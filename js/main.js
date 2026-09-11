@@ -1768,9 +1768,15 @@ function showEnding(kind, continueTo) {
   G.mode = 'ending';
   setMusic('ending');
   $('ending').classList.remove('hidden');
-  $('ending-label').textContent = e.label;
+  $('ending-label').textContent = continueTo ? e.label + ' · 第一部 完' : e.label;
   $('ending-title').textContent = e.title;
-  $('ending-text').textContent = e.text;
+  /* 第一部的结局是过场，不是终点。
+     此前这里按钮永远写着「再战一次」，玩家看完 SECRET END 只会以为通关了，
+     根本不知道后面还有第二部。 */
+  $('ending-text').textContent = continueTo
+    ? e.text + '\n\n——门关上了。但门后面，并不是空的。'
+    : e.text;
+  $('btn-again').textContent = continueTo ? '继续 · 第二部 门的另一边 →' : '旅程结算';
   $('ending-bg').style.background = `radial-gradient(ellipse at 50% 40%, #2a1a3c, #06040c)`;
   $('dialogue').classList.add('hidden');
   $('cmdmenu').classList.add('hidden');
