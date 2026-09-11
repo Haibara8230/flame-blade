@@ -9,6 +9,7 @@ screenshots/_tmp/
 screenshots/_x/
 shots-final/        # playthrough.cjs 的输出
 tools/shots/        # shot.cjs 的输出
+screenshots/mobile-*.png   # mobile.cjs 每次运行都会重新生成
 
 # ---- 编辑器 / 系统 ----
 .vscode/
