@@ -1,0 +1,5 @@
+[
+  { "name": "01-new", "eval": "document.getElementById('btn-new').click(); window.__trace2=[]; 'newgame'", "wait": 800 },
+  { "name": "02-go", "eval": "window.__advance(60); window.__autoRun(3000, 30000)", "wait": 32000 },
+  { "name": "03-res", "eval": "JSON.stringify({mode:window.__G.mode, scene:window.__G.sceneId, party:window.__state().party, gold:window.__G.gold, flags:window.__G.flags})", "wait": 400 }
+]

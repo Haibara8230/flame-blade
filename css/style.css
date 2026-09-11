@@ -1,0 +1,337 @@
+/* ============================================================
+   炎之刃 FLAME BLADE — 日漫热血风 UI
+   ============================================================ */
+:root{
+  --ink:#080a14;
+  --orange:#ff6a1a;
+  --orange-lt:#ffb43d;
+  --cyan:#48d8ff;
+  --pink:#ff4f8b;
+  --gold:#ffd76a;
+  --paper:rgba(10,13,26,.86);
+  --edge:rgba(255,170,80,.55);
+  --font: "Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html,body{margin:0;padding:0;height:100%;background:
+  radial-gradient(circle at 50% 0%, #1a1430 0%, #05060d 60%, #000 100%);
+  font-family:var(--font);color:#fff;overflow:hidden;
+  overscroll-behavior:none;touch-action:manipulation;
+  -webkit-user-select:none;user-select:none;position:fixed;width:100%}
+body{display:block;overflow:hidden}
+
+/* ---------- 舞台 ---------- */
+#stage{
+  position:absolute;left:0;top:0;width:960px;height:540px;
+  transform-origin:top left;touch-action:none;
+  box-shadow:0 0 0 1px rgba(255,140,60,.25), 0 0 60px rgba(255,90,0,.15), 0 30px 80px rgba(0,0,0,.9);
+  background:#04050c;overflow:hidden;
+  user-select:none;
+}
+#cv{display:block;width:960px;height:540px;image-rendering:auto}
+.hidden{display:none !important}
+
+/* ---------- 特效层 ---------- */
+#flash,#vignette,#tint,#dmgvignette,#hotoverlay{
+  position:absolute;inset:0;pointer-events:none}
+#flash{background:#fff;opacity:0;mix-blend-mode:screen}
+#vignette{background:radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.65) 100%)}
+#tint{opacity:0;transition:background .4s linear;background:transparent}
+#dmgvignette{opacity:0;background:radial-gradient(ellipse at center, transparent 35%, rgba(220,0,30,.85) 100%)}
+#hotoverlay{opacity:0;background:
+  radial-gradient(ellipse at center, rgba(255,150,0,0) 40%, rgba(255,90,0,.35) 100%);
+  mix-blend-mode:screen}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;top:0;left:0;right:0;height:38px;display:flex;
+  align-items:center;justify-content:space-between;padding:0 10px;
+  background:linear-gradient(180deg,rgba(6,8,18,.92),rgba(6,8,18,.15));
+  border-bottom:1px solid rgba(255,150,60,.22);z-index:20}
+#hud-chapter{font-size:14px;letter-spacing:2px;color:var(--gold);
+  text-shadow:0 0 12px rgba(255,170,60,.8)}
+.hud-right{display:flex;gap:6px}
+.hbtn{
+  font-family:var(--font);font-size:12px;color:#ffdcb0;cursor:pointer;
+  background:linear-gradient(180deg,rgba(40,26,60,.9),rgba(16,10,28,.95));
+  border:1px solid rgba(255,160,70,.4);border-radius:4px;padding:4px 9px;
+  letter-spacing:1px;transition:.15s}
+.hbtn:hover{background:linear-gradient(180deg,rgba(255,120,30,.85),rgba(150,40,10,.9));
+  color:#fff;box-shadow:0 0 14px rgba(255,140,40,.7)}
+
+/* ---------- 对话框 ---------- */
+#dialogue{position:absolute;left:16px;right:16px;bottom:14px;height:158px;z-index:25;
+  display:flex;gap:12px;padding:10px;
+  background:linear-gradient(180deg,rgba(12,10,26,.93),rgba(8,6,18,.97));
+  border:1px solid rgba(255,160,70,.45);border-radius:8px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.7) inset, 0 0 24px rgba(255,110,20,.22), 0 10px 30px rgba(0,0,0,.7)}
+#dialogue::before{content:"";position:absolute;inset:3px;border:1px solid rgba(255,170,80,.14);
+  border-radius:6px;pointer-events:none}
+.dlg-portrait{width:126px;height:136px;flex:0 0 126px;border-radius:6px;overflow:hidden;
+  border:1px solid rgba(255,160,70,.45);background:linear-gradient(180deg,#1a1430,#0a0818);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 18px rgba(255,120,30,.25) inset}
+.dlg-portrait img{width:100%;height:100%;object-fit:cover;object-position:top center}
+.dlg-main{position:relative;flex:1;padding:2px 8px 0 2px;overflow:hidden}
+.dlg-name{font-size:15px;font-weight:700;letter-spacing:2px;color:var(--gold);
+  text-shadow:0 0 10px rgba(255,170,60,.75);min-height:20px}
+.dlg-text{font-size:16.5px;line-height:1.62;margin-top:4px;color:#f2ecff;
+  text-shadow:0 1px 3px rgba(0,0,0,.9);white-space:pre-wrap}
+.dlg-text .shout{color:#ffd35c;font-weight:800;font-size:19px;
+  text-shadow:0 0 12px rgba(255,120,0,.95),0 2px 0 #7a1c00;
+  display:inline-block;animation:shake .3s infinite alternate}
+.dlg-text .narr{color:#a9a2c8;font-style:italic}
+.dlg-text .sys{color:var(--cyan);font-weight:700}
+.dlg-next{position:absolute;right:6px;bottom:0;color:var(--orange-lt);font-size:18px;
+  animation:bob .9s infinite}
+@keyframes bob{0%,100%{transform:translateY(0);opacity:.6}50%{transform:translateY(4px);opacity:1}}
+@keyframes shake{from{transform:translate(-1px,0) rotate(-.6deg)}to{transform:translate(1.5px,.5px) rotate(.6deg)}}
+.typing::after{content:"▌";color:var(--orange);animation:bob .5s infinite}
+
+/* ---------- 抉择 ---------- */
+#choices{position:absolute;inset:38px 60px 14px 60px;z-index:26;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  background:radial-gradient(ellipse at center,rgba(8,6,20,.72),rgba(4,3,12,.9))}
+.choices-title{font-size:15px;letter-spacing:6px;color:var(--orange-lt);
+  text-shadow:0 0 14px rgba(255,140,40,.8);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+#choices-list{display:flex;flex-direction:column;gap:12px;width:min(660px,90%)}
+.choice{position:relative;font-family:var(--font);font-size:16px;text-align:left;
+  padding:13px 20px;cursor:pointer;color:#fff2df;
+  background:linear-gradient(90deg,rgba(70,20,40,.92),rgba(20,12,34,.92));
+  border:1px solid rgba(255,150,70,.5);border-left:5px solid var(--orange);
+  border-radius:5px;transition:.16s;letter-spacing:1px}
+.choice:hover{transform:translateX(8px);
+  background:linear-gradient(90deg,rgba(255,110,30,.95),rgba(90,26,10,.95));
+  box-shadow:0 0 22px rgba(255,130,40,.6)}
+
+/* ---------- 战斗指令 ---------- */
+#cmdmenu{position:absolute;left:10px;right:10px;bottom:12px;z-index:24;
+  display:flex;flex-direction:column;gap:6px}
+.battle-log{height:66px;overflow:hidden;padding:6px 10px;font-size:13.5px;line-height:1.5;
+  background:linear-gradient(90deg,rgba(6,8,18,.86),rgba(6,8,18,.5));
+  border-left:3px solid rgba(255,150,60,.75);border-radius:4px;color:#cfd6ff}
+.battle-log div{opacity:.5;transition:opacity .3s}
+.battle-log div:last-child{opacity:1;color:#fff}
+.battle-log .hl{color:var(--gold);font-weight:700}
+.battle-log .dmg{color:#ff5f5f;font-weight:700}
+.battle-log .heal{color:#7dffa8;font-weight:700}
+.cmd-row{display:flex;align-items:stretch;gap:8px}
+.cmd-actor{width:190px;flex:0 0 190px;padding:7px 10px;border-radius:6px;
+  background:linear-gradient(180deg,rgba(14,10,30,.92),rgba(8,6,18,.96));
+  border:1px solid rgba(255,160,70,.4);font-size:12px}
+.cmd-actor .an{font-size:15px;font-weight:700;color:var(--gold);letter-spacing:2px}
+.cmd-buttons{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.cbtn{font-family:var(--font);font-size:15px;font-weight:700;letter-spacing:3px;cursor:pointer;
+  padding:10px 4px;border-radius:6px;color:#fff;
+  background:linear-gradient(180deg,rgba(60,34,90,.94),rgba(20,12,36,.96));
+  border:1px solid rgba(255,160,70,.45);transition:.14s;position:relative}
+.cbtn:hover:not(:disabled){transform:translateY(-3px);
+  background:linear-gradient(180deg,var(--orange),#a02200);
+  box-shadow:0 0 20px rgba(255,130,40,.75)}
+.cbtn:disabled{opacity:.35;cursor:not-allowed}
+.cbtn .sub{display:block;font-size:10.5px;font-weight:400;letter-spacing:1px;color:#ffcf9a;margin-top:2px}
+.cbtn.hot{border-color:var(--gold);animation:hotpulse .7s infinite alternate}
+@keyframes hotpulse{from{box-shadow:0 0 6px rgba(255,200,80,.5)}to{box-shadow:0 0 26px rgba(255,140,20,.95)}}
+.cbtn.sel{outline:2px solid var(--cyan);outline-offset:1px}
+
+/* ---------- 技能列表 ---------- */
+#skilllist{position:absolute;left:10px;right:10px;bottom:12px;z-index:27;
+  background:linear-gradient(180deg,rgba(12,10,28,.96),rgba(6,5,16,.98));
+  border:1px solid rgba(255,160,70,.45);border-radius:8px;padding:8px}
+#skilllist .sk-head{display:flex;justify-content:space-between;font-size:12px;color:var(--gold);
+  letter-spacing:2px;padding:0 4px 6px}
+.sk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-height:210px;overflow-y:auto}
+.sk{text-align:left;font-family:var(--font);cursor:pointer;padding:7px 9px;border-radius:5px;
+  background:linear-gradient(180deg,rgba(38,24,60,.92),rgba(16,10,28,.95));
+  border:1px solid rgba(150,120,255,.35);color:#eae4ff;transition:.13s}
+.sk:hover{background:linear-gradient(180deg,rgba(90,50,180,.95),rgba(40,16,80,.95));
+  border-color:var(--cyan);transform:translateY(-2px)}
+.sk .n{font-size:14px;font-weight:700;color:#fff}
+.sk .d{font-size:11px;color:#b6aee0;margin-top:2px}
+.sk .c{float:right;font-size:11px;color:var(--cyan)}
+.sk:disabled{opacity:.35;cursor:not-allowed;transform:none}
+
+/* ---------- 格挡条 ---------- */
+#guardbar{position:absolute;left:50%;top:74px;transform:translateX(-50%);z-index:28;
+  width:330px;text-align:center;padding:8px 12px;border-radius:8px;
+  background:rgba(8,6,20,.85);border:1px solid rgba(255,160,70,.5);
+  box-shadow:0 0 24px rgba(255,90,0,.4)}
+.guard-label{font-size:12px;letter-spacing:6px;color:var(--orange-lt);margin-bottom:5px}
+.guard-track{position:relative;height:18px;border-radius:9px;overflow:hidden;
+  background:linear-gradient(90deg,#2a1020,#3a1a10,#2a1020);
+  border:1px solid rgba(255,255,255,.16)}
+.guard-zone{position:absolute;top:0;bottom:0}
+.guard-zone.good{left:34%;width:32%;background:rgba(72,216,255,.35)}
+.guard-zone.perfect{left:44%;width:12%;background:linear-gradient(180deg,#fff6c0,#ffb300);
+  box-shadow:0 0 14px #ffcf4d}
+.guard-needle{position:absolute;top:-3px;bottom:-3px;width:4px;background:#fff;border-radius:2px;
+  box-shadow:0 0 10px #fff,0 0 20px #ff8a1a}
+.guard-tip{font-size:11px;color:#cbbfe8;margin-top:6px;letter-spacing:1px}
+kbd{background:#2a1c44;border:1px solid #6a5aa0;border-radius:3px;padding:0 4px;font-size:10px}
+
+/* ---------- 奥义 cut-in ---------- */
+#cutin{position:absolute;inset:0;z-index:40;overflow:hidden;pointer-events:none}
+.cutin-speed{position:absolute;inset:-30%;
+  background:repeating-linear-gradient(72deg,rgba(255,255,255,.9) 0 6px,transparent 6px 46px);
+  animation:speed .5s linear infinite;opacity:.35}
+@keyframes speed{from{transform:translateX(0)}to{transform:translateX(-120px)}}
+.cutin-band{position:absolute;left:-10%;right:-10%;top:50%;height:210px;transform:translateY(-50%) skewX(-9deg);
+  background:linear-gradient(90deg,rgba(0,0,0,0),rgba(30,4,4,.96) 12%,rgba(120,10,0,.96) 50%,rgba(30,4,4,.96) 88%,rgba(0,0,0,0));
+  border-top:3px solid var(--gold);border-bottom:3px solid var(--gold);
+  display:flex;align-items:center;gap:22px;padding:0 46px;
+  animation:bandin .32s cubic-bezier(.2,1.6,.4,1)}
+@keyframes bandin{from{transform:translateY(-50%) skewX(-9deg) scaleX(.2);opacity:0}
+  to{transform:translateY(-50%) skewX(-9deg) scaleX(1);opacity:1}}
+.cutin-band img{height:186px;width:150px;object-fit:cover;object-position:top;
+  border:2px solid var(--gold);box-shadow:0 0 30px rgba(255,160,40,.8);transform:skewX(9deg)}
+.cutin-text{font-size:52px;font-weight:900;letter-spacing:10px;color:#fff;
+  text-shadow:0 0 18px rgba(255,90,0,1),0 5px 0 #6d0d00,0 0 60px rgba(255,160,0,.9);
+  animation:cutzoom .4s cubic-bezier(.2,1.8,.4,1);transform:skewX(9deg)}
+@keyframes cutzoom{from{transform:skewX(9deg) scale(2.2);opacity:0}to{transform:skewX(9deg) scale(1);opacity:1}}
+
+/* ---------- 角色面板 ---------- */
+#panel{position:absolute;inset:38px 0 0 0;z-index:35;padding:14px 22px;
+  background:linear-gradient(180deg,rgba(8,7,20,.96),rgba(4,4,12,.99));
+  display:flex;flex-direction:column;gap:10px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;
+  font-size:16px;letter-spacing:4px;color:var(--gold);border-bottom:1px solid rgba(255,160,70,.35);padding-bottom:7px}
+.panel-body{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;align-content:start}
+.pcard{display:flex;gap:10px;padding:9px;border-radius:6px;
+  background:linear-gradient(180deg,rgba(24,16,42,.9),rgba(10,8,20,.92));
+  border:1px solid rgba(255,160,70,.28)}
+.pcard img{width:78px;height:96px;object-fit:cover;object-position:top;border-radius:4px;
+  border:1px solid rgba(255,160,70,.35)}
+.pcard .pi{flex:1;font-size:12.5px;line-height:1.55}
+.pcard .pn{font-size:16px;font-weight:800;color:var(--gold);letter-spacing:2px}
+.pcard .pv{color:#bbb2dd}
+.bar{position:relative;height:9px;border-radius:5px;background:#241a38;overflow:hidden;margin:2px 0 4px;
+  border:1px solid rgba(255,255,255,.12)}
+.bar i{position:absolute;left:0;top:0;bottom:0;display:block;transition:width .3s}
+.bar.hp i{background:linear-gradient(90deg,#ff3b5c,#ff8a4d)}
+.bar.mp i{background:linear-gradient(90deg,#3b8cff,#48d8ff)}
+.bar.ht i{background:linear-gradient(90deg,#ffb300,#ff5a00)}
+.tag{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:3px;margin:1px 3px 1px 0;
+  background:rgba(90,60,180,.4);border:1px solid rgba(160,130,255,.45);color:#dcd4ff}
+.tag.eq{background:rgba(255,140,20,.28);border-color:rgba(255,180,80,.6);color:#ffdba8}
+.shop-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;
+  padding:7px 9px;border-radius:5px;background:rgba(20,14,36,.85);border:1px solid rgba(255,160,70,.22)}
+.shop-row .pr{color:var(--gold);font-weight:700}
+.mini{cursor:pointer;font-family:var(--font);font-size:12px;padding:4px 10px;border-radius:4px;color:#fff;
+  background:linear-gradient(180deg,#ff7a1a,#a83000);border:1px solid rgba(255,190,110,.6)}
+.mini:disabled{opacity:.35;cursor:not-allowed}
+.mini.g{background:linear-gradient(180deg,#3b8cff,#123a80);border-color:rgba(120,180,255,.6)}
+
+/* ---------- 标题 / 载入 / 结局 ---------- */
+.screen{position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 30%,#241a3c 0%,#0a0818 55%,#000 100%);overflow:hidden}
+.title-glow{position:absolute;width:1200px;height:1200px;left:50%;top:60%;transform:translate(-50%,-50%);
+  background:radial-gradient(circle,rgba(255,110,20,.35),rgba(255,60,0,.08) 45%,transparent 70%);
+  animation:glowpulse 4s ease-in-out infinite}
+@keyframes glowpulse{0%,100%{opacity:.55;transform:translate(-50%,-50%) scale(1)}
+  50%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}}
+.title-inner,.loading-inner,.ending-inner{position:relative;text-align:center;z-index:2}
+.title-en{font-size:15px;letter-spacing:16px;color:rgba(255,190,120,.75);margin-bottom:2px}
+.title-cn{font-size:76px;margin:0;letter-spacing:18px;font-weight:900;
+  background:linear-gradient(180deg,#fff6d8 10%,#ffc44d 45%,#ff6a1a 70%,#a8260a 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(255,120,30,.85));animation:titlefloat 3.4s ease-in-out infinite}
+@keyframes titlefloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.title-sub{font-size:14px;letter-spacing:5px;color:#cdbfe8;margin:6px 0 26px}
+.title-menu{display:flex;flex-direction:column;gap:10px;align-items:center}
+.tbtn{font-family:var(--font);width:280px;padding:12px;font-size:16px;letter-spacing:5px;cursor:pointer;
+  color:#ffe9cf;background:linear-gradient(180deg,rgba(46,26,72,.9),rgba(16,10,30,.95));
+  border:1px solid rgba(255,160,70,.45);border-radius:5px;transition:.18s;position:relative;overflow:hidden}
+.tbtn:hover{transform:scale(1.05);color:#fff;
+  background:linear-gradient(180deg,#ff7a1a,#8f2100);box-shadow:0 0 28px rgba(255,130,40,.75)}
+.tbtn::after{content:"";position:absolute;top:0;left:-120%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transition:.5s}
+.tbtn:hover::after{left:130%}
+.title-foot{position:absolute;bottom:-150px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  font-size:11.5px;color:rgba(200,190,230,.5);letter-spacing:2px}
+.loading-inner h2{font-size:30px;letter-spacing:8px;color:var(--gold);margin:0 0 12px;
+  text-shadow:0 0 20px rgba(255,150,40,.8)}
+.loading-inner p{font-size:14px;color:#c9bfe6;letter-spacing:3px}
+#ending-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.32;filter:blur(1px)}
+.ending-label{font-size:13px;letter-spacing:10px;color:var(--orange-lt);margin-bottom:8px}
+.ending-inner h2{font-size:46px;letter-spacing:12px;margin:0 0 18px;
+  background:linear-gradient(180deg,#fff8dc,#ffb43d,#ff5a00);-webkit-background-clip:text;background-clip:text;
+  color:transparent;filter:drop-shadow(0 0 18px rgba(255,120,20,.8))}
+.ending-inner p{max-width:640px;margin:0 auto 26px;font-size:15px;line-height:2;color:#e2d9ff;letter-spacing:1px}
+
+/* ---------- 提示 ---------- */
+#toast{position:absolute;left:50%;top:52px;transform:translate(-50%,-14px);z-index:50;
+  padding:8px 20px;border-radius:20px;font-size:13.5px;letter-spacing:2px;
+  background:linear-gradient(90deg,rgba(255,120,30,.95),rgba(160,40,0,.95));
+  border:1px solid rgba(255,220,150,.7);box-shadow:0 0 22px rgba(255,120,20,.7);
+  opacity:0;pointer-events:none;transition:.28s}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- 触屏 ---------- */
+/* 战斗中才显示（由 JS 切换 .combat），避免遮住对话框 */
+#touch{position:absolute;right:10px;top:46px;z-index:30;display:none;flex-direction:column;gap:10px}
+#touch.combat{display:flex}
+.tkey{font-family:var(--font);width:88px;height:88px;
+  font-size:15px;font-weight:700;letter-spacing:3px;color:#fff;padding:0;
+  border-radius:50%;background:radial-gradient(circle at 35% 28%,rgba(255,150,50,.92),rgba(110,18,0,.92));
+  border:2px solid rgba(255,205,130,.7);
+  box-shadow:0 0 18px rgba(255,110,20,.55),0 4px 14px rgba(0,0,0,.6);
+  touch-action:manipulation;transition:transform .08s}
+.tkey[data-key="guard"]{background:radial-gradient(circle at 35% 28%,rgba(110,190,255,.9),rgba(10,50,110,.92));
+  border-color:rgba(170,225,255,.75);box-shadow:0 0 18px rgba(72,180,255,.5),0 4px 14px rgba(0,0,0,.6)}
+.tkey:active{transform:scale(.9);filter:brightness(1.25)}
+
+/* ---------- 竖屏提示 ---------- */
+#rotate{position:absolute;inset:0;z-index:80;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;
+  background:rgba(4,4,12,.94);backdrop-filter:blur(4px)}
+.rotate-icon{font-size:54px;animation:rotatespin 2.2s ease-in-out infinite}
+@keyframes rotatespin{0%,40%{transform:rotate(0)}60%,100%{transform:rotate(90deg)}}
+.rotate-title{font-size:20px;letter-spacing:5px;color:var(--gold);
+  text-shadow:0 0 16px rgba(255,160,40,.8)}
+.rotate-sub{font-size:12.5px;line-height:1.8;color:#c3b9e0;letter-spacing:1px;max-width:280px}
+
+/* ---------- 触屏适配 ---------- */
+.touch-ui #hud{height:36px;padding:0 6px}
+.touch-ui #hud-chapter{font-size:12px;letter-spacing:1px}
+.touch-ui .hbtn{font-size:11px;padding:4px 6px;letter-spacing:0}
+.touch-ui #dialogue{left:8px;right:8px;bottom:8px;height:164px;gap:8px;padding:8px}
+.touch-ui .dlg-portrait{width:108px;height:146px;flex:0 0 108px}
+.touch-ui .dlg-text{font-size:16px;line-height:1.58}
+.touch-ui .dlg-name{font-size:14px}
+.touch-ui .dlg-text .shout{font-size:18px}
+.touch-ui .choice{font-size:15px;padding:12px 16px}
+.touch-ui .cmd-buttons{grid-template-columns:repeat(4,1fr);gap:5px}
+.touch-ui .cbtn{font-size:14px;letter-spacing:1px;padding:14px 2px}
+.touch-ui .cbtn .sub{font-size:10px;letter-spacing:0}
+.touch-ui .cmd-actor{display:none}
+.touch-ui .battle-log{height:56px;font-size:13px}
+.touch-ui .sk-grid{grid-template-columns:repeat(2,1fr)}
+.touch-ui .sk .n{font-size:13.5px}
+.touch-ui .sk .d{font-size:10.5px}
+.touch-ui .guard-track{height:22px}
+.touch-ui #guardbar{top:64px;width:min(360px,86%)}
+.touch-ui .mini{padding:9px 14px;font-size:13px}
+.touch-ui .shop-row{font-size:12.5px;padding:9px}
+/* 窄屏（手机横屏）进一步压缩 */
+@media (max-width: 960px), (max-height: 560px){
+  .touch-ui #hud-chapter{font-size:11px}
+  .touch-ui .panel-body{grid-template-columns:1fr}
+  .title-cn{font-size:58px;letter-spacing:12px}
+  .title-sub{font-size:12px;letter-spacing:3px}
+  .tbtn{width:240px;padding:10px;font-size:15px;letter-spacing:3px}
+  .ending-inner h2{font-size:34px;letter-spacing:8px}
+  .ending-inner p{font-size:13px;line-height:1.8}
+  .rotate-sub{font-size:12px}
+}
+/* 超矮屏（手机横屏 320~400px 高）隐藏次要信息 */
+@media (max-height: 430px){
+  .touch-ui #hud-chapter{display:none}
+  .touch-ui #dialogue{height:150px}
+  .touch-ui .dlg-portrait{width:92px;height:132px;flex:0 0 92px}
+  .touch-ui .battle-log{height:48px}
+}
+
+/* 滚动条 */
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.05)}
+::-webkit-scrollbar-thumb{background:rgba(255,140,40,.5);border-radius:4px}

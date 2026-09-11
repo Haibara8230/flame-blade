@@ -1,0 +1,8 @@
+[
+  { "name": "01-new", "eval": "document.getElementById('btn-new').click(); 'newgame'", "wait": 1500 },
+  { "name": "02-prologue", "eval": "window.__advance(8) + ' | ' + JSON.stringify(window.__state().party)", "wait": 600 },
+  { "name": "03-progress", "eval": "window.__advance(60) + ' | ' + window.__state().scene", "wait": 800 },
+  { "name": "04-battle", "eval": "window.__advance(40) + ' | mode=' + window.__G.mode + ' enemies=' + (window.__G.battle?window.__G.battle.enemies.length:0) + ' | ui=' + document.getElementById('cmd-buttons').children.length + ' buttons'", "wait": 1500 },
+  { "name": "05-autobattle", "eval": "window.__autoRun(2000, 25000)", "wait": 27000 },
+  { "name": "06-result", "eval": "JSON.stringify({mode:window.__G.mode, scene:window.__G.sceneId, party:window.__state().party, gold:window.__G.gold})", "wait": 500 }
+]

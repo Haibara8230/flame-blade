@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#080a14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>炎之刃 — FLAME BLADE</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🔥</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="stage">
+  <canvas id="cv" width="960" height="540"></canvas>
+
+  <!-- ============ HUD ============ -->
+  <header id="hud" class="hidden">
+    <div class="hud-left">
+      <span id="hud-chapter">第一章 · 灰烬之村</span>
+    </div>
+    <div class="hud-right">
+      <button class="hbtn" id="btn-full" title="全屏">⛶</button>
+      <button class="hbtn" id="btn-status">◈ 队伍</button>
+      <button class="hbtn" id="btn-bag">◆ 道具</button>
+      <button class="hbtn" id="btn-save">◇ 存档</button>
+      <button class="hbtn" id="btn-title">✦ 标题</button>
+    </div>
+  </header>
+
+  <!-- ============ 对话框 ============ -->
+  <div id="dialogue" class="hidden">
+    <div class="dlg-portrait"><img id="dlg-img" alt=""></div>
+    <div class="dlg-main">
+      <div class="dlg-name"><span id="dlg-name-text"></span></div>
+      <div class="dlg-text" id="dlg-text"></div>
+      <div class="dlg-next" id="dlg-next">▼</div>
+    </div>
+  </div>
+
+  <!-- ============ 抉择 ============ -->
+  <div id="choices" class="hidden">
+    <div class="choices-title">— 做出你的选择 —</div>
+    <div id="choices-list"></div>
+  </div>
+
+  <!-- ============ 战斗指令 ============ -->
+  <div id="cmdmenu" class="hidden">
+    <div class="battle-log" id="battle-log"></div>
+    <div class="cmd-row">
+      <div class="cmd-actor" id="cmd-actor"></div>
+      <div class="cmd-buttons" id="cmd-buttons"></div>
+    </div>
+  </div>
+
+  <!-- ============ 弹反提示 ============ -->
+  <div id="guardbar" class="hidden">
+    <div class="guard-label">格 挡</div>
+    <div class="guard-track">
+      <div class="guard-zone good"></div>
+      <div class="guard-zone perfect"></div>
+      <div class="guard-needle" id="guard-needle"></div>
+    </div>
+    <div class="guard-tip">
+      <kbd>空格</kbd> / <kbd>点击</kbd> 完美弹反
+    </div>
+  </div>
+
+  <!-- ============ 奥义演出 ============ -->
+  <div id="cutin" class="hidden">
+    <div class="cutin-speed"></div>
+    <div class="cutin-band">
+      <img id="cutin-img" alt="">
+      <div class="cutin-text"><span id="cutin-name"></span></div>
+    </div>
+  </div>
+
+  <!-- 全屏视觉特效层 -->
+  <div id="flash"></div>
+  <div id="vignette"></div>
+  <div id="tint"></div>
+  <div id="dmgvignette"></div>
+  <div id="hotoverlay"></div>
+
+  <!-- ============ 角色面板 ============ -->
+  <div id="panel" class="hidden">
+    <div class="panel-head"><span id="panel-title">队伍状态</span><button class="hbtn" id="panel-close">✕ 关闭</button></div>
+    <div class="panel-body" id="panel-body"></div>
+  </div>
+
+  <!-- ============ 标题画面 ============ -->
+  <div id="title" class="screen">
+    <div class="title-glow"></div>
+    <div class="title-inner">
+      <div class="title-en">FLAME&nbsp;BLADE</div>
+      <h1 class="title-cn">炎 之 刃</h1>
+      <div class="title-sub">— 燃尽黑暗，此刃为谁而挥 —</div>
+      <div class="title-menu">
+        <button class="tbtn" id="btn-new">开始新旅程</button>
+        <button class="tbtn" id="btn-continue">继续冒险</button>
+        <button class="tbtn" id="btn-gallery">奥义一览</button>
+        <button class="tbtn" id="btn-help">操作说明</button>
+      </div>
+      <div class="title-foot">热血日漫风格 · 文字 + 图画 RPG · 键盘 / 触屏均可</div>
+    </div>
+  </div>
+
+  <!-- ============ 载入画面 ============ -->
+  <div id="loading" class="screen hidden">
+    <div class="title-glow"></div>
+    <div class="loading-inner">
+      <h2 id="load-chapter">第一章 · 灰烬之村</h2>
+      <p id="load-text">命运正在转动……</p>
+    </div>
+  </div>
+
+  <!-- ============ 结局画面 ============ -->
+  <div id="ending" class="screen hidden">
+    <div id="ending-bg"></div>
+    <div class="ending-inner">
+      <div class="ending-label" id="ending-label">TRUE END</div>
+      <h2 id="ending-title"></h2>
+      <p id="ending-text"></p>
+      <div class="title-menu">
+        <button class="tbtn" id="btn-again">再战一次</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 提示气泡 ============ -->
+  <div id="toast"></div>
+
+  <!-- ============ 移动端按键（仅战斗中由 JS 加上 .combat 显示，避免遮住对话框） ============ -->
+  <div id="touch">
+    <button class="tkey" data-key="action">攻 击</button>
+    <button class="tkey" data-key="guard">格 挡</button>
+  </div>
+
+  <!-- ============ 竖屏提示 ============ -->
+  <div id="rotate" class="hidden">
+    <div class="rotate-icon">📱</div>
+    <div class="rotate-title">请把手机横过来</div>
+    <div class="rotate-sub">《炎之刃》是横屏游戏，横屏后画面更大、弹反更好按</div>
+  </div>
+</div>
+
+<!-- 日漫风格音效（WebAudio 程序化合成，无需外部素材） -->
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

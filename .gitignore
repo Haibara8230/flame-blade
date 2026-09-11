@@ -1,0 +1,21 @@
+# ---- 运行/测试产生的临时文件 ----
+.tmp/
+__pycache__/
+*.pyc
+screenshots/_*/
+screenshots/_probe/
+screenshots/_reg/
+screenshots/_tmp/
+screenshots/_x/
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+*.log
+
+# ---- 依赖（本项目零依赖，仅作保险）----
+node_modules/
+
+# 说明：screenshots/ 里的正式截图（01~17-*.png）是要进仓库的，故不整体忽略
