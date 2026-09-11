@@ -294,6 +294,7 @@ function makeMember(id, level = null) {
     blk: st.blk, par: st.par, rageMul: st.rageMul,
     resource: def.resource || 'mp',
     equips, skills: def.skills.filter(s => s.lv <= lv).map(s => s.id),
+    bonus: { atk: 0, def: 0, hp: 0 },   // 剧情给的永久加成，recalc 后重新叠加
     isEnemy: false,
   };
 }
@@ -306,14 +307,22 @@ function defaultEquip(id, slot) {
   };
   return map[id] ? map[id][slot] : null;
 }
+/* 按等级 + 装备重算属性。
+   注意三件事都必须在这里处理，否则会被静默抹掉——升级和换装备都会走这个函数：
+   1. blk / par / rageMul 也是 statsAt 派生的（装备能加格挡率和弹反率）；
+   2. m.bonus 是剧情给的永久加成，不来自 statsAt，必须在重算后重新叠加；
+   3. 愤怒型角色的资源不该按比例缩放到满。 */
 function recalc(m) {
   const def = ACTORS[m.id];
   const st = statsAt(def, m.level, m.equips);
   const hpR = m.maxHp ? m.hp / m.maxHp : 1, mpR = m.maxMp ? m.mp / m.maxMp : 1;
   m.maxHp = st.hp; m.maxMp = st.mp; m.atk = st.atk; m.def = st.def; m.spd = st.spd;
   m.cri = st.cri; m.mpRegen = st.mpRegen;
-  m.hp = Math.min(m.maxHp, Math.max(1, Math.round(st.hp * hpR)));
-  m.mp = Math.min(m.maxMp, Math.round(st.mp * mpR));
+  m.blk = st.blk; m.par = st.par; m.rageMul = st.rageMul;
+  const b = m.bonus;
+  if (b) { m.atk += b.atk || 0; m.def += b.def || 0; m.maxHp += b.hp || 0; }
+  m.hp = Math.min(m.maxHp, Math.max(1, Math.round(m.maxHp * hpR)));
+  m.mp = Math.min(m.maxMp, Math.round(m.maxMp * mpR));
 }
 function addMember(id, level) {
   if (G.party.find(p => p.id === id)) return G.party.find(p => p.id === id);
@@ -403,8 +412,15 @@ function runAction(a) {
     toast(`※ 全队获得 ${a.exp} 点历练经验`);
     showLevelUps(ups);
   }
-  if (a.heal === 'party') for (const m of G.party) { m.hp = m.maxHp; m.mp = m.maxMp; }
-  if (a.bonus) for (const m of G.party) { if (a.bonus.atk) m.atk += a.bonus.atk; if (a.bonus.def) m.def += a.bonus.def; }
+  if (a.heal === 'party') for (const m of G.party) { m.hp = m.maxHp; if (m.resource !== 'rage') m.mp = m.maxMp; }
+  if (a.bonus) for (const m of G.party) {
+    // 直接改 m.atk 会在下一次 recalc（升级/换装备）时被抹掉，必须存进 m.bonus
+    if (!m.bonus) m.bonus = { atk: 0, def: 0, hp: 0 };
+    m.bonus.atk += a.bonus.atk || 0;
+    m.bonus.def += a.bonus.def || 0;
+    m.bonus.hp += a.bonus.hp || 0;
+    recalc(m);
+  }
   // 条件跳转动作：{ branch:'flagName', target:{ yes, no } }
   if (typeof a.branch === 'string' && a.target) {
     gotoScene(G.flags[a.branch] ? a.target.yes : a.target.no);
@@ -1004,7 +1020,7 @@ function saveGame() {
     flags: G.flags, gold: G.gold, bag: G.bag,
     party: G.party.map(m => ({
       id: m.id, level: m.level, exp: m.exp, hp: m.hp, mp: m.mp,
-      equips: m.equips, skills: m.skills,
+      equips: m.equips, skills: m.skills, bonus: m.bonus,
     })),
   };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); toast('◇ 已保存进度'); }
@@ -1018,6 +1034,7 @@ function loadGame() {
     G.party = d.party.map(p => {
       const m = makeMember(p.id, p.level);
       m.exp = p.exp || 0; m.equips = p.equips || m.equips; m.skills = p.skills || m.skills;
+      m.bonus = p.bonus || m.bonus;
       recalc(m);
       m.hp = Math.min(m.maxHp, Math.max(1, p.hp));
       m.mp = m.resource === 'rage' ? 0 : Math.min(m.maxMp, p.mp ?? m.maxMp);
