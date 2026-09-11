@@ -3,6 +3,7 @@
    模型改为：算出全场每「轮」（= 全体 gauge 各涨满一次的时间）里各单位的出手次数期望。 */
 import { ACTORS, ENEMIES, ENEMY_SKILLS, SKILLS, EQUIPS, statsAt } from '../js/characters.js';
 import { SCENES } from '../js/story.js';
+import { obtainable } from './reach.mjs';
 
 /* 复刻 battle.js 的公式（保持一致） */
 function eAtk(u) { return u.atk; }
@@ -47,6 +48,24 @@ const RAGE_PER_ACT = 16;     // 愤怒角色每次出手+挨打大致能攒到�
 
 /* 遭遇表直接从 story.js 读取——此前这里是手抄的副本，改了剧本这边不会跟着变。
    只有「打到这场时队伍大概什么水平」是模拟器的假设，必须留在这里。 */
+/* 预设里只允许出现玩家真能拿到的装备。
+   踩过的坑：终盘预设给凯配了圣剑·霜华 + 魔铠·黑曜，而这两件当时都无法获得，
+   于是整个终盘平衡是按玩家永远达不到的装等算的（实战比模拟结论更难）。 */
+function checkGear() {
+  const OK = obtainable();
+  const bad = [];
+  for (const [key, list] of Object.entries(PARTY)) {
+    for (const [id, lv, eq] of list) for (const e of eq) {
+      if (!OK.has(e)) bad.push(`${key}/${id}: ${e}`);
+    }
+  }
+  if (bad.length) {
+    console.log('! 预设里用了玩家拿不到的装备：' + bad.join('、'));
+    process.exitCode = 1;
+  }
+}
+checkGear();
+
 const STAGE_PARTY = {
   c1_battle1: ['第一章 魔兵×2', 'early'],
   c1_battle2: ['第一章 魔兵+弓手', 'early'],

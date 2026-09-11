@@ -201,6 +201,12 @@ export function canUlt(m) {
 }
 
 /* 资源占比（0~1），给 HUD 和隐藏结局判定用 */
+/* 被「封印」时不能使用技能与奥义（只剩普攻 / 格挡 / 道具）。
+   此前 STATUS.seal 定义了、图标也有，但既没有技能会施加它，被施加了也没有任何效果。 */
+export function isSealed(u) {
+  return !!(u && u.status && u.status.some(s => s.id === 'seal'));
+}
+
 export function resourceRatio(m) {
   return m && m.maxMp ? clamp(m.mp / m.maxMp, 0, 1) : 0;
 }
@@ -540,6 +546,7 @@ function resolvePlayerCmd(B, m, cmd) {
     case 'skill': {
       const sk = SKILLS[cmd.skill];
       if (!sk) break;
+      if (isSealed(m)) { addLog(B, `<span class="dmg">${m.name} 被封印了，无法使用术式！</span>`); break; }
       m.mp = Math.max(0, m.mp - (sk.mp || 0));
       if (sk.type === 'heal') {
         execHeal(B, m, sk, cmd.target);
@@ -722,7 +729,8 @@ function chooseEnemyAction(B, e) {
     B.enemyActs.push(1);
     return;
   }
-  const pool = e.skills || [{ id: 'atk', w: 1 }];
+  const pool = isSealed(e) ? [{ id: 'atk', w: 1 }] : (e.skills || [{ id: 'atk', w: 1 }]);
+  if (isSealed(e)) addLog(B, `${e.name} 被封印了，只能挥出普通一击。`);
   const total = pool.reduce((s, x) => s + x.w, 0);
   let r = Math.random() * total, pick = pool[0];
   for (const p of pool) { r -= p.w; if (r <= 0) { pick = p; break; } }
@@ -1243,4 +1251,4 @@ export function battleLogHTML(B) {
   return B.log.map(l => `<div class="${l.cls}">${l.txt}</div>`).join('');
 }
 
-export default { createBattle, updateBattle, drawBattle, beginNextTurn, takePlayerAction, forecastOrder, battleLogHTML, gainRage, canUlt, resourceRatio, computeDamage, checkBattleEnd };
+export default { createBattle, updateBattle, drawBattle, beginNextTurn, takePlayerAction, forecastOrder, battleLogHTML, gainRage, canUlt, resourceRatio, isSealed, computeDamage, checkBattleEnd };

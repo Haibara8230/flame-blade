@@ -701,6 +701,8 @@ function buildCommandUI() {
   mk('技能', '术式/奥义', () => openSkills(m));
   mk('道具', `剩余${Object.values(G.bag).reduce((a, b2) => a + b2, 0)}`, () => openBagInBattle(m));
   mk('格挡', '大幅提升格挡/弹反率', () => doCmd(m, { type: 'guard' }));
+  // 剧本用 escape 标记哪些战斗可以逃。此前只有这个标记，指令栏里从来没有出口。
+  if (b.def && b.def.escape) mk('逃跑', '脱离战斗', () => doCmd(m, { type: 'escape' }));
   $('cmdmenu').classList.remove('hidden');
 }
 function pickTargetIdx() {
@@ -732,11 +734,12 @@ function openSkills(m) {
   }
   const list = m.skills.filter(id => SKILLS[id]);
   const resName = m.resource === 'rage' ? '怒气' : '术力';
-  el.innerHTML = `<div class="sk-head"><span>${m.name} 的技能　${resName} ${Math.ceil(m.mp)}/${m.maxMp}</span><span style="color:#ffb98a">${m.resource === 'rage' ? '怒气靠攻击与受击积攒' : '术力每回合自然回复'}</span></div>
+  const sealed = BT.isSealed(m);
+  el.innerHTML = `<div class="sk-head"><span>${m.name} 的技能　${resName} ${Math.ceil(m.mp)}/${m.maxMp}</span><span style="color:#ffb98a">${sealed ? '✖ 被封印，无法使用术式' : (m.resource === 'rage' ? '怒气靠攻击与受击积攒' : '术力每回合自然回复')}</span></div>
     <div class="sk-grid">${list.map(id => {
     const s = SKILLS[id];
     const isUlt = !!s.ult;
-    const usable = s.mp <= m.mp;
+    const usable = !sealed && s.mp <= m.mp;
     return `<button class="sk" data-sk="${id}" ${usable ? '' : 'disabled'}>
         <span class="c">${isUlt ? '★奥义 ' : ''}${resName.slice(0, 1)} ${s.mp}</span>
         <div class="n">${s.name}</div>

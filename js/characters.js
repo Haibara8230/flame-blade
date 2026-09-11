@@ -48,10 +48,10 @@ export const ACTORS = {
     resource: 'mp',
     base: { hp: 230, mp: 110, atk: 30, def: 20, spd: 28, cri: 0.06, blk: 0.10, par: 0.05, rageMul: 0.9, mpRegen: 6 },
     grow: { hp: 34, mp: 12, atk: 3.0, def: 1.9, spd: 1.3 },
-    weaponSkill: ['liaoshang', 'bingzhen', 'leiting', 'fuyin'],
+    weaponSkill: ['liaoshang', 'bingzhen', 'shengguang', 'leiting', 'fuyin'],
     skills: [
       { id: 'liaoshang', lv: 2 }, { id: 'bingzhen', lv: 4 }, { id: 'qifu', lv: 7 },
-      { id: 'leiting', lv: 11 }, { id: 'fuyin', lv: 13 }, { id: 'zhenyan', lv: 15 },
+      { id: 'shengguang', lv: 9 }, { id: 'leiting', lv: 11 }, { id: 'fuyin', lv: 13 }, { id: 'zhenyan', lv: 15 },
     ],
     quote: '「别逞强了，笨蛋。——把手给我。」',
     winQuote: '伤口我来处理，你只管往前冲。',
@@ -103,8 +103,8 @@ export const SKILLS = {
   },
   liepo: {
     id: 'liepo', name: '裂地·炎爆斩', mp: 22, type: 'atk', elem: 'fire', power: 1.75, hits: 1,
-    target: 'all', desc: '烈焰横扫，对全体敌人造成炎属性伤害。', rage: 18,
-    fx: 'fire',
+    target: 'all', desc: '烈焰横扫，对全体敌人造成炎属性伤害，有机会点燃。', rage: 18,
+    fx: 'fire', inflict: { id: 'burn', chance: 0.4 },
   },
   leiming: {
     id: 'leiming', name: '雷鸣·千鸟突', mp: 26, type: 'atk', elem: 'thunder', power: 2.05, hits: 1,
@@ -119,7 +119,7 @@ export const SKILLS = {
   miehun: {
     id: 'miehun', name: '奥义·灭魂炎狱斩', mp: 58, type: 'atk', elem: 'fire', power: 1.05, hits: 5,
     target: 'one', desc: '【奥义】五段斩在敌人体内燃起炎狱。', rage: 0,
-    fx: 'fire', ult: true, multi: true,
+    fx: 'fire', ult: true, multi: true, inflict: { id: 'burn', chance: 0.9 },
   },
 
   /* —— 苍 —— */
@@ -133,7 +133,12 @@ export const SKILLS = {
   },
   qifu: {
     id: 'qifu', name: '苍之祈愿', mp: 30, type: 'heal', power: 0.40, target: 'party',
-    desc: '苍蓝之光治愈全体同伴。', rage: 14, fx: 'heal',
+    desc: '苍蓝之光治愈全体同伴，并提升防御。', rage: 14, fx: 'heal',
+    buff: { id: 'defUp', turns: 3 },
+  },
+  shengguang: {
+    id: 'shengguang', name: '圣光·裁罪', mp: 22, type: 'atk', elem: 'holy', power: 1.65, hits: 1,
+    target: 'one', desc: '苍白的审判之光，对魔性之物格外有效。', rage: 14, fx: 'thunder',
   },
   leiting: {
     id: 'leiting', name: '雷霆', mp: 24, type: 'atk', elem: 'thunder', power: 1.60, hits: 1,
@@ -225,7 +230,7 @@ export const ITEMS = {
 /* ---------------- 商店 ---------------- */
 export const SHOPS = {
   village: { name: '铁匠铺 & 药屋', items: ['potion', 'ether', 'leather', 'iron_sword', 'wood_staff', 'ring_pow'] },
-  harbor: { name: '港町商会', items: ['potion', 'potion_hi', 'ether', 'revive', 'seal', 'chain', 'blue_staff', 'hunter_spear', 'ring_fast'] },
+  harbor: { name: '港町商会', items: ['potion', 'potion_hi', 'ether', 'revive', 'seal', 'smoke', 'chain', 'blue_staff', 'hunter_spear', 'ring_fast'] },
   north: { name: '北境补给站', items: ['potion_hi', 'elixir', 'revive', 'bomb', 'flame_sword', 'storm_spear', 'ring_life', 'holy_cloak'] },
   final: { name: '深渊前哨 · 最后的交易', items: ['potion_hi', 'elixir', 'revive', 'bomb', 'demon_mail', 'bond_ring'] },
 };
@@ -282,10 +287,10 @@ export const ENEMIES = {
   zain: {
     id: 'zain', name: '暗影四天王·泽恩', shape: 'humanoid', scale: 1.15,
     palette: { hair: '#12101e', cloth: '#1a0f22', trim: '#8f1226', skin: '#e0c0c0', eye: '#ff3b4e', weapon: 'twin' },
-    hp: 2900, atk: 78, def: 30, spd: 46, exp: 320, gold: 420, hot: 13,
-    weak: ['thunder'],
+    hp: 2900, atk: 84, def: 30, spd: 46, exp: 320, gold: 420, hot: 13,
+    weak: ['thunder', 'holy'],
     quote: '「热血」？真是廉价的词汇。',
-    skills: [{ id: 'atk', w: 3 }, { id: 'dark_slash', w: 4 }, { id: 'shadow_step', w: 3 }, { id: 'drain', w: 2 }, { id: 'dark_wave', w: 4 }],
+    skills: [{ id: 'atk', w: 3 }, { id: 'dark_slash', w: 4 }, { id: 'shadow_step', w: 3 }, { id: 'drain', w: 2 }, { id: 'dark_wave', w: 4 }, { id: 'dark_seal', w: 2 }],
     boss: true,
   },
   baixue: {
@@ -300,8 +305,8 @@ export const ENEMIES = {
   demon_general: {
     id: 'demon_general', name: '魔将·古兰', shape: 'demon', scale: 1.2,
     palette: { body: '#2a0c14', trim: '#c8a04a', eye: '#ff6a1a' },
-    hp: 3400, atk: 75, def: 40, spd: 34, exp: 520, gold: 700, hot: 14,
-    weak: ['ice'],
+    hp: 3400, atk: 79, def: 40, spd: 34, exp: 520, gold: 700, hot: 14,
+    weak: ['ice', 'holy'],
     quote: '人类的城池，一座一座烧掉就好。',
     skills: [{ id: 'atk', w: 5 }, { id: 'heavy', w: 4 }, { id: 'dark_slash', w: 3 }, { id: 'quake', w: 2 }],
     boss: true,
@@ -310,7 +315,7 @@ export const ENEMIES = {
     id: 'demon_king', name: '魔王·阿斯特', shape: 'king', scale: 1.35,
     palette: { body: '#14060e', trim: '#c8a04a', eye: '#ff2a3c', cape: '#5a0a18' },
     hp: 3100, atk: 64, def: 40, spd: 46, exp: 999, gold: 999, hot: 15,
-    weak: ['ice'],
+    weak: ['ice', 'holy'],
     quote: '——来吧，让我看看人类能燃烧到什么程度。',
     skills: [
       { id: 'atk', w: 4 }, { id: 'dark_slash', w: 4 }, { id: 'abyss', w: 3 },
@@ -322,7 +327,7 @@ export const ENEMIES = {
     id: 'demon_king_final', name: '终焉魔王·阿斯特·真', shape: 'king', scale: 1.55,
     palette: { body: '#0a0308', trim: '#ffd76a', eye: '#ff2a3c', cape: '#8f0f22' },
     hp: 5200, atk: 69, def: 46, spd: 50, exp: 999, gold: 999, hot: 16,
-    weak: ['thunder'],
+    weak: ['thunder', 'holy'],
     quote: '绝望吧。这就是终焉。',
     skills: [
       { id: 'atk', w: 3 }, { id: 'dark_slash', w: 4 }, { id: 'abyss', w: 3 },
@@ -347,6 +352,7 @@ export const ENEMY_SKILLS = {
   frost_nova: { id: 'frost_nova', name: '霜之新星', power: 1.5, elem: 'ice', target: 'all', inflict: { id: 'defDown', chance: 0.5 } },
   dark_slash: { id: 'dark_slash', name: '暗影斩', power: 1.65, elem: 'dark' },
   dark_wave: { id: 'dark_wave', name: '暗影波动', power: 1.25, elem: 'dark', target: 'all' },
+  dark_seal: { id: 'dark_seal', name: '影缚·封术', power: 1.45, elem: 'dark', inflict: { id: 'seal', chance: 0.55 } },
   shadow_step: { id: 'shadow_step', name: '影渡', power: 1.2, elem: 'dark', hits: 2 },
   drain: { id: 'drain', name: '生命吸取', power: 1.3, elem: 'dark', drain: 0.6 },
   quake: { id: 'quake', name: '震地', power: 1.35, elem: 'none', target: 'all', inflict: { id: 'stun', chance: 0.25 } },

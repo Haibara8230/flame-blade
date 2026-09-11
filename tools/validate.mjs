@@ -1,7 +1,8 @@
 /* 剧情图校验：确保每个场景都有出路、引用存在、战斗场景有敌人 */
 import { SCENES, ENDINGS } from '../js/story.js';
-import { ACTORS, SKILLS, ENEMIES, ITEMS, EQUIPS, SHOPS, ELEM, statsAt } from '../js/characters.js';
+import { ACTORS, SKILLS, ENEMIES, ITEMS, EQUIPS, SHOPS, ELEM, STATUS, ENEMY_SKILLS, statsAt } from '../js/characters.js';
 import { PORTRAITS } from '../js/portraits.js';
+import { obtainable, openShops } from './reach.mjs';
 
 const errs = [], warns = [];
 const ids = new Set(Object.keys(SCENES));
@@ -129,6 +130,50 @@ for (const a of Object.values(ACTORS)) {
       if (!ELEM[w]) errs.push(`敌人 ${e.id}: 未知弱点属性 ${w}`);
       else if (!atkElems.has(w)) errs.push(`敌人 ${e.id}: 弱点 ${w} 没有任何我方攻击技能能打出`);
     }
+  }
+}
+
+/* ---- 可达性校验 ----
+   专防一类问题：数据、图标、台词、执行代码都写好了，但没有任何路径能让玩家碰到。
+   这类东西静态看代码全是「已实现」，只有真人玩到那一步才会发现不对。
+   踩过的坑：圣剑·霜华只有一行台词说「获得了」，实际从未发放。 */
+{
+  // 商店必须真的被某个可达场景引用，否则它的独家商品玩家买不到
+  const open = openShops(reachable);
+  for (const [k, v] of Object.entries(SHOPS)) {
+    if (!open.has(k)) errs.push(`商店 ${k}（${v.name}）没有任何可达场景引用它，其独家商品玩家买不到`);
+  }
+}
+
+{
+  const OK = obtainable(reachable);
+  for (const [k, e] of Object.entries(EQUIPS)) {
+    if (!OK.has(k)) errs.push(`装备 ${e.name}(${k}) 玩家无法获得——不在任何开放商店出售，也没有场景发放`);
+  }
+  for (const [k, it] of Object.entries(ITEMS)) {
+    if (!OK.has(k)) errs.push(`道具 ${it.name}(${k}) 玩家无法获得——不在任何开放商店出售，也没有场景发放`);
+  }
+}
+
+{
+  // 状态异常：必须至少有一个技能 / 敌技 / 道具会施加
+  const applied = new Set();
+  for (const sk of [...Object.values(SKILLS), ...Object.values(ENEMY_SKILLS)]) {
+    if (sk.inflict) applied.add(sk.inflict.id);
+    if (sk.buff) applied.add(sk.buff.id);
+  }
+  for (const it of Object.values(ITEMS)) if (it.seal) applied.add('stun');   // 封魔符实际施加的是 stun
+  for (const k of Object.keys(STATUS)) {
+    if (!applied.has(k)) errs.push(`状态 ${STATUS[k].name}(${k}) 没有任何技能或道具会施加它`);
+  }
+
+  // 属性：必须至少有一个攻击技能能打出，否则弱点/克制永远触发不了
+  const castable = new Set([
+    ...Object.values(SKILLS).filter(sk => sk.type === 'atk').map(sk => sk.elem),
+    ...Object.values(ENEMY_SKILLS).map(sk => sk.elem),
+  ]);
+  for (const k of Object.keys(ELEM)) {
+    if (k !== 'none' && !castable.has(k)) errs.push(`属性 ${ELEM[k].name}(${k}) 没有任何攻击技能能打出，克制机制对它永远不生效`);
   }
 }
 

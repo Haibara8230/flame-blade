@@ -704,6 +704,9 @@ c5_throne: {
 },
 
 c5_before: {
+  // SHOPS.final「深渊前哨 · 最后的交易」原本没有任何场景引用它，
+  // 其独家的魔铠·黑曜与羁绊之证因此玩家永远买不到。这里是魔王战前的最后一站。
+  shop: 'final',
   chapter: CH.c5, bg: 'castle', music: 'boss',
   lines: [
     ['魔王·阿斯特', '（笑）……好。真像他。'],
