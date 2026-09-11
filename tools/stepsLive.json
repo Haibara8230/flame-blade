@@ -1,0 +1,8 @@
+[
+  { "name": "01-live-title", "eval": "JSON.stringify({title:document.title, hasStage:!!document.getElementById('stage'), hasBtn:!!document.getElementById('btn-new'), scripts:[...document.querySelectorAll('script')].map(s=>s.src||'(inline)')})", "wait": 500 },
+  { "name": "02-live-newgame", "eval": "document.getElementById('btn-new').click(); 'clicked'", "wait": 1500 },
+  { "name": "03-live-dialogue", "eval": "JSON.stringify({dialogueVisible:!document.getElementById('dialogue').classList.contains('hidden'), name:document.getElementById('dlg-name-text').textContent, text:document.getElementById('dlg-text').textContent.slice(0,36), portraitLoaded:(function(){const i=document.getElementById('dlg-img');return i.complete&&i.naturalWidth>0;})()})", "wait": 600 },
+  { "name": "04-live-canvas", "eval": "JSON.stringify(window.__canvasStats())", "wait": 300 },
+  { "name": "05-live-battle", "eval": "(function(){ let n=0; const step=()=>{ window.dispatchEvent(new KeyboardEvent('keydown',{key:'z'})); window.dispatchEvent(new KeyboardEvent('keyup',{key:'z'})); n++; if(!document.getElementById('cmdmenu').classList.contains('hidden')) return 'BATTLE at '+n; if(n>400) return 'line='+n; requestAnimationFrame(()=>requestAnimationFrame(step)); }; step(); return 'walking'; })()", "wait": 14000 },
+  { "name": "06-live-battle-state", "eval": "JSON.stringify({cmdmenu:!document.getElementById('cmdmenu').classList.contains('hidden'), btns:document.getElementById('cmd-buttons').children.length, log:document.getElementById('battle-log').textContent.replace(/\\s+/g,' ').slice(0,60), actor:document.getElementById('cmd-actor').textContent.replace(/\\s+/g,' ').slice(0,26)})", "wait": 400 }
+]

@@ -1,0 +1,6 @@
+[
+  { "name": "01", "eval": "document.getElementById('btn-new').click(); 'ok'", "wait": 2000 },
+  { "name": "02-portrait", "eval": "(function(){ const i=document.getElementById('dlg-img'); return JSON.stringify({complete:i.complete, nw:i.naturalWidth, nh:i.naturalHeight, srcHead:i.src.slice(0,42), srcLen:i.src.length}); })()", "wait": 1500 },
+  { "name": "03-after", "eval": "(function(){ const i=document.getElementById('dlg-img'); return JSON.stringify({complete:i.complete, nw:i.naturalWidth, nh:i.naturalHeight}); })()", "wait": 1500 },
+  { "name": "04-canvas-colors", "eval": "(function(){ const c=document.getElementById('cv'); const g=c.getContext('2d'); const d=g.getImageData(0,0,c.width,c.height).data; const u=new Set(); let n=0; for(let i=0;i<d.length;i+=280){ u.add((d[i]>>4<<8)|(d[i+1]>>4<<4)|(d[i+2]>>4)); n++; } return JSON.stringify({sampled:n, distinctColors:u.size}); })()", "wait": 500 }
+]

@@ -108,6 +108,25 @@ console.log('结局:', [...endingsUsed].join(', '));
 console.log('敌人种类:', Object.keys(ENEMIES).length, ' 技能数:', Object.keys(SKILLS).length);
 console.log('立绘:', Object.keys(PORTRAITS).join(', '));
 
+/* ---- 立绘 SVG 结构校验 ----
+   曾经踩过的坑：svgWrap 漏写 </svg>，导致所有立绘都是残缺 XML、
+   浏览器静默解码失败（img.naturalWidth === 0），画面上立绘框全空。 */
+for (const [k, uri] of Object.entries(PORTRAITS)) {
+  const svg = decodeURIComponent(uri.slice(uri.indexOf(',') + 1));
+  const opens = (svg.match(/<svg\b/g) || []).length;
+  const closes = (svg.match(/<\/svg>/g) || []).length;
+  if (!svg.startsWith('<svg')) errs.push(`立绘 ${k}: 不是以 <svg 开头`);
+  if (!svg.trimEnd().endsWith('</svg>')) errs.push(`立绘 ${k}: 缺少结尾 </svg>（SVG 残缺，浏览器会解码失败）`);
+  if (opens !== closes) errs.push(`立绘 ${k}: <svg>/${'</svg>'} 数量不匹配 (${opens}/${closes})`);
+  // 引用一致性：#id 定义的渐变必须都存在
+  const ids = new Set([...svg.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]));
+  for (const ref of new Set([...svg.matchAll(/url\(#([^)]+)\)/g)].map(m => m[1]))) {
+    if (!ids.has(ref)) errs.push(`立绘 ${k}: 引用了未定义的渐变 #${ref}`);
+  }
+  if ((svg.match(/<path\b/g) || []).length < 8) warns.push(`立绘 ${k}: path 数量偏少，可能画错了`);
+}
+console.log('立绘结构: 全部通过（' + Object.keys(PORTRAITS).length + ' 张）');
+
 /* ---- 成长曲线模拟：按主线战斗最小经验推算队伍等级 ---- */
 {
   const { expToNext: e2n } = await import('../js/characters.js');

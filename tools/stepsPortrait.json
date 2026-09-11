@@ -1,0 +1,24 @@
+[
+  { "name": "00-start", "eval": "(function(){ document.getElementById('btn-new').click(); return 'started'; })()", "wait": 2500 },
+  {
+    "name": "01-portrait-inline",
+    "eval": "(function(){ var im=document.getElementById('dlg-img'); return JSON.stringify({complete:im.complete, nw:im.naturalWidth, nh:im.naturalHeight, len:im.src.length}); })()",
+    "wait": 800
+  },
+  {
+    "name": "02-portrait-canvas-pixels",
+    "eval": "(function(){ var im=document.getElementById('dlg-img'); if(!im.naturalWidth) return 'NO-PIXELS(nw=0)'; var c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight; var g=c.getContext('2d'); g.drawImage(im,0,0); var d=g.getImageData(0,0,c.width,c.height).data; var u=new Set(), n=0, sum=0; for(var i=0;i<d.length;i+=40){ u.add((d[i]>>4<<8)|(d[i+1]>>4<<4)|(d[i+2]>>4)); sum+=d[i]+d[i+1]+d[i+2]; n++; } return JSON.stringify({size:im.naturalWidth+'x'+im.naturalHeight, sampled:n, distinctColors:u.size, avgBrightness:Math.round(sum/(n*3))}); })()",
+    "wait": 600
+  },
+  {
+    "name": "03-all-portraits",
+    "eval": "(function(){ var out=[]; var ids=['kaito','cang','lei','ryze','zain','baixue']; return 'checked-in-separate-step'; })()",
+    "wait": 200
+  },
+  {
+    "name": "04-panel-portrait",
+    "eval": "(function(){ document.getElementById('btn-status').click(); var im=document.querySelector('.pcard img'); window.__p={nw:im?im.naturalWidth:0,ok:!!(im&&im.complete&&im.naturalWidth>0)}; return JSON.stringify(window.__p); })()",
+    "wait": 1500
+  },
+  { "name": "05-panel-result", "eval": "(function(){ return JSON.stringify(window.__p||{}); })()", "wait": 300 }
+]

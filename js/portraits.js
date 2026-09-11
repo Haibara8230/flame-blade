@@ -75,7 +75,8 @@ function svgWrap(inner, bgFrom, bgTo) {
   </defs>
   <rect width="300" height="360" fill="url(#bg)"/>
   ${inner}
-  <rect width="300" height="360" fill="url(#vig)"/>`;
+  <rect width="300" height="360" fill="url(#vig)"/>
+</svg>`;
 }
 
 /* ---------------- 角色定义 ---------------- */
