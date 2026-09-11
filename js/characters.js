@@ -243,6 +243,12 @@ export const SHOPS = {
    shape: humanoid / wolf / bird / slime / demon / king
 ------------------------------------------- */
 export const ENEMIES = {
+  training_dummy: {
+    id: 'training_dummy', name: '练习木桩', shape: 'humanoid',
+    palette: { hair: '#806044', cloth: '#9a7955', trim: '#d4b080', skin: '#bc9464', eye: '#59432e', weapon: 'staff' },
+    hp: 100, atk: 1, def: 0, spd: 18, exp: 0, gold: 0, hot: 0,
+    weak: [], quote: '（绑着布团的横臂缓缓转来。）', skills: [{ id: 'atk', w: 1 }],
+  },
   demon_soldier: {
     id: 'demon_soldier', name: '魔兵', shape: 'humanoid', palette: { hair: '#3a1020', cloth: '#4a1220', trim: '#8f1226', skin: '#c98f8f', eye: '#ff3b4e', weapon: 'axe' },
     hp: 180, atk: 26, def: 10, spd: 26, exp: 22, gold: 24, hot: 9,
@@ -340,6 +346,14 @@ export const ENEMIES = {
     boss: true,
   },
 };
+
+// 新旅程的敌人复用现有绘制轮廓，拥有独立数值和名称。
+Object.assign(ENEMIES, {
+  curse_root: { ...ENEMIES.forest_guard, id: 'curse_root', name: '咒缚根', boss: false, hp: 170, atk: 12, def: 4, spd: 16, exp: 12, gold: 0, quote: '（黑根扎进树心。）', skills: [{ id: 'rootbind', w: 1 }] },
+  harbor_guard: { ...ENEMIES.demon_soldier, id: 'harbor_guard', name: '商会武装护卫', hp: 420, atk: 37, def: 14, exp: 48, gold: 55, weak: ['thunder'], quote: '凭证呢？退后！' },
+  relic_guard: { ...ENEMIES.demon_soldier, id: 'relic_guard', name: '遗迹石像', hp: 1050, atk: 48, def: 28, spd: 22, exp: 95, gold: 65, weak: ['ice', 'holy'], quote: '（古老的机关重新运转。）' },
+  memory_blade: { ...ENEMIES.zain, id: 'memory_blade', name: '记忆中的刀影', hp: 1800, atk: 54, def: 22, spd: 34, exp: 180, gold: 0, weak: ['holy', 'thunder'], quote: '（回去吧。饭已经好了。）', skills: [{ id: 'atk', w: 4 }, { id: 'heavy', w: 2 }] },
+});
 
 /* ---------------- 敌人技能 ---------------- */
 export const ENEMY_SKILLS = {

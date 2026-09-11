@@ -273,14 +273,6 @@ const G = {
 };
 
 /* 队伍构造 */
-/* 全队资源占比（0~100）。隐藏结局用它替代原来的「热血」判定：
-   打到最后还留着怒气/术力 = 仍有余力，才配触发限界突破。 */
-function partyResourcePct(list) {
-  const ms = (list || []).filter(m => m && m.maxMp);
-  if (!ms.length) return 0;
-  return ms.reduce((s, m) => s + (m.mp / m.maxMp) * 100, 0) / ms.length;
-}
-
 function makeMember(id, level = null) {
   const def = ACTORS[id];
   const lv = level ?? def.joinLevel;
@@ -392,7 +384,11 @@ function gotoScene(id) {
   if (sc.bg) setBg(sc.bg);
   if (sc.music) setMusic(sc.music);
   // pre 动作
-  if (sc.pre) for (const a of sc.pre) runAction(a);
+  const visited = G.flags.sceneRewards || (G.flags.sceneRewards = {});
+  if (sc.pre && (!sc.once || !visited[id])) {
+    visited[id] = true;
+    for (const a of sc.pre) runAction(a);
+  }
   if (sc.loading) { showLoading(sc.loadingTitle || sc.chapter, sc.loadingText || ''); G.loadTarget = id; return; }
   $('dialogue').classList.remove('hidden');
   $('choices').classList.add('hidden');
@@ -403,6 +399,8 @@ function gotoScene(id) {
 function runAction(a) {
   if (!a || typeof a !== 'object') return;
   if (a.set) Object.assign(G.flags, a.set);
+  if (a.objective) G.flags.currentObjective = a.objective;
+  if (a.evaluateAid) G.flags.allAid = !!(G.flags.forestAid && G.flags.harborAid && G.flags.northAid);
   if (typeof a.join === 'string' && ACTORS[a.join]) { addMember(a.join); toast(`※ ${ACTORS[a.join].name} 加入了队伍！`); }
   if (typeof a.item === 'string') { G.bag[a.item] = (G.bag[a.item] || 0) + 1; toast(`获得【${EQUIPS[a.item]?.name || ITEMS[a.item]?.name || a.item}】`); }
   if (typeof a.equip === 'string') { const owner = G.party.find(m => ACTORS[m.id]) || G.party[0]; if (owner) { const slotIdx = ['weapon', 'armor', 'acc'].indexOf(EQUIPS[a.equip]?.slot); if (slotIdx >= 0) owner.equips[slotIdx] = a.equip; } }
@@ -412,7 +410,7 @@ function runAction(a) {
     toast(`※ 全队获得 ${a.exp} 点历练经验`);
     showLevelUps(ups);
   }
-  if (a.heal === 'party') for (const m of G.party) { m.hp = m.maxHp; if (m.resource !== 'rage') m.mp = m.maxMp; }
+  if (a.heal === 'party') for (const m of G.party) { m.dead = false; m.hp = m.maxHp; if (m.resource !== 'rage') m.mp = m.maxMp; }
   if (a.bonus) for (const m of G.party) {
     // 直接改 m.atk 会在下一次 recalc（升级/换装备）时被抹掉，必须存进 m.bonus
     if (!m.bonus) m.bonus = { atk: 0, def: 0, hp: 0 };
@@ -453,18 +451,6 @@ function nextLine() {
   const [name, text] = sc.lines[G.lineIdx];
   G.lineIdx++;
   showLine(name, text);
-  // 【隐藏】秘密路线触发：终焉之战中热血越界
-  if (G.sceneId === 'c5_promise' && !G.flags.secretUsed && !G.flags.secretWin) {
-    const alive = G.party.filter(m => m.level);
-    const avgRes = partyResourcePct(alive);
-    if ((G.flags.breakLimit || avgRes >= 55) && G.lineIdx >= 8) {
-      G.flags.secretUsed = true;
-      G.flags.breakLimit = false;
-      G.secretEnemyLv = Math.min(24, Math.max(20, Math.max(...alive.map(m => m.level), 1) + 1));
-      toast('★ 热血越界——限界突破！');
-      G.secretTrigger = { scene: 'c5_promise', t: 1.4 };
-    }
-  }
 }
 function finishLines() {
   const sc = G.scene;
@@ -487,6 +473,7 @@ const PID_MAP = (() => {
   put('冰之四天王·白雪', 'baixue'); put('白雪', 'baixue');
   put('健次郎', null); put('凯', 'kaito');
   put('魔王·阿斯特', 'zain'); put('终焉魔王·阿斯特·真', 'zain');
+  put('阿斯特', 'zain'); put('古兰', 'zain');
   put('魔将·古兰', 'zain');
   return m;
 })();
@@ -548,12 +535,19 @@ function formatLine(s) {
 /* ============================================================
    抉择
    ============================================================ */
+function choiceAvailable(c) {
+  return !!c && !(c.unless && G.flags[c.unless]) &&
+    (!c.requireAll || c.requireAll.every(k => G.flags[k])) &&
+    (!c.require || Object.entries(c.require).every(([k, v]) => G.flags[k] === v));
+}
 function showChoices(list) {
   const box = $('choices'), ul = $('choices-list');
   ul.innerHTML = '';
   list.forEach(c => {
+    if (c.unless && G.flags[c.unless]) return;
     const b = document.createElement('button');
     b.className = 'choice';
+    b.disabled = !choiceAvailable(c);
     b.innerHTML = `${c.text}${c.hint ? `<div style="font-size:11.5px;color:#ffb98a;margin-top:5px;letter-spacing:0">▸ ${c.hint}</div>` : ''}`;
     b.onclick = e => { e.stopPropagation(); pickChoice(c); };
     ul.appendChild(b);
@@ -561,6 +555,14 @@ function showChoices(list) {
   box.classList.remove('hidden');
 }
 function pickChoice(c) {
+  if (!choiceAvailable(c)) return;
+  if (c.action?.some(a => a.retryBattle)) {
+    if (!G.battleCheckpoint) { toast('没有战前记录，请读取存档或重新开始。'); return; }
+    const snap = JSON.parse(JSON.stringify(G.battleCheckpoint));
+    G.party = snap.party; G.bag = snap.bag; G.gold = snap.gold; G.flags = snap.flags;
+    gotoScene(snap.sceneId);
+    return;
+  }
   sfx('levelup');
   $('choices').classList.add('hidden');
   if (c.action) for (const a of c.action) runAction(a);
@@ -586,12 +588,14 @@ function startBattleFromScene(sc) {
 }
 
 function launchBattle(sc) {
+  G.battleCheckpoint = JSON.parse(JSON.stringify({ sceneId: sc.id || G.sceneId, party: G.party, bag: G.bag, gold: G.gold, flags: G.flags }));
   G.battleScene = null;
   const stage = { bg: sc.bg || G.bg, introLines: sc.introLines };
   const def = {
     id: sc.id || G.sceneId, bg: sc.bg || G.bg, enemies: sc.enemies,
     escape: sc.escape !== false, boss: !!sc.boss,
     introLines: sc.introLines, win: sc.win, onWin: sc.onWin, next: sc.next || null,
+    objective: sc.objective, telegraph: sc.telegraph, modifiers: sc.modifiers, support: sc.support,
   };
   G.stageDef = def;
   G.battleBg = sc.bg || G.bg;
@@ -627,15 +631,11 @@ function battleEndToStory() {
 G.onBattleWin = function (b, exp, gold) {
   setTimeout(() => {
     sfx('win');
-    G.gold += gold;
-    // 【隐藏】限界突破条件：终焉之战第一形态结束时全队热血仍高涨
-    if (b && b.def && b.def.id === 'c5_king') {
-      const avgRes = partyResourcePct(G.party);
-      if (avgRes >= 55 && G.flags.trustRyze) {
-        G.flags.breakLimit = true;
-        toast('★ 热血越界——限界突破的条件已满足！');
-      }
+    for (const member of G.party) {
+      const fought = b.party.find(m => m.id === member.id);
+      if (fought) { member.hp = fought.hp; member.mp = fought.mp; member.dead = fought.dead; }
     }
+    G.gold += gold;
     const ups = gainExp(exp);
     showLevelUps(ups);
     // 战后回复少量
@@ -652,15 +652,7 @@ G.onBattleLose = function (b) {
     G.battle = null;
     $('cmdmenu').classList.add('hidden');
     $('cmd-buttons').innerHTML = '';
-    // 【隐藏】终焉之战倒下时，若全队热血全满 → 触发限界突破（SECRET END）
-    const alive = G.party.filter(m => m.level);
-    const avgRes = partyResourcePct(alive);
-    if ((G.sceneId === 'c5_final' || (b && b.def && b.def.id === 'c5_final')) && avgRes >= 72) {
-      G.secretEnemyLv = Math.min(24, Math.max(20, Math.max(...alive.map(m => m.level), 1) + 1));
-      gotoScene('secret_route');
-    } else {
-      gotoScene('c5_defeat');
-    }
+    gotoScene('c5_defeat');
   }, 1200);
 };
 G.onBattleEscape = function (b) {
@@ -701,6 +693,10 @@ function buildCommandUI() {
   mk('技能', '术式/奥义', () => openSkills(m));
   mk('道具', `剩余${Object.values(G.bag).reduce((a, b2) => a + b2, 0)}`, () => openBagInBattle(m));
   mk('格挡', '大幅提升格挡/弹反率', () => doCmd(m, { type: 'guard' }));
+  if (b.objective) {
+    const label = b.objective.type === 'purify' ? '净化' : '封门';
+    if (b.objective.type !== 'rescue') mk(label, BT.objectiveText(b), () => doCmd(m, { type: 'objective' }), !BT.canObjective(b, m));
+  }
   // 剧本用 escape 标记哪些战斗可以逃。此前只有这个标记，指令栏里从来没有出口。
   if (b.def && b.def.escape) mk('逃跑', '脱离战斗', () => doCmd(m, { type: 'escape' }));
   $('cmdmenu').classList.remove('hidden');
@@ -1022,6 +1018,10 @@ function openPartyPanel() {
       </div>
     </div>`;
   }).join('') + `<div style="grid-column:1/-1;font-size:12px;color:#bbb2dd;margin-top:6px">
+      <p>当前目标：${G.flags.currentObjective || '陪小铃完成村里的事情。'}</p>
+      <p>旅程支援：${[['forestAid', '森林根系'], ['harborAid', '港町船队'], ['northAid', '北境灯塔']].map(([key, label]) => `${G.flags[key] ? '✓' : '○'} ${label}`).join('　')}</p>
+      <p>封门准备：${G.flags.sealKnowledge ? '✓ 已掌握完整封门法' : '○ 尚未读完完整术式'}；三地支援齐全可解除共同封门的代价。</p>
+      <p>同伴往事：${[['leiBond', '雷'], ['ryzeBond', '璃'], ['cangBond', '苍']].map(([key, label]) => `${G.flags[key] ? '✓' : '○'} ${label}`).join('　')}</p>
       道具：${Object.keys(G.bag).filter(k => G.bag[k] > 0).map(k => `${ITEMS[k]?.name || EQUIPS[k]?.name || k}×${G.bag[k]}`).join('、') || '无'}
     </div>`;
   $('panel').classList.remove('hidden');
@@ -1068,6 +1068,7 @@ function newGame() {
   G.bag = { potion: 3, ether: 1 };
   G.gold = 120;
   G.flags = {};
+  G.battleCheckpoint = null;
   G.chapter = '';
   addMember('kaito', 1);
   for (const m of G.party) { m.hp = m.maxHp; m.mp = m.resource === 'rage' ? 0 : m.maxMp; }
@@ -1079,7 +1080,8 @@ function newGame() {
 }
 function saveGame() {
   const data = {
-    v: 1, t: Date.now(), sceneId: G.sceneId, chapter: G.chapter,
+    v: 2, t: Date.now(), sceneId: SCENES[G.sceneId]?.once ? G.sceneId : (G.scene?.next || G.sceneId), chapter: G.chapter,
+    battleCheckpoint: G.battleCheckpoint,
     flags: G.flags, gold: G.gold, bag: G.bag,
     party: G.party.map(m => ({
       id: m.id, level: m.level, exp: m.exp, hp: m.hp, mp: m.mp,
@@ -1104,6 +1106,12 @@ function loadGame() {
       return m;
     });
     G.bag = d.bag || {}; G.gold = d.gold || 0; G.flags = d.flags || {};
+    G.battleCheckpoint = d.battleCheckpoint || null;
+    // 战斗中保存的进度从本场开战前恢复，避免读档重复消耗道具或保留残血。
+    if (SCENES[d.sceneId]?.enemies && G.battleCheckpoint?.sceneId === d.sceneId) {
+      const snap = JSON.parse(JSON.stringify(G.battleCheckpoint));
+      G.party = snap.party; G.bag = snap.bag; G.gold = snap.gold; G.flags = snap.flags;
+    }
     G.chapter = d.chapter || '';
     $('title').classList.add('hidden');
     $('ending').classList.add('hidden');
@@ -1134,7 +1142,7 @@ function openGallery() {
         <div class="pn">${ACTORS[pid].name} <span style="font-size:11.5px;color:#bbb2dd">${ACTORS[pid].title}</span></div>
         <div style="color:#ffd76a;font-weight:700;margin:4px 0">★ ${name}</div>
         <div class="pv">${s ? s.desc : desc}</div>
-        <div class="pv" style="margin-top:4px">消耗：${s && s.ult ? '热血 100%（不消耗术力）' : 'MP ' + (s ? s.mp : '?')}</div>
+        <div class="pv" style="margin-top:4px">消耗：${ACTORS[pid].resource === 'rage' ? '怒气' : '术力'} ${s ? s.mp : '?'}</div>
         <div class="pv" style="margin-top:6px;color:#ff9a9a">${ACTORS[pid].quote}</div>
       </div>
     </div>`;
@@ -1143,9 +1151,11 @@ function openGallery() {
       <b style="color:#ffd76a">战斗操作</b>
       <div style="font-size:12.5px;line-height:1.9;color:#ddd5ff">
         · 鼠标点击指令按钮，或直接点击画面 = 确认<br>
-        · <kbd>空格</kbd> / <kbd>Z</kbd> = 确认　　敌人攻击时按 <kbd>空格</kbd> 或 <kbd>点击</kbd> = <b style="color:#ffd76a">弹反</b><br>
-        · 命中窗口中央（金色区域）= <b style="color:#ffd76a">完美弹反</b>：伤害全免 + 热血大增<br>
-        · 热血槽满 100% 时，技能列表里的 <b>★奥义</b> 即可发动<br>
+        · <kbd>空格</kbd> / <kbd>Z</kbd> = 推进对话；战斗点击指令和目标，不需要时机操作<br>
+        · 【格挡】提升本次防御概率并积攒怒气；顶部显示未来行动顺序<br>
+        · 学会奥义且怒气或术力足够时，可在【技能】中发动<br>
+        · 【净化】和【封门】只在目标满足、指定角色行动时可用；蓄力预警表示敌人的下次行动<br>
+        · 【◈ 队伍】底部查看目标和支援；战败后可恢复战前状态重试<br>
         · 敌人有 <b style="color:#8fe6ff">弱点属性</b>，用对应属性攻击可打出 1.5 倍伤害
       </div>
       <button class="mini g" id="gal-back" style="padding:8px 22px;margin-top:6px">返回</button>
@@ -1297,13 +1307,6 @@ function loop(now) {
     $('cutin').classList.add('hidden');
   }
 
-  /* 隐藏路线延迟跳转（保证在两句台词之后才切入） */
-  if (G.secretTrigger) {
-    G.secretTrigger.t -= dt;
-    if (G.sceneId !== G.secretTrigger.scene) G.secretTrigger = null;
-    else if (G.secretTrigger.t <= 0) { G.secretTrigger = null; gotoScene('secret_route'); }
-  }
-
   /* 载入过渡 */
   if (G.loadTarget) {
     G.loadTimer += dt;
@@ -1414,20 +1417,23 @@ window.__autoRun = function (maxSteps = 400, maxMs = 120000) {
         else {
           // 简易 AI：能用奥义就用，其次用能负担的最强攻击技，最后普攻
           const ult = m.skills.map(s => SKILLS[s]).find(s => s && s.ult && (s.mp || 0) <= m.mp);
-          if (ult) { doCmd(m, { type: 'skill', skill: ult.id, target: 0 }); }
+          const target = b.enemies.findIndex(e => !e.dead && (b.objective?.type !== 'purify' || e.ref === 'curse_root'));
+          if (BT.canObjective(b, m)) doCmd(m, { type: 'objective' });
+          else if (target < 0) doCmd(m, { type: 'guard' });
+          else if (ult) { doCmd(m, { type: 'skill', skill: ult.id, target }); }
           else {
             const atkSkills = m.skills.map(s => SKILLS[s])
               .filter(s => s && s.type === 'atk' && !s.ult && (s.mp || 0) <= m.mp);
             atkSkills.sort((a, b) => (b.power * (b.hits || 1)) - (a.power * (a.hits || 1)));
             const best = atkSkills[0];
-            if (best && (best.power * (best.hits || 1)) > 1.05 && m.mp > best.mp) doCmd(m, { type: 'skill', skill: best.id, target: 0 });
-            else doCmd(m, { type: 'attack', target: 0 });
+            if (best && (best.power * (best.hits || 1)) > 1.05 && m.mp > best.mp) doCmd(m, { type: 'skill', skill: best.id, target });
+            else doCmd(m, { type: 'attack', target });
           }
         }
       }
     } else if (G.mode === 'shop') { closePanel(); goAfterShop(); }
     else if (G.mode === 'scene') {
-      if (G.scene && G.scene.choices) pickChoice(G.scene.choices[0]);
+      if (G.scene && G.scene.choices) pickChoice(G.scene.choices.find(choiceAvailable));
       else __advance(1);
     } else if (G.mode === 'title') { window.__trace = trace; return 'back-to-title:' + G.sceneId; }
     setTimeout(tick, 30);

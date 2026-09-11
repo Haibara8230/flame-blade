@@ -97,6 +97,19 @@ export function createBattle(game, def, stage) {
     if (m.resource === 'rage') m.mp = 0;   // 愤怒从零攒起
   }
 
+  B.objective = def.objective ? { ...def.objective, progress: 0, completed: [] } : null;
+  B.supportUsed = {};
+  for (const mod of def.modifiers || []) if (game.flags?.[mod.flag]) {
+    for (const e of B.enemies) {
+      if (mod.enemyHp) e.hp = e.maxHp = Math.floor(e.maxHp * mod.enemyHp);
+      if (mod.enemySpeed) e.spd = Math.max(1, Math.floor(e.spd * mod.enemySpeed));
+    }
+  }
+  if (def.support && game.flags?.forestAid) {
+    applyBuff(B, { id: 'defUp', turns: 5 }, B.party);
+    addLog(B, '森林根系托住城基：全队获得防御提升。');
+  }
+
   addLog(B, `⚔ ${def.enemies.map(e => ENEMIES[e.ref].name).join('、')} 出现了！`);
   for (const e of B.enemies) if (e.quote && chance(0.7)) B.floats.push({ kind: 'quote', txt: e.quote, x: e.x, y: e.y - 110 * e.scale, life: 0, dur: 2.2, col: '#ff9a9a' });
   beginNextTurn(B);
@@ -163,6 +176,8 @@ function damage(B, target, amount, opt = {}) {
     addFloat(B, `+${heal}`, opt.from.x, opt.from.y - 120, '#7dffa8', 26);
   }
   target.hp = Math.max(0, target.hp - amount);
+  // 净化战不能靠击杀守卫取胜，伤害只会压制本体。
+  if (B.objective?.type === 'purify' && target.ref === 'forest_guard') target.hp = Math.max(1, target.hp);
   const col = opt.col || (opt.crit ? '#ffe14d' : '#ff5566');
   addFloat(B, (opt.crit ? '会心 ' : '') + amount, target.x + rnd(-18, 18), target.y - 110, col, opt.crit ? 42 : 32, opt.crit);
   target.hurtP = 0;
@@ -472,6 +487,7 @@ export function tickStatus(B, unit) {
       addFloat(B, `+${h}`, unit.x, unit.y - 120, '#7dffa8', 26);
       addFx(B, 'heal', unit.x, unit.y - 60, '#7dffa8', { dur: .5 });
     }
+    if (B.objective?.type === 'purify' && unit.ref === 'forest_guard') unit.hp = Math.max(1, unit.hp);
     if (unit.hp <= 0 && !unit.dead) {
       unit.dead = true; unit.pose = 'dead'; unit.dying = 0;
       addLog(B, `<span class="dmg">${unit.name} 倒下了！</span>`);
@@ -554,7 +570,17 @@ function endTurn(B) {
 
 function resolvePlayerCmd(B, m, cmd) {
   if (m.dead) return;
+  if (B.objective?.type === 'rescue') B.objective.progress++;
   switch (cmd.type) {
+    case 'objective': {
+      if (!canObjective(B, m)) break;
+      B.objective.completed.push(m.id);
+      B.objective.progress++;
+      m.guardStance = true;
+      addLog(B, `${m.name} 完成了${B.objective.type === 'purify' ? '净化' : '封门术式'}！`);
+      addFloat(B, '术式完成', m.x, m.y - 130, '#8fe6ff', 26);
+      break;
+    }
     case 'attack': {
       const ws = (ACTORS[m.id] && ACTORS[m.id].weaponSkill) || ['xinzhan'];
       const sk = SKILLS[ws[0]] || SKILLS.xinzhan || SKILLS.liaoshang;
@@ -739,6 +765,22 @@ function attemptEscape(B) {
    敌方回合
    ============================================================ */
 function chooseEnemyAction(B, e) {
+  const warning = B.def.telegraph;
+  if (warning && warning.enemy === e.ref && !isSealed(e)) {
+    e.storyActs = (e.storyActs || 0) + 1;
+    if (!e.charging && e.storyActs % warning.every === 0) {
+      e.charging = warning.skill;
+      addLog(B, `预警：${e.name} 下次行动将施放【${ENEMY_SKILLS[warning.skill].name}】！`);
+      addFloat(B, '蓄力中！', e.x, e.y - 145, '#ffe14d', 28);
+      return;
+    }
+    if (e.charging && B.def.support && B.game.flags?.northAid && !B.supportUsed.north) {
+      B.supportUsed.north = true;
+      e.charging = null;
+      addLog(B, '北境灯塔照亮核心，打断了这次蓄力！');
+      return;
+    }
+  }
   // 阶段转换（Boss 半血狂暴）
   if (e.boss && e.phase === 1 && e.hp / e.maxHp <= 0.5) {
     e.phase = 2;
@@ -750,7 +792,9 @@ function chooseEnemyAction(B, e) {
     B.enemyActs.push(1);
     return;
   }
-  const pool = isSealed(e) ? [{ id: 'atk', w: 1 }] : (e.skills || [{ id: 'atk', w: 1 }]);
+  const pool = isSealed(e) ? [{ id: 'atk', w: 1 }] : e.charging ? [{ id: e.charging, w: 1 }] :
+    (e.skills || [{ id: 'atk', w: 1 }]).filter(p => !warning || e.ref !== warning.enemy || p.id !== warning.skill);
+  if (!isSealed(e)) e.charging = null;
   if (isSealed(e)) addLog(B, `${e.name} 被封印了，只能挥出普通一击。`);
   const total = pool.reduce((s, x) => s + x.w, 0);
   let r = Math.random() * total, pick = pool[0];
@@ -793,11 +837,50 @@ function chooseEnemyAction(B, e) {
 /* ============================================================
    胜负判定
    ============================================================ */
+export function canObjective(B, m) {
+  const o = B.objective;
+  if (!o || !m || m.dead || isSealed(m) || o.completed.includes(m.id)) return false;
+  if (o.type === 'purify') return m.id === o.actor && B.enemies.filter(e => o.targets.includes(e.ref)).every(e => e.dead);
+  if (o.type === 'seal') return o.actors.includes(m.id) && B.enemies.every(e => e.dead);
+  return false;
+}
+
+export function objectiveText(B) {
+  const o = B.objective;
+  if (!o) return '';
+  if (o.type === 'rescue') return `装船进度 ${Math.min(o.progress, o.steps)}/${o.steps} · 也可击退全部追兵`;
+  if (o.type === 'purify') return `咒缚根剩余 ${B.enemies.filter(e => o.targets.includes(e.ref) && !e.dead).length} · 断根后由苍选择净化`;
+  return B.enemies.some(e => !e.dead) ? '目标：击破核心；随后由璃和苍选择封门' :
+    `封门进度 ${o.completed.length}/${o.actors.length} · 等待${o.actors.filter(id => !o.completed.includes(id)).map(id => ACTORS[id].name).join('、')}`;
+}
+
 export function checkBattleEnd(B) {
   if (B.over) return;
   const aliveP = B.party.filter(m => !m.dead);
   const aliveE = B.enemies.filter(e => !e.dead);
-  if (!aliveE.length) {
+  // 核心破坏后没有敌人，必须唤醒术式执行者，避免缺少复活道具时永远无法封门。
+  if (B.objective?.type === 'seal' && !aliveE.length && aliveP.length && !B.coreOpened) {
+    B.coreOpened = true;
+    for (const m of B.party) {
+      if (m.dead) { m.dead = false; m.hp = Math.max(1, Math.floor(m.maxHp * 0.25)); m.pose = 'idle'; }
+      m.status = [];
+      m.buffs = { atk: 1, def: 1, spd: 1 };
+    }
+    addLog(B, '核心破坏，压制解除。同伴恢复行动，轮到璃和苍时选择【封门】。');
+  }
+  if (B.def.support && B.game.flags?.harborAid && !B.supportUsed.harbor && aliveP.length && B.enemies.some(e => e.hp <= e.maxHp / 2)) {
+    B.supportUsed.harbor = true;
+    for (const m of aliveP) {
+      m.hp = Math.min(m.maxHp, m.hp + Math.floor(m.maxHp * 0.35));
+      if (m.resource !== 'rage') m.mp = Math.min(m.maxMp, m.mp + Math.floor(m.maxMp * 0.3));
+    }
+    addLog(B, '港町船队送来补给：全队恢复 35% 生命和 30% 术力。');
+  }
+  const obj = B.objective;
+  const won = !obj ? !aliveE.length : obj.type === 'rescue' ? (!aliveE.length || obj.progress >= obj.steps) :
+    obj.type === 'purify' ? obj.completed.includes(obj.actor) :
+    !aliveE.length && obj.actors.every(id => obj.completed.includes(id));
+  if (won && aliveP.length) {
     B.over = true; B.result = 'win';
     B.ui.queue.push({ dur: 1.0, start() { flash(B, .55); addLog(B, `<span class="hl">※ 战斗胜利！</span>`); }, tick() { }, resolve() { } });
     B.ui.queue.push({ dur: 0.05, start() { }, tick() { }, resolve() { onWin(B); } });
@@ -887,6 +970,15 @@ export function drawBattle(B, ctx, W, H) {
 
   /* 背景 */
   SP.drawBackground(ctx, B.bg, W, H, t, { pan: 0 });
+  if (B.objective || B.enemies.some(e => e.charging && !e.dead)) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(8,6,20,.85)'; ctx.fillRect(120, 76, 720, 48);
+    ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffe2a0';
+    ctx.fillText(objectiveText(B), 480, 94);
+    const warning = B.enemies.filter(e => e.charging && !e.dead).map(e => `${e.name} 下次行动：${ENEMY_SKILLS[e.charging].name}`).join(' / ');
+    ctx.fillStyle = '#ff9d9d'; ctx.fillText(warning, 480, 114);
+    ctx.restore();
+  }
 
   /* 战斗地面光 */
   const gg = ctx.createRadialGradient(W / 2, H - 60, 40, W / 2, H - 60, 460);
