@@ -1341,9 +1341,34 @@ function enterPanel(kind) {
 }
 function closePanel() {
   $('panel').classList.add('hidden');
+
+  /* 商店是用 G.mode='shop' 直接开的，没走 enterPanel。
+     此前点【关闭】只把面板藏起来，G.mode 仍停在 'shop'——画面上什么都没有，
+     点任何地方都没反应，只能刷新页面。关闭商店等同于逛完离开。 */
+  if (G.mode === 'shop') { G.panelKind = null; G.prevMode = null; goAfterShop(); return; }
+
+  const wasCamp = G.panelKind === 'camp';
+  G.panelKind = null;
   if (G.mode === 'panel') G.mode = (G.prevMode && G.prevMode !== 'panel') ? G.prevMode : 'scene';
   G.prevMode = null;
-  G.panelKind = null;
+
+  // 关掉营地 = 继续前进
+  if (wasCamp) { continueAfterCamp(); return; }
+  resumeSceneUI();
+}
+
+/* 收尾保险：回到 scene 模式时，画面上必须有对话框或抉择按钮之一。
+   两者都没有说明这一幕的台词已经放完（例如从营地/商店返回），
+   此时要把场景继续推下去，而不是把玩家留在空画面里。 */
+function resumeSceneUI() {
+  if (G.mode !== 'scene') return;
+  const dlgHidden = $('dialogue').classList.contains('hidden');
+  const chHidden = $('choices').classList.contains('hidden');
+  if (!dlgHidden || !chHidden) return;
+  const sc = G.scene;
+  if (!sc) { gotoTitle(); return; }
+  if (sc.lines && G.lineIdx < sc.lines.length) { $('dialogue').classList.remove('hidden'); nextLine(); return; }
+  advanceScene();
 }
 /* 再点一次同一个 HUD 按钮 = 关闭（手机上这是最自然的退出方式） */
 function togglePanel(kind, open) {
@@ -1418,6 +1443,7 @@ function openCamp(sceneDef) {
   }).join('');
 
   const restCost = 30 + G.party[0].level * 8;
+  G.campScene = sceneDef;
   openPanel('△ 营地', `<div style="grid-column:1/-1">
     <div style="font-size:12px;color:#bbb2dd;margin-bottom:10px">战斗后只回复两成生命。要走远路，得先在这里把状态补回来。</div>
     <div class="shop-row">
@@ -1431,7 +1457,7 @@ function openCamp(sceneDef) {
       ${sceneDef.shop ? '<button class="mini" id="camp-shop">◆ 补给</button>' : ''}
       <button class="mini g" id="camp-go">继续前进 →</button>
     </div>
-  </div>`);
+  </div>`, 'camp');
 
   $('camp-rest').onclick = e => {
     e.stopPropagation();
@@ -1453,17 +1479,22 @@ function openCamp(sceneDef) {
   $('camp-party').onclick = e => { e.stopPropagation(); openPartyPanel(); };
   const cs = $('camp-shop');
   if (cs) cs.onclick = e => { e.stopPropagation(); closePanel(); openShop(sceneDef.shop); };
-  $('camp-go').onclick = e => {
-    e.stopPropagation();
-    closePanel();
-    G.mode = 'scene';
-    const sc2 = G.scene;
-    if (sc2.shop) { openShop(sc2.shop); return; }
-    if (sc2.enemies) { startBattleFromScene(sc2); return; }
-    if (sc2.choices) { showChoices(sc2.choices); return; }
-    if (sc2.next) { G.campDone = false; gotoScene(sc2.next); return; }
-    gotoTitle();
-  };
+  $('camp-go').onclick = e => { e.stopPropagation(); closePanel(); };
+}
+
+/* 离开营地后继续推进本场景。
+   关掉营地面板和点「继续前进」是同一件事——否则玩家点【关闭】就会卡在
+   一个既没有对话框也没有面板的空画面里。 */
+function continueAfterCamp() {
+  G.campScene = null;
+  G.mode = 'scene';
+  const sc2 = G.scene;
+  if (!sc2) { gotoTitle(); return; }
+  if (sc2.shop) { openShop(sc2.shop); return; }
+  if (sc2.enemies) { startBattleFromScene(sc2); return; }
+  if (sc2.choices) { showChoices(sc2.choices); return; }
+  if (sc2.next) { G.campDone = false; gotoScene(sc2.next); return; }
+  gotoTitle();
 }
 
 /* 营地闲聊的一句提示，真正的内容在羁绊等级里体现 */
@@ -1643,8 +1674,8 @@ function gotoTitle() {
   $('btn-continue').style.opacity = anySave() ? 1 : .4;
 }
 /* 通用面板：给存档槽、羁绊、遗物、天赋这些新界面共用 */
-function openPanel(title, html) {
-  enterPanel('generic');
+function openPanel(title, html, kind = 'generic') {
+  enterPanel(kind);
   $('panel').classList.remove('hidden');
   $('panel-title').textContent = title;
   $('panel-body').innerHTML = html;
