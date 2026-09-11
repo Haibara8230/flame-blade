@@ -178,11 +178,43 @@ let problems = [];
       scene: window.__G.sceneId })`);
     const ch = parseOr(chRaw, { line: -1, lines: 0, choHidden: true, btns: 0, scene: null }, d.name + ' 抉择场景');
 
+    /* 6) 战斗指令必须能选目标。
+       此前攻击/道具永远打第一个敌人、治疗与复活永远作用在 party[0]，
+       也就是没法集火、没法治疗或复活除队首以外的任何人。 */
+    await evalx(`
+      window.__newGame(15, ['kaito','cang','lei','ryze']);
+      window.__startBattle({ id:'tgt', bg:'snow', next:'prologue',
+        enemies:[{ref:'ice_hound',level:12},{ref:'ice_hound',level:12},{ref:'demon_soldier',level:12}] });
+      return 'ok';
+    `);
+    await sleep(1500);
+    await evalx(`
+      const b = window.__G.battle;
+      b.active = b.party[0]; b.ui.mode = 'input'; window.__G.curActor = 0;
+      window.__G.requestPlayerTurn(b);
+      return 'ok';
+    `);
+    await sleep(600);
+    await evalx(`
+      const btn = [].find.call(document.querySelectorAll('.cbtn'), x => x.innerText.indexOf('攻击') === 0);
+      if (btn) btn.click();
+      return btn ? 'clicked' : 'no-button';
+    `);
+    await sleep(600);
+    const tgRaw = await evalx(`
+      const el = document.getElementById('skilllist');
+      const open = !!el && !el.classList.contains('hidden');
+      const rows = open ? [].map.call(el.querySelectorAll('.sk[data-tg]'), x => x.dataset.tg).filter(v => v !== '__cancel') : [];
+      return JSON.stringify({ open, rows: rows.length, enemies: window.__G.battle ? window.__G.battle.enemies.length : 0 });
+    `);
+    const tg = parseOr(tgRaw, { open: false, rows: 0, enemies: 0 }, d.name + ' 目标选择');
+
     console.log(`  舞台: ${g.w}x${g.h} @(${g.x},${g.y})  视口: ${g.vw}x${g.vh}  touch-ui=${g.touchUI}`);
     console.log(`  模式=${t.mode} 战斗中=${t.inBattle} 出手者=${t.actor}  指令栏=${t.cmdMenuVisible ? '显示' : '隐藏'} 按钮=${t.cmdBtns}个 ${t.cmdBtnSize} 在视口内=${t.cmdInView}`);
     console.log(`  旋转提示=${rotateShown === true ? '显示' : '隐藏'}`);
     console.log(`  触摸点击=${tapRes}  剧情推进=${advanced ? '✔' : '✗'} (${b0.mode}|${b0.scene} → ${a0.mode}|${a0.scene})`);
     console.log(`  抉择场景：真实点击 6 次后 台词 ${ch.line}/${ch.lines} 行、按钮 ${ch.btns} 个、已弹出=${!ch.choHidden}`);
+    console.log(`  战斗选目标：点「攻击」后目标列表已弹出=${tg.open}，列出 ${tg.rows} 个目标（场上 ${tg.enemies} 个敌人）`);
 
     if (d.mobile && !portrait && g.w < 200) problems.push(`${d.name}: 舞台宽度异常 ${g.w}`);
     if (g.x < -1 || g.y < -1) problems.push(`${d.name}: 舞台被移出可视区 @(${g.x},${g.y})`);
@@ -197,6 +229,8 @@ let problems = [];
     if (d.mobile && !advanced) problems.push(`${d.name}: 触摸点击未推进剧情`);
     if (ch.choHidden) problems.push(`${d.name}: 抉择场景点不动——连点 6 次后按钮仍未弹出（台词停在 ${ch.line}/${ch.lines}）`);
     else if (ch.btns < 2) problems.push(`${d.name}: 抉择按钮只渲染了 ${ch.btns} 个`);
+    if (!tg.open) problems.push(`${d.name}: 点「攻击」没有弹出目标选择列表`);
+    else if (tg.rows !== tg.enemies) problems.push(`${d.name}: 目标列表 ${tg.rows} 项，与场上 ${tg.enemies} 个敌人不符`);
     if (!portrait) {
       // 战斗里一次只给一个角色下指令，指令栏必须有 4 个按钮且够大、够得着
       if (!t.inBattle) problems.push(`${d.name}: 没能进入战斗（mode=${t.mode}）`);

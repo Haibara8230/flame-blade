@@ -2,7 +2,7 @@
    main.js — 主循环 / 场景 / UI / 存档 / 音效
    《炎之刃》FLAME BLADE
    ============================================================ */
-import { ACTORS, SKILLS, ITEMS, EQUIPS, SHOPS, STATUS, statsAt, expToNext, ENEMIES } from './characters.js';
+import { ACTORS, SKILLS, ITEMS, EQUIPS, SHOPS, STATUS, ELEM, statsAt, expToNext, ENEMIES } from './characters.js';
 import { SCENES, ENDINGS } from './story.js';
 import { portraitURL } from './portraits.js';
 import * as SP from './sprites.js';
@@ -697,7 +697,7 @@ function buildCommandUI() {
     btn.onclick = e => { e.stopPropagation(); sfx('ui'); fn(); };
     row.appendChild(btn);
   };
-  mk('攻击', '斩击', () => doCmd(m, { type: 'attack', target: pickTargetIdx() }));
+  mk('攻击', '斩击', () => chooseTarget(m, 'enemy', i => doCmd(m, { type: 'attack', target: i })));
   mk('技能', '术式/奥义', () => openSkills(m));
   mk('道具', `剩余${Object.values(G.bag).reduce((a, b2) => a + b2, 0)}`, () => openBagInBattle(m));
   mk('格挡', '大幅提升格挡/弹反率', () => doCmd(m, { type: 'guard' }));
@@ -705,6 +705,56 @@ function buildCommandUI() {
   if (b.def && b.def.escape) mk('逃跑', '脱离战斗', () => doCmd(m, { type: 'escape' }));
   $('cmdmenu').classList.remove('hidden');
 }
+/* 目标选择界面。
+   此前攻击和敌方道具永远打「第一个活着的敌人」，单体治疗和友方道具永远作用在
+   party[0]（凯）——意味着没法集火、没法挑弱点，也没法治疗或复活除凯以外的任何人。
+   kind: 'enemy' | 'ally'（活着的同伴）| 'downed'（倒下的同伴，复活用） */
+function chooseTarget(m, kind, onPick, back) {
+  const b = G.battle;
+  hideSubmenu();
+  let el = $('skilllist');
+  if (!el) { el = document.createElement('div'); el.id = 'skilllist'; $('cmdmenu').appendChild(el); }
+
+  const rows = kind === 'enemy'
+    ? b.enemies.map((e, i) => ({ i, u: e, ok: !e.dead }))
+    : b.party.map((p, i) => ({ i, u: p, ok: kind === 'downed' ? p.dead : !p.dead }));
+  const usable = rows.filter(r => r.ok);
+  if (!usable.length) {
+    toast(kind === 'downed' ? '没有倒下的同伴' : '没有可选的目标');
+    back ? back() : hideSubmenu();
+    return;
+  }
+  // 只剩一个合法目标时不必多点一次
+  if (usable.length === 1) { hideSubmenu(); onPick(usable[0].i); return; }
+
+  const label = kind === 'enemy' ? '选择攻击目标' : (kind === 'downed' ? '选择要复活的同伴' : '选择目标同伴');
+  el.innerHTML = `<div class="sk-head"><span>${m.name} —— ${label}</span><span style="color:#ffb98a">点一下确定</span></div>
+    <div class="sk-grid">${rows.map(r => {
+    const u = r.u;
+    const pct = Math.max(0, Math.round((u.hp / u.maxHp) * 100));
+    const st = (u.status || []).map(x => (STATUS[x.id] ? STATUS[x.id].icon : '')).join('');
+    const weak = (kind === 'enemy' && u.weak && u.weak.length)
+      ? '　弱点 ' + u.weak.map(w => (ELEM[w] ? ELEM[w].name : w)).join('/') : '';
+    return `<button class="sk" data-tg="${r.i}" ${r.ok ? '' : 'disabled'}>
+        <span class="c">${u.dead ? '倒下' : pct + '%'}</span>
+        <div class="n">${u.name}${u.level ? ' Lv.' + u.level : ''}</div>
+        <div class="d">HP ${Math.ceil(u.hp)}/${u.maxHp}${weak}${st ? '　' + st : ''}</div>
+      </button>`;
+  }).join('')}
+      <button class="sk" data-tg="__cancel"><div class="n">← 返回</div></button>
+    </div>`;
+  el.classList.remove('hidden');
+  el.querySelectorAll('.sk').forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation(); sfx('ui');
+      const v = btn.dataset.tg;
+      if (v === '__cancel') { back ? back() : hideSubmenu(); return; }
+      hideSubmenu();
+      onPick(Number(v));
+    };
+  });
+}
+
 function pickTargetIdx() {
   const b = G.battle;
   const alive = b.enemies.filter(e => !e.dead);
@@ -756,8 +806,13 @@ function openSkills(m) {
       sfx('ui');
       if (id === '__cancel') { hideSubmenu(); return; }
       const s = SKILLS[id];
-      const target = (s.target === 'ally' || s.target === 'party') ? 0 : pickTargetIdx();
-      doCmd(m, { type: 'skill', skill: id, target });
+      const go = t => doCmd(m, { type: 'skill', skill: id, target: t });
+      const again = () => openSkills(m);
+      // 群体 / 自身技能不需要选目标
+      if (s.target === 'all' || s.target === 'party' || s.target === 'self') { go(0); return; }
+      if (s.type === 'revive') chooseTarget(m, 'downed', go, again);
+      else if (s.target === 'ally') chooseTarget(m, 'ally', go, again);
+      else chooseTarget(m, 'enemy', go, again);
     };
   });
 }
@@ -780,7 +835,12 @@ function openBagInBattle(m) {
       const k = btn.dataset.it;
       if (k === '__cancel') { hideSubmenu(); return; }
       const it = ITEMS[k];
-      doCmd(m, { type: 'item', item: k, target: it.target === 'enemy' ? pickTargetIdx() : 0 });
+      const go = t => doCmd(m, { type: 'item', item: k, target: t });
+      const again = () => openBagInBattle(m);
+      if (it.target === 'self') { go(0); return; }
+      if (it.target === 'enemy') chooseTarget(m, 'enemy', go, again);
+      else if (it.revive) chooseTarget(m, 'downed', go, again);
+      else chooseTarget(m, 'ally', go, again);
     };
   });
 }
