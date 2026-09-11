@@ -471,7 +471,7 @@ const G = {
   storySeen: false,
   // 新增系统
   bonds: {}, relics: {}, codex: {},
-  autoBattle: false, lastDrops: null,
+  autoBattle: false, lastDrops: null, campShownFor: null,
 };
 /* 战斗模块通过这两个钩子查询羁绊与天赋，避免 battle.js 反向依赖存档结构 */
 G.bondLevel = id => BD.bondLevel(G, id);
@@ -673,7 +673,7 @@ function advanceScene() {
     if (bs) { launchBattle(bs); return; }
   }
   // 营地：休整、聊天涨羁绊、调整养成，然后再继续
-  if (sc.camp && !G.campDone) { G.campDone = true; openCamp(sc); return; }
+  if (tryOpenCamp(sc)) return;
   if (sc.shop) { openShop(sc.shop); return; }
   if (sc.enemies) { startBattleFromScene(sc); return; }
   // 第一部的结局：放完结局画面再进第二部
@@ -684,7 +684,7 @@ function advanceScene() {
     return;
   }
   if (sc.ending) { showEnding(sc.ending); return; }
-  if (sc.next) { G.campDone = false; gotoScene(sc.next); return; }
+  if (sc.next) { gotoScene(sc.next); return; }
   // 没有下一步：回到标题
   gotoTitle();
 }
@@ -698,9 +698,25 @@ function nextLine() {
   G.lineIdx++;
   showLine(name, text, expr);
 }
+/* 营地要按「哪一幕」记，不能用一个全局布尔。
+   此前 campDone 只在「营地后面直接接 next」这条路上被复位，而营地场景
+   通常接的是 shop 或 choices——于是第一处营地开过之后，后面全都不再打开。
+
+   而且这个判断必须放在 finishLines 里、在 choices 之前：
+   台词放完时 finishLines 会直接把选项弹出来，根本走不到 advanceScene。
+   「营地 + 二选一」的那三处（林中夜营、雪夜、遗迹出口）就是这样被跳过的。 */
+function tryOpenCamp(sc) {
+  if (!sc || !sc.camp || G.campShownFor === G.sceneId) return false;
+  G.campShownFor = G.sceneId;
+  $('dialogue').classList.add('hidden');
+  openCamp(sc);
+  return true;
+}
+
 function finishLines() {
   const sc = G.scene;
   $('dialogue').classList.add('hidden');
+  if (tryOpenCamp(sc)) return;
   if (sc.choices) { showChoices(sc.choices); return; }
   if (sc.branch) {
     const v = G.flags[sc.branch.branch];
@@ -1258,25 +1274,31 @@ G.sfx = sfx;
 /* ============================================================
    商店
    ============================================================ */
-/* 第二部的商店没有固定货架：按队伍等级现场生成一批，
-   每次进店都不一样，逛店本身变成一件有期待的事。 */
-const DYNAMIC_SHOPS = {
-  spirit: { name: '仙灵之野 · 换物处', consum: ['potion_hi', 'ether', 'revive', 'elixir'], n: 6 },
-  edge: { name: '断天之径 · 无名者的摊子', consum: ['potion_hi', 'elixir', 'revive', 'bomb', 'seal'], n: 7 },
-  divine: { name: '神域 · 静室补给', consum: ['elixir', 'revive', 'bomb', 'seal', 'ether'], n: 8 },
-  last: { name: '终幕之前 · 最后一次整备', consum: ['elixir', 'revive', 'bomb'], n: 8 },
+/* 所有商店的装备货架都现场生成——第一部原本是写死的几件，
+   到了第二部忽然变成随机掉落品，两边像两个游戏。现在统一：
+   固定清单里的消耗品与剧情装备保留，再按队伍等级补一批当前档位的装备。 */
+const SHOP_STOCK_N = {
+  village: 3, harbor: 4, north: 5, final: 6,
+  spirit: 6, edge: 7, divine: 8, last: 8,
+};
+const DYNAMIC_ONLY = {
+  spirit: '仙灵之野 · 换物处',
+  edge: '断天之径 · 无名者的摊子',
+  divine: '神域 · 静室补给',
+  last: '终幕之前 · 最后一次整备',
 };
 function shopDef(id) {
-  const dyn = DYNAMIC_SHOPS[id];
-  if (!dyn) return SHOPS[id];
+  const fixed = SHOPS[id];
+  const name = DYNAMIC_ONLY[id] || (fixed && fixed.name);
+  if (!fixed && !DYNAMIC_ONLY[id]) return null;
   const cache = G.shopStock || (G.shopStock = {});
   if (!cache[id]) {
     const lv = Math.max(1, Math.round(G.party.reduce((a, m) => a + m.level, 0) / Math.max(1, G.party.length)));
     setLootContext({ ngPlus: G.flags.ngPlus || 0, flags: G.flags });
-    const stock = rollShopStock(lv, dyn.n, { luck: (G.flags.ngPlus || 0) * 0.3 });
-    cache[id] = [...dyn.consum, ...stock.map(e => e.id)];
+    const stock = rollShopStock(lv, SHOP_STOCK_N[id] || 4, { luck: (G.flags.ngPlus || 0) * 0.3 });
+    cache[id] = [...((fixed && fixed.items) || []), ...stock.map(e => e.id)];
   }
-  return { name: dyn.name, items: cache[id] };
+  return { name, items: cache[id] };
 }
 
 function openShop(id) {
@@ -1337,7 +1359,7 @@ function openShop(id) {
     e.stopPropagation();
     openEquipScreen(b.dataset.eq, () => openShop(id));
   });
-  $('shop-leave').onclick = e => { e.stopPropagation(); closePanel(); goAfterShop(); };
+  $('shop-leave').onclick = e => { e.stopPropagation(); goAfterShop(); };
 }
 function statLine(o) {
   if (!o) return '';
@@ -1350,10 +1372,16 @@ function statLine(o) {
   if (o.cri) p.push(`暴击+${Math.round(o.cri * 100)}%`);
   return p.join('　');
 }
+/* 离开商店，继续推进剧情。
+   注意：closePanel() 在 G.mode==='shop' 时会自己转调这里，
+   所以调用方不要再先 closePanel() 再 goAfterShop() ——那会推进两次，
+   把「商店的下一幕」直接跳过去（第三章补给后会一路掉回标题画面）。 */
 function goAfterShop() {
   G.mode = 'scene';
   const sc = G.scene;
   $('panel').classList.add('hidden');
+  G.panelKind = null;
+  G.prevMode = null;
   if (sc && sc.next) gotoScene(sc.next);
   else gotoTitle();
 }
@@ -1601,7 +1629,7 @@ function continueAfterCamp() {
   if (sc2.shop) { openShop(sc2.shop); return; }
   if (sc2.enemies) { startBattleFromScene(sc2); return; }
   if (sc2.choices) { showChoices(sc2.choices); return; }
-  if (sc2.next) { G.campDone = false; gotoScene(sc2.next); return; }
+  if (sc2.next) { gotoScene(sc2.next); return; }
   gotoTitle();
 }
 
@@ -1889,7 +1917,7 @@ function startNewGamePlus() {
   closePanel();
   $('ending').classList.add('hidden');
   $('hud').classList.remove('hidden');
-  G.mode = 'scene'; G.campDone = false;
+  G.mode = 'scene'; G.campShownFor = null;
   toast(`※ 第 ${ng + 1} 周目开始：敌人更强，掉落品质更高`, 3000);
   gotoScene('prologue');
 }
@@ -2085,7 +2113,7 @@ $('btn-again').onclick = e => {
     G.mode = 'scene';
     $('hud').classList.remove('hidden');
     $('dialogue').classList.remove('hidden');
-    G.campDone = false;
+    G.campShownFor = null;
     gotoScene(nx);
     return;
   }
@@ -2214,11 +2242,13 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
+/* 台词放完之后该做什么，只允许 finishLines 一处说了算。
+   此前这里自己又判了一次 sc.choices，于是「营地 + 二选一」的场景
+   会直接弹选项、跳过营地——点击推进和无头测试走的都是这条路。 */
 function nextLineCheck() {
   const sc = G.scene;
   if (!sc) return;
   if (sc.lines && G.lineIdx < sc.lines.length) nextLine();
-  else if (sc.choices) showChoices(sc.choices);
   else finishLines();
 }
 
@@ -2232,11 +2262,11 @@ if (DEBUG) {
 window.__fast = false;   // 无头测试：跳过商店
 window.__advance = function (n = 1) {
   for (let i = 0; i < n; i++) {
-    if (G.mode === 'shop') { closePanel(); goAfterShop(); continue; }
+    if (G.mode === 'shop') { goAfterShop(); continue; }
     if (G.mode !== 'scene' || !G.scene) break;
     G.typed = G.fullText.length; G.typing = 0;
     nextLineCheck();
-    if (window.__fast && G.mode === 'shop') { closePanel(); goAfterShop(); }
+    if (window.__fast && G.mode === 'shop') { goAfterShop(); }
   }
   return `${G.mode} | ${G.sceneId}`;
 };
@@ -2334,7 +2364,7 @@ window.__autoRun = function (maxSteps = 400, maxMs = 120000) {
           }
         }
       }
-    } else if (G.mode === 'shop') { closePanel(); goAfterShop(); }
+    } else if (G.mode === 'shop') { goAfterShop(); }
     else if (G.mode === 'panel') {
       // 营地等面板会把 G.mode 切到 panel；无头测试里直接点「继续前进」
       const go = document.getElementById('camp-go');

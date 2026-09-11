@@ -87,7 +87,14 @@ const done = c => { try { proc && proc.kill(); } catch (e) { } setTimeout(() => 
   console.log('[1] 商店：推进到开店 -> 点关闭');
   await ev("window.__setScene('c1_end'); 'ok'");
   await sleep(350);
-  let st = await advanceUntil('shop');
+  // c1_end 现在是「营地 → 商店」，先把营地走过去
+  let st = await advanceUntil('panel');
+  if (st.panelKind === 'camp') {
+    await ev("document.getElementById('camp-go').click(); 'ok'");
+    await sleep(700);
+    st = await state();
+  }
+  if (st.mode !== 'shop') st = await advanceUntil('shop');
   console.log('    开店后 mode = ' + st.mode);
   if (st.mode !== 'shop') { console.log('    FAIL 没能进商店，本项无效'); fail++; }
   else {
