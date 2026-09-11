@@ -261,7 +261,9 @@ body{display:block;overflow:hidden}
 /* ---------- 触屏适配 ---------- */
 .touch-ui #hud{height:36px;padding:0 6px}
 .touch-ui #hud-chapter{font-size:12px;letter-spacing:1px}
-.touch-ui .hbtn{font-size:11px;padding:4px 6px;letter-spacing:0}
+/* 触屏上把 HUD 按钮放大而不是缩小——34x19 的关闭按钮在手机上几乎点不中 */
+.touch-ui .hbtn{font-size:12px;padding:9px 11px;letter-spacing:0;min-height:38px}
+.touch-ui #panel-close{font-size:13px;padding:10px 16px;min-height:42px}
 .touch-ui #dialogue{left:8px;right:8px;bottom:8px;height:164px;gap:8px;padding:8px}
 .touch-ui .dlg-portrait{width:108px;height:146px;flex:0 0 108px}
 .touch-ui .dlg-text{font-size:16px;line-height:1.58}

@@ -897,9 +897,27 @@ function openEquipScreen(memberId, back) {
 /* ============================================================
    面板
    ============================================================ */
-function closePanel() { $('panel').classList.add('hidden'); if (G.mode === 'panel') G.mode = G.prevMode || 'scene'; }
+/* 进入面板模式。
+   关键：面板已经开着时不能再用 'panel' 覆盖 prevMode——否则关闭时会「恢复」到 panel 自己，
+   面板视觉上消失但 G.mode 永远停在 'panel'，点任何地方都没反应，只能刷新页面。 */
+function enterPanel(kind) {
+  if (G.mode !== 'panel') G.prevMode = G.mode;
+  G.panelKind = kind;
+  G.mode = 'panel';
+}
+function closePanel() {
+  $('panel').classList.add('hidden');
+  if (G.mode === 'panel') G.mode = (G.prevMode && G.prevMode !== 'panel') ? G.prevMode : 'scene';
+  G.prevMode = null;
+  G.panelKind = null;
+}
+/* 再点一次同一个 HUD 按钮 = 关闭（手机上这是最自然的退出方式） */
+function togglePanel(kind, open) {
+  if (G.mode === 'panel' && G.panelKind === kind) closePanel();
+  else open();
+}
 function openPartyPanel() {
-  G.prevMode = G.mode; G.mode = 'panel';
+  enterPanel('party');
   $('panel-title').textContent = '◈ 队伍状态　持有 ' + G.gold + ' 金';
   const body = $('panel-body');
   body.innerHTML = G.party.map(m => {
@@ -1056,12 +1074,15 @@ function openGallery() {
 function refreshHUD() {
   $('hud-chapter').textContent = G.chapter || '炎之刃';
 }
-$('btn-status').onclick = e => { e.stopPropagation(); openPartyPanel(); };
+$('btn-status').onclick = e => { e.stopPropagation(); togglePanel('party', openPartyPanel); };
 $('panel-close').onclick = e => { e.stopPropagation(); closePanel(); };
+// 点面板本身的空白处（不是里面的内容）也关闭
+$('panel').addEventListener('pointerdown', e => { if (e.target === $('panel')) closePanel(); });
 $('btn-bag').onclick = e => {
   e.stopPropagation();
   if (G.mode === 'battle') return toast('战斗中请使用指令栏的【道具】');
-  G.prevMode = G.mode; G.mode = 'panel';
+  if (G.mode === 'panel' && G.panelKind === 'bag') return closePanel();
+  enterPanel('bag');
   $('panel-title').textContent = '◆ 持有道具　' + G.gold + ' 金';
   $('panel-body').innerHTML = `<div style="grid-column:1/-1">
     ${Object.keys(G.bag).filter(k => G.bag[k] > 0).map(k => {
@@ -1153,6 +1174,10 @@ function loop(now) {
   } else {
     updateToast(dt);
   }
+
+  /* 兜底：G.mode 停在 'panel' 但面板已经隐藏 = 状态失同步，此时点哪都没反应。
+     与其让玩家只能刷新，不如直接恢复。 */
+  if (G.mode === 'panel' && $('panel').classList.contains('hidden')) closePanel();
 
   /* 特效层透明度 */
   dmgVig = Math.max(0, dmgVig - dt * 1.6);
