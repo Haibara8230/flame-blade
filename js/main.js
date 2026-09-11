@@ -12,10 +12,60 @@ import * as BD from './bonds.js';
 import * as SP from './sprites.js';
 import * as BT from './battle.js';
 
-const W = 960, H = 540;
+const W = 960, H = 540;          // 逻辑坐标系，所有绘制代码都按这个尺寸写
 const $ = id => document.getElementById(id);
 const cv = $('cv');
-const ctx = cv.getContext('2d');
+const ctx = cv.getContext('2d', { alpha: true, desynchronized: false });
+
+/* ============================================================
+   高分屏渲染
+   ============================================================
+   画布的后备缓冲此前固定 960×540，再用 CSS transform 把整个 #stage 放大铺满屏幕：
+   1080p 上是 2 倍拉伸，2K 上接近 2.7 倍，4K 更糟——所以画面糊。
+   （DOM 那层的文字和面板是矢量的，一直都清晰，糊的只有 canvas。）
+
+   现在让后备缓冲等于「实际占用的物理像素」，再用 setTransform 把坐标系
+   缩回 960×540，绘制代码一行都不用改。 */
+/* 上限 2880×1620。够 2K 做到 1:1，4K 会略低于 1:1 但远好过原来的 960×540。
+   低端机或 4K 上如果掉帧，renderCap 会自动往下退一档。 */
+const MAX_RENDER_SCALE = 3;
+let renderCap = MAX_RENDER_SCALE;
+let renderScale = 1;
+
+function applyBaseTransform() {
+  ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+}
+
+/* 帧率兜底：连续一段时间掉到 40fps 以下就降一档分辨率。
+   只降不升，避免在阈值附近来回抖动；最多降两档（3 → 2.5 → 2）。 */
+let slowFrames = 0, lastCssScale = 1;
+function watchPerf(dt) {
+  if (renderCap <= 2 || renderScale <= 2) { slowFrames = 0; return; }
+  if (dt > 1 / 40) slowFrames++; else slowFrames = Math.max(0, slowFrames - 1);
+  if (slowFrames > 90) {            // 约 1.5~2 秒持续掉帧
+    slowFrames = 0;
+    renderCap = Math.max(2, renderCap - 0.5);
+    syncCanvasResolution(lastCssScale);
+  }
+}
+
+function syncCanvasResolution(cssScale) {
+  lastCssScale = cssScale;
+  const dpr = window.devicePixelRatio || 1;
+  const want = Math.min(renderCap, Math.max(1, cssScale * dpr));
+  const bw = Math.round(W * want), bh = Math.round(H * want);
+  // 改 width/height 会清空画布并重置上下文状态，所以只在真的变了时才改
+  if (cv.width !== bw || cv.height !== bh) {
+    cv.width = bw;
+    cv.height = bh;
+    cv.style.width = W + 'px';     // CSS 尺寸保持逻辑大小，#stage 的布局不受影响
+    cv.style.height = H + 'px';
+  }
+  renderScale = cv.width / W;
+  applyBaseTransform();
+}
 /* 多存档槽：四结局的游戏只有一个槽位是硬伤。
    slot 0 是自动存档，1~3 是手动槽。 */
 const SAVE_PREFIX = 'flameblade.save.v3.';
@@ -86,6 +136,7 @@ function fit() {
   stage.style.transform = `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) scale(${s.toFixed(4)})`;
   stage.dataset.scale = s.toFixed(4);
   stage.dataset.portrait = portrait ? '1' : '0';
+  syncCanvasResolution(s);
 
   // 竖屏提示（只在触屏设备上出现）
   const rot = $('rotate');
@@ -96,6 +147,18 @@ function fit() {
 }
 window.addEventListener('resize', fit);
 window.addEventListener('orientationchange', () => setTimeout(fit, 120));
+/* 窗口拖到另一块 DPR 不同的显示器上时，resize 不一定触发，
+   用 resolution 媒体查询兜住。 */
+if (window.matchMedia) {
+  let dprWatch = null;
+  const watchDpr = () => {
+    if (dprWatch && dprWatch.removeEventListener) dprWatch.removeEventListener('change', onDpr);
+    dprWatch = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+    if (dprWatch.addEventListener) dprWatch.addEventListener('change', onDpr, { once: true });
+  };
+  const onDpr = () => { fit(); watchDpr(); };
+  watchDpr();
+}
 if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
 if (window.matchMedia) {
   const mq = window.matchMedia('(orientation: portrait)');
@@ -2063,6 +2126,8 @@ function loop(now) {
   $('hotoverlay').style.background = `radial-gradient(ellipse at center, rgba(255,150,0,0) 40%, rgba(255,90,0,.45) 100%)`;
 
   /* --- 绘制 --- */
+  watchPerf(dt);
+  applyBaseTransform();          // 每帧重置基准变换，save/restore 失衡时能自愈
   ctx.clearRect(0, 0, W, H);
   ctx.save();
   if (G.mode === 'battle' && G.battle) {
