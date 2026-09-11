@@ -112,28 +112,27 @@ let problems = [];
     `);
     const g = parseOr(geo, { x: 0, y: 0, w: 0, h: 0, vw: d.w, vh: d.h, touchUI: null }, d.name + ' stage几何');
 
-    // 3) 开局 → 战斗，检查触屏按键只在战斗中显示
+    // 3) 开局 → 战斗，检查指令栏在触屏下可点（战斗已不再需要悬浮按键）
     const flow = await evalx(`
       if (window.__newGame) { window.__newGame(20,['kaito','cang','lei','ryze']); window.__advance(70); }
       return window.__G ? window.__G.mode : 'no-debug';
     `);
     await sleep(1600);
     const touchState = await evalx(`
+      const b = window.__G && window.__G.battle;
       return JSON.stringify({
         mode: window.__G ? window.__G.mode : null,
-        touchCombat: document.getElementById('touch').classList.contains('combat'),
-        touchVisible: getComputedStyle(document.getElementById('touch')).display,
-        keySize: (function(){const k=document.querySelector('.tkey');const r=k.getBoundingClientRect();return [Math.round(r.width),Math.round(r.height)];})(),
+        inBattle: !!b,
+        actor: b && b.active ? b.active.name : null,
+        cmdMenuVisible: !document.getElementById('cmdmenu').classList.contains('hidden'),
         cmdBtns: document.getElementById('cmd-buttons').children.length,
-        cmdBtnSize: (function(){const b=document.querySelector('.cbtn');if(!b)return null;const r=b.getBoundingClientRect();return [Math.round(r.width),Math.round(r.height)];})(),
-        overlap: (function(){
-          const t=document.getElementById('touch').getBoundingClientRect();
-          const c=document.getElementById('cmdmenu').getBoundingClientRect();
-          return !(t.bottom < c.top || t.top > c.bottom || t.right < c.left || t.left > c.right);
-        })()
+        cmdBtnSize: (function(){const x=document.querySelector('.cbtn');if(!x)return null;const r=x.getBoundingClientRect();return [Math.round(r.width),Math.round(r.height)];})(),
+        // 指令栏必须完整落在视口内，否则手机上点不到最下面一排
+        cmdInView: (function(){const c=document.getElementById('cmdmenu').getBoundingClientRect();
+          return c.top >= -1 && c.bottom <= window.innerHeight + 1 && c.left >= -1 && c.right <= window.innerWidth + 1;})()
       });
     `);
-    const t = parseOr(touchState, { mode: null, touchCombat: false, touchVisible: 'none', keySize: [0, 0], cmdBtns: 0, cmdBtnSize: null, overlap: false }, d.name + ' 触屏状态');
+    const t = parseOr(touchState, { mode: null, inBattle: false, actor: null, cmdMenuVisible: false, cmdBtns: 0, cmdBtnSize: null, cmdInView: false }, d.name + ' 战斗UI状态');
 
     // 4) 剧情推进链路：退回剧情模式，点画面应推进一行台词
     await evalx(`window.__setScene('prologue'); return 'to-prologue';`);
@@ -155,22 +154,31 @@ let problems = [];
     const advanced = (a0.line > b0.line) || (a0.scene !== b0.scene) || (a0.mode !== b0.mode);
 
     console.log(`  舞台: ${g.w}x${g.h} @(${g.x},${g.y})  视口: ${g.vw}x${g.vh}  touch-ui=${g.touchUI}`);
-    console.log(`  模式=${t.mode}  触屏按键 display=${t.touchVisible} combat=${t.touchCombat} 尺寸=${t.keySize}  指令按钮=${t.cmdBtns}个 ${t.cmdBtnSize}`);
-    console.log(`  旋转提示=${rotateShown === true ? '显示' : '隐藏'}  按键与指令栏重叠=${t.overlap}`);
+    console.log(`  模式=${t.mode} 战斗中=${t.inBattle} 出手者=${t.actor}  指令栏=${t.cmdMenuVisible ? '显示' : '隐藏'} 按钮=${t.cmdBtns}个 ${t.cmdBtnSize} 在视口内=${t.cmdInView}`);
+    console.log(`  旋转提示=${rotateShown === true ? '显示' : '隐藏'}`);
     console.log(`  触摸点击=${tapRes}  剧情推进=${advanced ? '✔' : '✗'} (${b0.mode}|${b0.scene} → ${a0.mode}|${a0.scene})`);
 
     if (d.mobile && !portrait && g.w < 200) problems.push(`${d.name}: 舞台宽度异常 ${g.w}`);
     if (g.x < -1 || g.y < -1) problems.push(`${d.name}: 舞台被移出可视区 @(${g.x},${g.y})`);
     if (g.y + g.h > g.vh + 1 && d.mobile) problems.push(`${d.name}: 舞台纵向溢出底部 ${(g.y + g.h).toFixed(0)}>${g.vh}`);
-    if (d.mobile && !portrait && g.h < g.vh * 0.9) problems.push(`${d.name}: 横屏未铺满高度 ${g.h}/${g.vh}`);
-    if (d.mobile && !advanced) problems.push(`${d.name}: 触摸点击未推进剧情`);
-    if (!d.mobile && t.touchVisible === 'flex') problems.push(`${d.name}: 桌面端不该显示触屏按键`);
+    // 16:9 的画面塞进非 16:9 的屏幕，必然要在某一个方向留黑边。
+    // 要求是「至少填满一个方向、且不溢出」——宁可上下留黑边，也不能把指令按钮裁到屏幕外。
     if (d.mobile && !portrait) {
-      if (t.touchCombat && t.touchVisible !== 'flex') problems.push(`${d.name}: 战斗中触屏按键未显示`);
-      if (t.keySize[0] < 40) problems.push(`${d.name}: 触屏按键过小 ${t.keySize}`);
-      if (t.cmdBtnSize && t.cmdBtnSize[1] < 34) problems.push(`${d.name}: 指令按钮过矮 ${t.cmdBtnSize}`);
-      if (t.cmdBtns !== 4) problems.push(`${d.name}: 指令按钮数量异常 ${t.cmdBtns}`);
-      if (t.overlap) problems.push(`${d.name}: 触屏按键与指令栏重叠`);
+      const fillsH = g.h >= g.vh * 0.9, fillsW = g.w >= g.vw * 0.9;
+      if (!fillsH && !fillsW) problems.push(`${d.name}: 横屏两个方向都没填满 ${g.w}x${g.h} / ${g.vw}x${g.vh}`);
+      if (g.w > g.vw + 1) problems.push(`${d.name}: 舞台横向溢出 ${g.w}>${g.vw}`);
+    }
+    if (d.mobile && !advanced) problems.push(`${d.name}: 触摸点击未推进剧情`);
+    if (!portrait) {
+      // 战斗里一次只给一个角色下指令，指令栏必须有 4 个按钮且够大、够得着
+      if (!t.inBattle) problems.push(`${d.name}: 没能进入战斗（mode=${t.mode}）`);
+      else {
+        if (!t.actor) problems.push(`${d.name}: 行动条没有选出出手者`);
+        if (!t.cmdMenuVisible) problems.push(`${d.name}: 战斗中指令栏未显示`);
+        if (t.cmdBtns !== 4) problems.push(`${d.name}: 指令按钮数量异常 ${t.cmdBtns}`);
+        if (d.mobile && t.cmdBtnSize && t.cmdBtnSize[1] < 34) problems.push(`${d.name}: 指令按钮过矮 ${t.cmdBtnSize}`);
+        if (d.mobile && !t.cmdInView) problems.push(`${d.name}: 指令栏超出视口，手机上点不到`);
+      }
     }
 
     const shot = await send('Page.captureScreenshot', { format: 'png' });

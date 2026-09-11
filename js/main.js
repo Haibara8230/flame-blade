@@ -58,9 +58,10 @@ function fit() {
   // 先算出「完整放下」的缩放
   const fitScale = Math.min(vw / W, vh / H) * 0.98;
   let s = fitScale;
-  // 手机横屏：允许按高度放大到铺满（此时宽度会溢出，由 #stage 的 overflow 裁掉）
+  // 触屏横屏：按高度放大到铺满，但不允许宽度超出视口。
+  // 16:9 手机本来就不会溢出；4:3 平板会溢出 30%+，直接把指令栏最右的按钮裁到屏幕外。
   if (IS_TOUCH && !portrait) {
-    s = Math.max(fitScale, (vh / H) * 0.995);
+    s = Math.max(fitScale, Math.min((vh / H) * 0.995, vw / W));
   }
   const dx = Math.max(0, (vw - W * s) / 2);
   const dy = Math.max(0, (vh - H * s) / 2);
