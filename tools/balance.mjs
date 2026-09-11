@@ -1,31 +1,34 @@
 /* 平衡模拟：用真实公式推算各场战斗的长度、生存能力与胜负倾向。
    行动条改版后「回合」不再是所有人各打一次，而是按 spd 分配出手机会——
    模型改为：算出全场每「轮」（= 全体 gauge 各涨满一次的时间）里各单位的出手次数期望。 */
-import { ACTORS, ENEMIES, ENEMY_SKILLS, SKILLS, EQUIPS, statsAt } from '../js/characters.js';
+import { ACTORS, ENEMIES, ENEMY_SKILLS, SKILLS, EQUIPS, statsAt, enemyStatsAt } from '../js/characters.js';
+import { rollEquip } from '../js/loot.js';
 import { SCENES } from '../js/story.js';
 import { obtainable } from './reach.mjs';
 
 /* 复刻 battle.js 的公式（保持一致） */
 function eAtk(u) { return u.atk; }
 function eDef(u) { return u.def; }
-function dmgOf(atk, def, power, lvl, dlv, critRate = 0) {
-  const base = (atk * power * 1.02) - def * 0.9 + 44 * power;
+function dmgOf(atk, def, power, lvl, dlv, critRate = 0, hits = 1) {
+  // 与 battle.js 一致：防御按段数摊薄，多段技不再被扣满 N 次
+  const base = (atk * power * 1.02) - (def * 0.9) / Math.max(1, hits) + 44 * power;
   const lvK = 1 + (lvl - dlv) * 0.02;
   let d = base * lvK;
   d *= (1 - critRate) * 1 + critRate * 1.72;
   return Math.max(1, Math.round(d));
 }
 function mkEnemy(ref, lv) {
-  const d = ENEMIES[ref], k = lv - 1;
-  const hpK = (d.boss && lv >= 18) ? 0.032 : 0.075;
+  const d = ENEMIES[ref];
+  const st = enemyStatsAt(d, lv);      // 缩放公式只有 characters.js 一份
   return {
-    name: d.name, level: lv, hp: Math.floor(d.hp * (1 + k * hpK)),
-    atk: Math.floor(d.atk * (1 + k * 0.11)), def: Math.floor(d.def * (1 + k * 0.10)),
-    spd: d.spd + k, skills: d.skills, boss: !!d.boss, weak: d.weak || [],
+    name: d.name, level: lv, hp: st.maxHp,
+    atk: st.atk, def: st.defv,
+    spd: st.spd, skills: d.skills, boss: !!d.boss, weak: d.weak || [],
   };
 }
-function mkHero(id, lv, equips) {
-  const s = statsAt(ACTORS[id], lv, equips);
+function mkHero(id, lv, equips, gear) {
+  const s = statsAt(ACTORS[id], lv, equips || []);
+  if (gear) for (const k of Object.keys(gear)) s[k] = (s[k] || 0) + gear[k];
   return {
     id, name: ACTORS[id].name, role: ACTORS[id].role, level: lv,
     resource: ACTORS[id].resource || 'mp',
@@ -42,6 +45,25 @@ const PARTY = {
   final: [['kaito', 18, ['holy_sword', 'demon_mail']], ['cang', 18, ['blue_staff', 'holy_cloak']], ['lei', 18, ['storm_spear', 'chain']], ['ryze', 18, ['snow_staff', 'holy_cloak']]],
 };
 
+/* 第二部的装备是掉落生成的，没有固定 id。
+   这里按该档位的典型等级采样若干件，取均值当作「玩家大概会穿成什么样」。 */
+function sampleGear(level, n = 40) {
+  const acc = { atk: 0, def: 0, hp: 0, mp: 0, spd: 0, cri: 0, blk: 0, par: 0 };
+  for (let i = 0; i < n; i++) {
+    for (const slot of ['weapon', 'armor', 'acc']) {
+      const e = rollEquip({ level, slot, register: false });
+      for (const k of Object.keys(acc)) acc[k] += e[k] || 0;
+    }
+  }
+  for (const k of Object.keys(acc)) acc[k] /= n;
+  return acc;
+}
+const P2_LEVELS = { spirit: 24, edge: 31, divine: 37, last: 46 };
+for (const [key, lv] of Object.entries(P2_LEVELS)) {
+  PARTY[key] = [['kaito', lv], ['cang', lv], ['lei', lv], ['ryze', lv]];
+  PARTY[key].gear = sampleGear(lv);
+}
+
 const ASSUMED_ROUNDS = 6;    // 续航折算用的典型战斗长度（单位：轮）
 const HEALER_OUTPUT = 0.5;   // 治愈角色实际用于输出的出手占比
 const RAGE_PER_ACT = 16;     // 愤怒角色每次出手+挨打大致能攒到的怒气
@@ -55,7 +77,7 @@ function checkGear() {
   const OK = obtainable();
   const bad = [];
   for (const [key, list] of Object.entries(PARTY)) {
-    for (const [id, lv, eq] of list) for (const e of eq) {
+    for (const [id, lv, eq] of list) for (const e of (eq || [])) {
       if (!OK.has(e)) bad.push(`${key}/${id}: ${e}`);
     }
   }
@@ -66,29 +88,31 @@ function checkGear() {
 }
 checkGear();
 
-const STAGE_PARTY = {
-  c1_battle1: ['第一章 魔兵×2', 'early'],
-  c1_battle2: ['第一章 魔兵+弓手', 'early'],
-  c2_battle1: ['第二章 冥狼×2+弓手', 'forest'],
-  c2_guardian: ['第二章 森之守卫(BOSS)', 'forest'],
-  c3_battle1: ['第三章 霜牙兽×2+魔兵', 'mid'],
-  c3_witch: ['第三章 冰之魔女(BOSS)', 'mid'],
-  c4_zain: ['第四章 泽恩(BOSS)', 'late'],
-  c4_grang: ['第四章 古兰+杂兵(BOSS)', 'late'],
-  c5_king: ['第五章 魔王(BOSS)', 'final'],
-  c5_final: ['第五章 终焉魔王(BOSS)', 'final'],
-  secret_final: ['隐藏 终焉魔王·强', 'final'],
-};
+/* 遭遇表与队伍档位都从剧本推导。
+   此前这里是一张手抄的 STAGE_PARTY，剧情拆分重构之后就对不上了：
+   10 场战斗被跳过，还误报四个敌人「未被任何战斗使用」。
+   现在档位按该场敌人的等级自动选，新增章节不用改这个文件。 */
+function tierFor(lv) {
+  if (lv <= 4) return 'early';
+  if (lv <= 8) return 'forest';
+  if (lv <= 12) return 'mid';
+  if (lv <= 16) return 'late';
+  if (lv <= 19) return 'final';
+  if (lv <= 26) return 'spirit';
+  if (lv <= 33) return 'edge';
+  if (lv <= 40) return 'divine';
+  return 'last';
+}
 
+/* 战斗场景在剧本里的先后顺序，用来给场次编号 */
 const STAGES = [];
 for (const [sid, sc] of Object.entries(SCENES)) {
-  if (!sc.enemies) continue;
-  const meta = STAGE_PARTY[sid];
-  if (!meta) { console.log(`! 战斗场景 ${sid} 没有配队伍档位，已跳过`); continue; }
-  STAGES.push([meta[0], meta[1], sc.enemies.map(e => [e.ref, e.level])]);
-}
-for (const sid of Object.keys(STAGE_PARTY)) {
-  if (!SCENES[sid] || !SCENES[sid].enemies) console.log(`! STAGE_PARTY 里的 ${sid} 在剧本里已不是战斗场景`);
+  if (!sc.enemies || !sc.enemies.length) continue;
+  const lv = Math.round(sc.enemies.reduce((a, e) => a + e.level, 0) / sc.enemies.length);
+  const label = `${(sc.chapter || '').replace(/^第|章.*$/g, '').slice(0, 8) || '?'} ${sc.enemies.map(e => ENEMIES[e.ref].name).join('+')}`.slice(0, 26);
+  // 教学战（练习木桩）本来就该秒杀，不参与平衡结论
+  const tutorial = sc.enemies.every(e => e.ref === 'training_dummy');
+  STAGES.push([label + (sc.boss ? '(BOSS)' : ''), tierFor(lv), sc.enemies.map(e => [e.ref, e.level]), sid, tutorial]);
 }
 
 /* 从未出现在任何战斗里的敌人（做了数据和立绘却没人用） */
@@ -101,8 +125,8 @@ for (const sid of Object.keys(STAGE_PARTY)) {
 console.log('=== 战斗平衡模拟（期望值） ===');
 console.log('场次'.padEnd(26), '我方HP', '敌方HP', '我方/轮', '敌/轮', '预计轮数', '评价');
 let problems = [];
-for (const [name, pkey, foes] of STAGES) {
-  const heroes = PARTY[pkey].map(([id, lv, eq]) => mkHero(id, lv, eq));
+for (const [name, pkey, foes, , tutorial] of STAGES) {
+  const heroes = PARTY[pkey].map(([id, lv, eq]) => mkHero(id, lv, eq, PARTY[pkey].gear));
   const es = foes.map(([ref, lv]) => mkEnemy(ref, lv));
   const totalHp = heroes.reduce((a, h) => a + h.hp, 0);
   const eHp = es.reduce((a, e) => a + e.hp, 0);
@@ -127,7 +151,7 @@ for (const [name, pkey, foes] of STAGES) {
     const usable = h.skills.map(id => SKILLS[id]).filter(s => s && s.type === 'atk' && !s.ult);
     let best = null, bestV = -1;
     for (const s of usable) {
-      const single = dmgOf(h.atk, eDef0, s.power, h.level, eLv, h.cri) * (s.hits || 1);
+      const single = dmgOf(h.atk, eDef0, s.power, h.level, eLv, h.cri, s.hits || 1) * (s.hits || 1);
       const total = s.target === 'all' ? single * es.length : single;
       const v = total / Math.max(8, (s.mp || 10));
       if (v > bestV) { bestV = v; best = { s, total }; }
@@ -174,7 +198,7 @@ for (const [name, pkey, foes] of STAGES) {
   if (+survive > 12) verdict.push('太简单');
   if (!verdict.length) verdict.push('✔ 手感良好');
   if (!verdict.includes('✔ 手感良好')) {
-    problems.push(name + ' → ' + verdict.join('/') + '（轮数 ' + rounds + '、生存 ' + survive + '）');
+    if (!tutorial) problems.push(name + ' → ' + verdict.join('/') + '（轮数 ' + rounds + '、生存 ' + survive + '）');
   }
   console.log(name.padEnd(26), String(totalHp).padStart(6), String(eHp).padStart(7), String(pOut).padStart(9), String(eOut).padStart(8), String(rounds).padStart(8), ' 存活' + survive + '轮', verdict.join(' '));
 }

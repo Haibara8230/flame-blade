@@ -35,7 +35,7 @@ export const JOURNEY = {
   ], 'c2_camp'),
   c2_camp: B('forest', ['hell_hound', 'demon_soldier', 'demon_soldier2'], 4, 'c2_captive', {
     lines: [['旁白', '（魔兵押着两个掉队的人折返回来。雷从树上跃下，截住退路。）']],
-    onWin: [{ heal: 'party' }], win: [['雷', '把绳子解开。你们还有多少人在前面？'], ['伤员', '药师带着孩子往港口去了。我们腿慢，没跟上……']],
+    win: [['雷', '把绳子解开。你们还有多少人在前面？'], ['伤员', '药师带着孩子往港口去了。我们腿慢，没跟上……']],
   }),
   c2_captive: S('forest', [
     ['伤员', '林子的守卫疯了，过路就打。孩子们是趁天黑爬过去的。'],
@@ -45,9 +45,9 @@ export const JOURNEY = {
     ['旁白', '（雷愣了一下。她本来已经准备独自追上去。）'],
   ], 'c2_guardian'),
   c2_guardian: B('forest', ['forest_guard', 'curse_root', 'curse_root'], 4, 'c2_guardian_after', {
-    boss: true, objective: { type: 'purify', label: '斩断两根咒缚根，再由苍净化', actor: 'cang', targets: ['curse_root'], steps: 1 },
+    boss: true, theme: '古森遗誓', objective: { type: 'purify', label: '斩断两根咒缚根，再由苍净化', actor: 'cang', targets: ['curse_root'], steps: 1 },
     lines: [['旁白', '（巨大的守卫抬起手臂，黑根从背后扎进它的胸口。）'], ['苍', '别伤树心！两侧的咒缚根断开后，轮到我时选择【净化】。'], ['系统', '守卫本体不会被击杀；清除两根咒缚根后，苍可使用专属目标指令。']],
-    onWin: [{ exp: 650 }, { heal: 'party' }],
+    onWin: [{ exp: 650 }],
     win: [['旁白', '（苍把手按在树心上。黑色脉络褪去，守卫终于放下了举起的手。）'], ['森之守卫', '小小的火……谢谢。去海边吧。系红绳的女孩，最后一个走。']],
   }),
   c2_guardian_after: S('forest', [
@@ -123,7 +123,7 @@ export const JOURNEY = {
   ], 'h_warehouse'),
   h_warehouse: B('harbor', ['harbor_guard', 'demon_soldier2', 'harbor_guard'], 6, 'h_plan', {
     lines: [['旁白', '（仓库门打开。魔兵挡在一排锁着的铁笼前，里面的孩子全都站了起来。）']],
-    onWin: [{ item: 'potion_hi' }, { item: 'ether' }, { heal: 'party' }],
+    onWin: [{ item: 'potion_hi' }, { item: 'ether' }],
     win: [['凯', '别挤，一个一个出来。叫到名字就握住旁边人的手。'], ['旁白', '（不会说话的小孩举起了手。凯在树皮上，补上最后一个勾。）']],
   }),
   h_plan: S('harbor', [
@@ -141,7 +141,7 @@ export const JOURNEY = {
     modifiers: [{ flag: 'craneReady', enemyHp: 0.72 }],
     objective: { type: 'rescue', label: '全队累计行动 12 次，掩护装船', steps: 12 },
     lines: [['系统', '全队累计完成 12 次行动，或提前击退全部追兵，即可掩护撤离。治疗与格挡也会推进装船。']],
-    onWin: [{ exp: 450 }, { heal: 'party' }], win: [['船长', '最后一个上来了！收栈板！'], ['旁白', '（雷跳上甲板，凯抓住她的手腕，两个人一起滚倒在绳堆里。）']],
+    onWin: [{ exp: 450 }], win: [['船长', '最后一个上来了！收栈板！'], ['旁白', '（雷跳上甲板，凯抓住她的手腕，两个人一起滚倒在绳堆里。）']],
   }),
   h_depart: S('harbor', [
     ['船长', '这艘船往南。你们要去北境，换外港的小艇。'],
@@ -208,13 +208,13 @@ export const JOURNEY = {
     ['凯', '这次一起。'],
   ], 's_defend', { pre: [F('trustRyze')] }),
   s_defend: B('snow', ['ice_hound', 'ice_hound', 'demon_soldier2'], 8, 'c3_witch', {
-    onWin: [{ heal: 'party' }, { item: 'ether' }],
+    onWin: [{ item: 'ether' }],
     win: [['旁白', '（居民们从后院递来药与热水。丝薇雅越过围墙，手里的杖开始结霜。）']],
   }),
   c3_witch: B('snow', ['ice_witch'], 8, 's_after', {
     boss: true, telegraph: { enemy: 'ice_witch', skill: 'blizzard', every: 3 },
     lines: [['苍', '她每隔几次行动就会蓄起暴风雪。看见预告，先治疗或格挡，也可以用雷的四连枪延后她的行动。']],
-    onWin: [{ exp: 800 }, { heal: 'party' }],
+    onWin: [{ exp: 800 }],
     win: [['旁白', '（风雪卷回断杖。丝薇雅跪在雪里，看着璃衣襟上的纸太阳。）'], ['丝薇雅', '你以为他们能让你自由？霜华就在地下。自己去问那把剑。'], ['璃', '我会去。但不替他问。']],
   }),
   s_after: S('snow', [

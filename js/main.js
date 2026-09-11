@@ -2,9 +2,13 @@
    main.js — 主循环 / 场景 / UI / 存档 / 音效
    《炎之刃》FLAME BLADE
    ============================================================ */
-import { ACTORS, SKILLS, ITEMS, EQUIPS, SHOPS, STATUS, ELEM, statsAt, expToNext, ENEMIES } from './characters.js';
+import { ACTORS, SKILLS, COMBOS, ITEMS, EQUIPS, SHOPS, STATUS, ELEM, statsAt, expToNext, ENEMIES, MAX_LEVEL } from './characters.js';
 import { SCENES, ENDINGS } from './story.js';
-import { portraitURL } from './portraits.js';
+import { portraitURL, hasPortrait } from './portraits.js';
+import { rollDrops, rollShopStock, restoreLoot, collectLoot, setLootContext } from './loot.js';
+import { RELICS, relicBonus, syncRelics } from './relics.js';
+import * as GR from './growth.js';
+import * as BD from './bonds.js';
 import * as SP from './sprites.js';
 import * as BT from './battle.js';
 
@@ -12,7 +16,21 @@ const W = 960, H = 540;
 const $ = id => document.getElementById(id);
 const cv = $('cv');
 const ctx = cv.getContext('2d');
-const SAVE_KEY = 'flameblade.save.v1';
+/* 多存档槽：四结局的游戏只有一个槽位是硬伤。
+   slot 0 是自动存档，1~3 是手动槽。 */
+const SAVE_PREFIX = 'flameblade.save.v3.';
+const SAVE_SLOTS = 4;
+const slotKey = i => SAVE_PREFIX + i;
+const LEGACY_KEY = 'flameblade.save.v1';
+function slotInfo(i) {
+  try {
+    const raw = localStorage.getItem(slotKey(i)) || (i === 1 ? localStorage.getItem(LEGACY_KEY) : null);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    return { i, t: d.t, chapter: d.chapter || '—', lv: d.party?.[0]?.level || 1, ng: d.flags?.ngPlus || 0 };
+  } catch (e) { return null; }
+}
+function anySave() { for (let i = 0; i < SAVE_SLOTS; i++) if (slotInfo(i)) return true; return false; }
 
 /* ============================================================
    自适应缩放
@@ -106,7 +124,7 @@ if (fullBtn) {
 /* ============================================================
    音效（WebAudio 程序化合成）
    ============================================================ */
-let AC = null, musicTimer = null, musicMode = null;
+let AC = null, musicMode = null;
 function ac() {
   if (!AC) {
     try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; }
@@ -153,33 +171,149 @@ const SFX = {
 };
 function sfx(k) { (SFX[k] || SFX.ui)(); }
 
-const MUSIC = {
-  calm: [261.6, 329.6, 392.0, 523.3, 392.0, 329.6],
-  forest: [220, 277.2, 329.6, 415.3, 329.6, 277.2],
-  snow: [293.7, 349.2, 440, 587.3, 440, 349.2],
-  dark: [155.6, 185, 233.1, 311.1, 233.1, 185],
-  boss: [130.8, 155.6, 196, 261.6, 311.1, 261.6],
-  battle: [196, 233.1, 293.7, 392, 293.7, 233.1],
-  raid: [174.6, 207.7, 261.6, 349.2, 261.6, 207.7],
-  hot: [261.6, 311.1, 392, 523.3, 622.3, 523.3],
-  ending: [349.2, 440, 523.3, 698.5, 523.3, 440],
+/* ============================================================
+   程序化音序器
+   ============================================================
+   此前 BGM 的全部实现是一个 6 音数组，按固定间隔轮播单音三角波——
+   没有节奏、没有和声、没有打击、没有段落变化，一个琶音循环 90 分钟。
+
+   现在是一个真正的小型音序器：和弦层 + 低音层 + 打击层 + 旋律层，
+   四小节一段，A/B 段交替，仍然是纯 WebAudio，不需要任何外部音频文件。 */
+
+const NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const hz = (name, oct) => 440 * Math.pow(2, (NOTE[name] + (oct - 4) * 12 - 9) / 12);
+
+/* 和弦：根音 + 音程结构 */
+const CHORD = {
+  min: [0, 3, 7], maj: [0, 4, 7], min7: [0, 3, 7, 10], maj7: [0, 4, 7, 11],
+  sus4: [0, 5, 7], dim: [0, 3, 6],
 };
+function chordFreqs(root, oct, kind) {
+  const base = hz(root, oct);
+  return CHORD[kind].map(i => base * Math.pow(2, i / 12));
+}
+
+/* 每种气氛的一段编配：
+     bpm   速度
+     prog  和弦进行（四小节，A/B 两段交替）
+     drums 打击型（k 底鼓 / s 军鼓 / h 踩镲 / . 空）
+     lead  旋律动机，按和弦音级取音，null 表示该拍不出声
+     wave  旋律音色 */
+const TRACKS = {
+  calm: {
+    bpm: 76, wave: 'triangle', vol: .5,
+    prog: [['A', 3, 'min7'], ['F', 3, 'maj7'], ['C', 3, 'maj7'], ['G', 3, 'sus4']],
+    progB: [['F', 3, 'maj7'], ['G', 3, 'sus4'], ['A', 3, 'min7'], ['A', 3, 'min7']],
+    drums: 'h...h...h...h...',
+    lead: [0, null, 2, null, 1, null, 0, null, 2, null, 1, null, 0, null, null, null],
+  },
+  forest: {
+    bpm: 88, wave: 'triangle', vol: .5,
+    prog: [['D', 3, 'min'], ['B', 2, 'maj'], ['G', 3, 'maj'], ['A', 3, 'sus4']],
+    progB: [['G', 3, 'maj'], ['D', 3, 'min'], ['A', 3, 'min7'], ['A', 3, 'sus4']],
+    drums: 'k..h..k.h.k..h..',
+    lead: [0, 1, 2, null, 1, null, 2, 3, null, 2, 1, null, 0, null, 1, null],
+  },
+  snow: {
+    bpm: 68, wave: 'sine', vol: .46,
+    prog: [['E', 3, 'min'], ['C', 3, 'maj7'], ['G', 3, 'maj'], ['B', 2, 'min7']],
+    progB: [['C', 3, 'maj7'], ['G', 3, 'sus4'], ['E', 3, 'min'], ['E', 3, 'min']],
+    drums: '..h.....h.......',
+    lead: [2, null, null, 1, null, 0, null, null, 2, null, 3, null, 2, null, null, null],
+  },
+  dark: {
+    bpm: 84, wave: 'sawtooth', vol: .42,
+    prog: [['D', 2, 'min'], ['D', 2, 'min'], ['B', 2, 'dim'], ['A', 2, 'min']],
+    progB: [['F', 2, 'maj'], ['E', 2, 'dim'], ['D', 2, 'min'], ['A', 2, 'sus4']],
+    drums: 'k...k..sk...k..s',
+    lead: [0, null, 0, 1, null, 0, null, null, 2, null, 1, 0, null, null, null, null],
+  },
+  battle: {
+    bpm: 132, wave: 'square', vol: .40,
+    prog: [['A', 2, 'min'], ['G', 2, 'maj'], ['F', 2, 'maj'], ['E', 2, 'maj']],
+    progB: [['A', 2, 'min'], ['C', 3, 'maj'], ['G', 2, 'maj'], ['E', 2, 'maj']],
+    drums: 'k.h.s.h.k.h.s.hh',
+    lead: [0, 2, 1, 2, 0, null, 2, 3, 1, null, 2, 1, 0, null, 0, null],
+  },
+  raid: {
+    bpm: 126, wave: 'sawtooth', vol: .40,
+    prog: [['D', 2, 'min'], ['A', 2, 'min'], ['B', 2, 'dim'], ['A', 2, 'maj']],
+    progB: [['D', 2, 'min'], ['F', 2, 'maj'], ['C', 3, 'maj'], ['A', 2, 'maj']],
+    drums: 'k.k.s.k.k.k.s.s.',
+    lead: [0, 0, 2, null, 1, 1, null, 2, 0, null, 3, 2, 1, null, null, null],
+  },
+  boss: {
+    bpm: 148, wave: 'sawtooth', vol: .42,
+    prog: [['C', 2, 'min'], ['A', 2, 'dim'], ['G', 2, 'min'], ['G', 2, 'maj']],
+    progB: [['C', 2, 'min'], ['E', 2, 'maj'], ['F', 2, 'min'], ['G', 2, 'maj']],
+    drums: 'k.khs.khk.khs.kk',
+    lead: [0, 1, 2, 3, 2, 1, 0, null, 2, 3, 4, 3, 2, null, 0, null],
+  },
+  hot: {
+    bpm: 160, wave: 'square', vol: .44,
+    prog: [['A', 2, 'min'], ['F', 2, 'maj'], ['C', 3, 'maj'], ['G', 2, 'maj']],
+    progB: [['A', 2, 'min'], ['G', 2, 'maj'], ['F', 2, 'maj'], ['E', 2, 'maj']],
+    drums: 'kkhsk.hskkhsk.hs',
+    lead: [0, 2, 4, 2, 3, 2, 1, 2, 0, 2, 4, 5, 4, 2, 1, null],
+  },
+  ending: {
+    bpm: 72, wave: 'triangle', vol: .5,
+    prog: [['C', 3, 'maj7'], ['G', 3, 'maj'], ['A', 3, 'min7'], ['F', 3, 'maj7']],
+    progB: [['F', 3, 'maj7'], ['C', 3, 'maj7'], ['G', 3, 'sus4'], ['C', 3, 'maj7']],
+    drums: '..h.....h...h...',
+    lead: [0, null, 1, 2, null, 1, null, 0, 2, null, 3, null, 2, null, null, null],
+  },
+};
+
+let seqTimer = null, seqStep = 0, seqBar = 0, seqAlt = false;
+
+function playStep(t) {
+  const a = ac(); if (!a) return;
+  const bar = Math.floor(seqStep / 4) % 4;
+  const beat = seqStep % 16;
+  const prog = (seqAlt && t.progB) ? t.progB : t.prog;
+  const [root, oct, kind] = prog[bar];
+
+  // 每小节头：铺和弦 + 低音
+  if (seqStep % 4 === 0) {
+    const freqs = chordFreqs(root, oct, kind);
+    freqs.forEach((f, i) => tone(f, 1.5, 'triangle', .035 * t.vol * (i === 0 ? 1.3 : 1)));
+    tone(hz(root, oct - 1), 1.2, 'sine', .075 * t.vol);
+  }
+  // 打击
+  const d = t.drums[beat];
+  if (d === 'k') { tone(56, .16, 'sine', .30 * t.vol, -26); noise(.05, .06 * t.vol, 90); }
+  else if (d === 's') { noise(.13, .17 * t.vol, 1300); tone(190, .07, 'triangle', .07 * t.vol); }
+  else if (d === 'h') noise(.045, .055 * t.vol, 6500);
+  // 旋律
+  const deg = t.lead[beat];
+  if (deg !== null && deg !== undefined) {
+    const scale = CHORD[kind];
+    const step = scale[deg % scale.length] + 12 * Math.floor(deg / scale.length);
+    tone(hz(root, oct + 1) * Math.pow(2, step / 12), .34, t.wave, .10 * t.vol);
+  }
+}
+
 function setMusic(mode) {
   if (mode === musicMode) return;
   musicMode = mode;
-  if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+  if (seqTimer) { clearInterval(seqTimer); seqTimer = null; }
   if (!mode) return;
-  const seq = MUSIC[mode] || MUSIC.calm;
-  let i = 0;
-  const play = () => {
-    const f = seq[i % seq.length];
-    tone(f, mode === 'boss' || mode === 'hot' ? .5 : .9, 'triangle', mode === 'boss' ? .075 : .05);
-    if (i % 3 === 0) tone(f / 2, 1.1, 'sine', .045);
-    i++;
+  const t = TRACKS[mode] || TRACKS.calm;
+  seqStep = 0; seqBar = 0; seqAlt = false;
+  const stepMs = 60000 / t.bpm / 4;     // 十六分音符
+  const tick = () => {
+    playStep(t);
+    seqStep++;
+    if (seqStep % 16 === 0) { seqBar++; if (seqBar % 4 === 0) seqAlt = !seqAlt; }  // 四小节换段
   };
-  musicTimer = setInterval(play, mode === 'boss' || mode === 'hot' ? 480 : 900);
-  play();
+  seqTimer = setInterval(tick, stepMs);
+  tick();
 }
+
+/* Boss 阶段转换时切到更紧的变奏，由 battle.js 的 checkPhases 调用 */
+function battleMusic(mode) { setMusic(mode); }
+
 
 /* ============================================================
    输入
@@ -240,11 +374,12 @@ function syncInput() {
    Toast
    ============================================================ */
 let toastT = 0;
-function toast(msg) {
+function toast(msg, ms) {
   const el = $('toast');
-  el.textContent = msg;
+  // 战利品提示带稀有度颜色，所以这里允许少量 HTML
+  if (/[<][a-z/]/i.test(msg)) el.innerHTML = msg; else el.textContent = msg;
   el.classList.add('on');
-  toastT = 2.2;
+  toastT = ms ? ms / 1000 : 2.2;
 }
 function updateToast(dt) {
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
@@ -270,7 +405,14 @@ const G = {
   galleryFrom: 'title',
   lastDmg: 0,
   storySeen: false,
+  // 新增系统
+  bonds: {}, relics: {}, codex: {},
+  autoBattle: false, lastDrops: null,
 };
+/* 战斗模块通过这两个钩子查询羁绊与天赋，避免 battle.js 反向依赖存档结构 */
+G.bondLevel = id => BD.bondLevel(G, id);
+G.onBattleMusic = mode => battleMusic(mode);
+G.talentBonus = (m, key) => GR.talentBonus(m, key);
 
 /* 队伍构造 */
 function makeMember(id, level = null) {
@@ -287,6 +429,9 @@ function makeMember(id, level = null) {
     resource: def.resource || 'mp',
     equips, skills: def.skills.filter(s => s.lv <= lv).map(s => s.id),
     bonus: { atk: 0, def: 0, hp: 0 },   // 剧情给的永久加成，recalc 后重新叠加
+    // 养成：属性点 / 技能点 / 天赋，全部进存档并被二周目继承
+    alloc: { str: 0, vit: 0, agi: 0, foc: 0 },
+    points: 0, sp: 0, talents: {},
     isEnemy: false,
   };
 }
@@ -307,6 +452,16 @@ function defaultEquip(id, slot) {
 function recalc(m) {
   const def = ACTORS[m.id];
   const st = statsAt(def, m.level, m.equips);
+  GR.applyStatPoints(st, m.alloc);      // 玩家分配的属性点
+  GR.applyTalentStats(st, m);           // 天赋树的直接属性
+  // 遗物是全队共享的被动加成
+  st.atk += relicBonus(G, 'atk');
+  st.def += relicBonus(G, 'def');
+  st.hp += relicBonus(G, 'hp');
+  st.cri += relicBonus(G, 'cri');
+  st.par += relicBonus(G, 'par');
+  st.blk = Math.min(st.blk, 0.60);
+  st.par = Math.min(st.par, 0.30);
   const hpR = m.maxHp ? m.hp / m.maxHp : 1, mpR = m.maxMp ? m.mp / m.maxMp : 1;
   m.maxHp = st.hp; m.maxMp = st.mp; m.atk = st.atk; m.def = st.def; m.spd = st.spd;
   m.cri = st.cri; m.mpRegen = st.mpRegen;
@@ -338,10 +493,10 @@ function addMember(id, level) {
 function gainExp(amount) {
   const ups = [];
   for (const m of G.party) {
-    if (m.level >= 30) continue;
+    if (m.level >= MAX_LEVEL) continue;
     m.exp += amount;
     let leveled = false;
-    while (m.exp >= expToNext(m.level) && m.level < 30) {
+    while (m.exp >= expToNext(m.level) && m.level < MAX_LEVEL) {
       m.exp -= expToNext(m.level);
       m.level++;
       leveled = true;
@@ -349,6 +504,7 @@ function gainExp(amount) {
       const def = ACTORS[m.id];
       m.skills = def.skills.filter(s => s.lv <= m.level).map(s => s.id);
       const gained = m.skills.filter(s => !before.includes(s)).map(s => SKILLS[s]?.name).filter(Boolean);
+      GR.grantLevelPoints(m, 1);        // 每级 3 属性点 + 1 技能点
       ups.push({ name: m.name, level: m.level, skills: gained });
     }
     if (leveled) {
@@ -375,6 +531,16 @@ function showLevelUps(ups) {
 /* ============================================================
    场景推进
    ============================================================ */
+/* 旗标点亮后登记新遗物 */
+function checkRelics() {
+  const got = syncRelics(G);
+  for (const r of got) {
+    toast(`◇ 获得遗物【${r.name}】`, 2600);
+    if (r.bond) BD.addBond(G, r.bond, 'relic');
+  }
+  if (got.length) for (const m of G.party) recalc(m);
+}
+
 function gotoScene(id) {
   const sc = SCENES[id];
   if (!sc) { console.warn('missing scene', id); return; }
@@ -389,6 +555,8 @@ function gotoScene(id) {
     visited[id] = true;
     for (const a of sc.pre) runAction(a);
   }
+  checkRelics();
+  autoSave();
   if (sc.loading) { showLoading(sc.loadingTitle || sc.chapter, sc.loadingText || ''); G.loadTarget = id; return; }
   $('dialogue').classList.remove('hidden');
   $('choices').classList.add('hidden');
@@ -396,7 +564,11 @@ function gotoScene(id) {
   nextLine();
 }
 
+/* 遗物的战斗特效走和装备词缀同一套键名 */
+G.relicBonus = key => relicBonus(G, key);
+
 function runAction(a) {
+  if (a.bond) { const r = BD.addBond(G, a.bond.id, a.bond.src || 'talk'); if (r.leveled) toast(`※ 与 ${ACTORS[a.bond.id]?.name || a.bond.id} 的羁绊提升到 Lv.${r.to}`); }
   if (!a || typeof a !== 'object') return;
   if (a.set) Object.assign(G.flags, a.set);
   if (a.objective) G.flags.currentObjective = a.objective;
@@ -436,10 +608,19 @@ function advanceScene() {
     const bs = G.battleScene;
     if (bs) { launchBattle(bs); return; }
   }
+  // 营地：休整、聊天涨羁绊、调整养成，然后再继续
+  if (sc.camp && !G.campDone) { G.campDone = true; openCamp(sc); return; }
   if (sc.shop) { openShop(sc.shop); return; }
   if (sc.enemies) { startBattleFromScene(sc); return; }
+  // 第一部的结局：放完结局画面再进第二部
+  if (sc.partEnding && !G.flags[`partShown_${sc.partEnding}`]) {
+    G.flags[`partShown_${sc.partEnding}`] = true;
+    G.flags.part1Ending = sc.partEnding;
+    showEnding(sc.partEnding, sc.next);
+    return;
+  }
   if (sc.ending) { showEnding(sc.ending); return; }
-  if (sc.next) { gotoScene(sc.next); return; }
+  if (sc.next) { G.campDone = false; gotoScene(sc.next); return; }
   // 没有下一步：回到标题
   gotoTitle();
 }
@@ -448,9 +629,10 @@ function nextLine() {
   const sc = G.scene;
   if (!sc || !sc.lines) { finishLines(); return; }
   if (G.lineIdx >= sc.lines.length) { finishLines(); return; }
-  const [name, text] = sc.lines[G.lineIdx];
+  // 台词可选第三项：显式指定表情（['璃','……笨蛋……','cry']）
+  const [name, text, expr] = sc.lines[G.lineIdx];
   G.lineIdx++;
-  showLine(name, text);
+  showLine(name, text, expr);
 }
 function finishLines() {
   const sc = G.scene;
@@ -468,46 +650,83 @@ const PID_MAP = (() => {
   const m = {};
   const put = (n, pid) => { if (n) m[n] = pid; };
   for (const a of Object.values(ACTORS)) { put(a.name, a.portrait); put(a.name + '·' + a.id, a.portrait); }
+  /* 此前 25 个说话人里只有 6 个有立绘，约一半台词显示的是「变暗的凯」，
+     其中小铃 22 句、健次郎 22 句，魔王阿斯特还借用了泽恩的脸。 */
+  put('妹妹·小铃', 'suzu'); put('小铃', 'suzu');
+  put('健次郎', 'kenjiro');
+  put('魔王·阿斯特', 'aster'); put('终焉魔王·阿斯特·真', 'aster'); put('阿斯特', 'aster');
+  put('魔将·古兰', 'grang'); put('古兰', 'grang');
+  put('铁匠', 'smith'); put('药屋学徒', 'smith');
+  put('船长', 'captain'); put('港口护卫', 'captain'); put('护卫', 'captain');
+  put('居民', 'villager'); put('药师', 'villager'); put('孩子', 'villager');
+  put('车夫', 'villager'); put('伤员', 'villager'); put('守钟老人', 'villager');
+  put('村长', 'villager'); put('森之守卫', 'villager');
   put('冰之魔女·丝薇雅', 'baixue'); put('丝薇雅', 'baixue');
-  put('暗影四天王·泽恩', 'zain'); put('泽恩', 'zain');
   put('冰之四天王·白雪', 'baixue'); put('白雪', 'baixue');
-  put('健次郎', null); put('凯', 'kaito');
-  put('魔王·阿斯特', 'zain'); put('终焉魔王·阿斯特·真', 'zain');
-  put('阿斯特', 'zain'); put('古兰', 'zain');
-  put('魔将·古兰', 'zain');
+  put('暗影四天王·泽恩', 'zain'); put('泽恩', 'zain');
+  put('凯', 'kaito');
+  // 第二部
+  put('白泽', 'baize'); put('九尾', 'baize'); put('青鸾', 'baize');
+  put('玄鹿', 'baize'); put('守约之神', 'baize');
   return m;
 })();
 
-function showLine(name, text) {
+/* 说话人 → 表情的兜底推断。
+   剧本可以在台词里显式写第三项（['璃','……笨蛋……','cry']），
+   没写的时候按标点与内容猜一个，比全程同一张微笑脸强得多。 */
+function guessExpr(name, text) {
+  if (/（哭|眼泪|抹眼|哭出声/.test(text)) return 'cry';
+  if (/！{1,}$|——！|「[^」]*！」/.test(text) && text.length < 40) return 'shout';
+  if (/（笑|笑了|咧嘴|嘿嘿/.test(text)) return 'smile';
+  if (/别管我|撑着点|咳|受伤|（喘|倒下/.test(text)) return 'hurt';
+  if (/杀|滚|闭嘴|混蛋|可恶|别过来/.test(text)) return 'angry';
+  return 'normal';
+}
+
+function showLine(name, text, expr) {
   const nm = $('dlg-name-text');
   const tx = $('dlg-text');
   const img = $('dlg-img');
   const wrap = $('dialogue');
+  const port = img.parentElement;
   wrap.classList.remove('hidden');
-  // 名字与立绘
-  const speaker = Object.values(ACTORS).find(a => a.name === name);
-  if (name === '旁白') {
-    nm.textContent = '';
-    img.src = portraitURL(G.party[0]?.portrait || 'kaito');
-    img.style.filter = 'grayscale(.7) brightness(.7)';
-  } else if (name === '系统') {
-    nm.textContent = 'SYSTEM';
-    img.src = portraitURL(G.party[0]?.portrait || 'kaito');
-    img.style.filter = 'hue-rotate(160deg) brightness(.8)';
+
+  /* 旁白占全剧 28% 的台词，此前一直显示一张灰度的凯。
+     现在直接把立绘收起来，对话框自己撑满。 */
+  if (name === '旁白' || name === '系统') {
+    nm.textContent = name === '系统' ? 'SYSTEM' : '';
+    port.classList.add('hidden');
+    wrap.classList.add('no-portrait');
   } else {
+    const pid = PID_MAP[name]
+      || (name.includes('璃') ? 'ryze' : name.includes('凯') ? 'kaito' : null);
+    if (pid && hasPortrait(pid)) {
+      port.classList.remove('hidden');
+      wrap.classList.remove('no-portrait');
+      const e = expr || guessExpr(name, text);
+      const next = portraitURL(pid, e);
+      if (img.src !== next) {
+        img.src = next;
+        // 换人/换表情时给一次轻微的进场，视觉上不再是「贴图突然替换」
+        img.classList.remove('pop');
+        void img.offsetWidth;
+        img.classList.add('pop');
+      }
+      img.style.filter = 'none';
+    } else {
+      port.classList.add('hidden');
+      wrap.classList.add('no-portrait');
+    }
     nm.textContent = name;
-    const mapped = PID_MAP[name];
-    const pid = (mapped !== undefined && mapped !== null) ? mapped
-      : (name.includes('璃') ? 'ryze' : name.includes('凯') ? 'kaito' : null);
-    img.src = portraitURL(pid || G.party[0]?.portrait || 'kaito');
-    img.style.filter = pid ? 'none' : 'brightness(.72) saturate(.8)';
   }
+
   G.fullText = text;
   G.typed = 0; G.typing = text.length * 0.014 + 0.06;
   tx.textContent = '';
   tx.className = 'dlg-text typing';
   $('dlg-next').classList.add('hidden');
 }
+
 function updateTyping(dt) {
   if (G.typing > 0) {
     G.typing -= dt;
@@ -535,6 +754,8 @@ function formatLine(s) {
 /* ============================================================
    抉择
    ============================================================ */
+/* 选项门禁。第一部的线性剧情用不到，第二部的神域枢纽要靠它
+   实现「七柱任选顺序、全部打完才开最深处」。 */
 function choiceAvailable(c) {
   return !!c && !(c.unless && G.flags[c.unless]) &&
     (!c.requireAll || c.requireAll.every(k => G.flags[k])) &&
@@ -611,6 +832,25 @@ function launchBattle(sc) {
   buildCommandUI();
 }
 
+/* 战利品：普通战斗小概率掉一件，首领必掉且保底稀有。
+   等级取敌方最高等级，所以越往后掉的东西越好。 */
+function grantDrops(b) {
+  const sc = G.stageDef || {};
+  const lv = Math.max(1, ...b.enemies.map(e => e.level || 1));
+  const isBoss = !!sc.boss || b.enemies.some(e => e.boss);
+  // 图鉴：登记本场遇到并击破的敌人
+  for (const e of b.enemies) if (e.dead) G.codex[e.ref] = (G.codex[e.ref] || 0) + 1;
+  setLootContext({ ngPlus: G.flags.ngPlus || 0, flags: G.flags });
+  // 首领掉落走图鉴里它自己的主题（打古兰掉「赤狱战场」系）
+  const theme = sc.theme || b.enemies.find(e => e.boss && e.def && e.def.theme)?.def.theme || null;
+  const drops = rollDrops({ boss: isBoss, theme }, lv, { luck: (G.flags.ngPlus || 0) * 0.25 });
+  if (!drops.length) return;
+  for (const eq of drops) G.bag[eq.id] = (G.bag[eq.id] || 0) + 1;
+  G.lastDrops = drops;
+  const names = drops.map(e => `<span style="color:${e.col}">${e.name}</span>`).join('、');
+  toast(`※ 战利品：${names}`, 2600);
+}
+
 function battleEndToStory() {
   const sc = G.stageDef;
   const nextScene = {
@@ -638,11 +878,16 @@ G.onBattleWin = function (b, exp, gold) {
     G.gold += gold;
     const ups = gainExp(exp);
     showLevelUps(ups);
-    // 战后回复少量
-    for (const m of G.party) if (!m.dead) m.mp = Math.min(m.maxMp, m.mp + Math.floor(m.maxMp * 0.15));
+    /* 战后回复：固定两成，不再回满。
+       补给与休整因此变成真正需要规划的事，而不是每场打完自动清零。 */
+    for (const m of G.party) if (!m.dead) {
+      m.hp = Math.min(m.maxHp, m.hp + Math.floor(m.maxHp * 0.20));
+      m.mp = Math.min(m.maxMp, m.mp + Math.floor(m.maxMp * 0.20));
+    }
     // 复活倒下的同伴（残血）
     for (const m of G.party) if (m.dead) { m.dead = false; m.hp = Math.max(1, Math.floor(m.maxHp * 0.15)); m.pose = 'idle'; }
     for (const m of G.party) if (m.resource === 'rage') m.mp = 0;   // 怒气不跨战斗保留
+    grantDrops(b);
     battleEndToStory();
   }, 900);
 };
@@ -677,10 +922,15 @@ function buildCommandUI() {
   const m = b.party[G.curActor];
   if (!m || m.dead) return;
   const resName = m.resource === 'rage' ? '怒气' : '术力';
+  const stage = BT.releaseStage(m);
   $('cmd-actor').innerHTML = `<div class="an">${m.name}</div>
     <div style="color:#bbb2dd">Lv.${m.level} · ${m.title}</div>
     <div style="color:#ffb98a;margin-top:3px">HP ${Math.ceil(m.hp)}/${m.maxHp}</div>
-    <div style="color:${m.resource === 'rage' ? '#ff9a3c' : '#6fd8ff'}">${resName} ${Math.ceil(m.mp)}/${m.maxMp}</div>`;
+    <div style="color:${m.resource === 'rage' ? '#ff9a3c' : '#6fd8ff'}">${resName} ${Math.ceil(m.mp)}/${m.maxMp}${stage ? ` <span style="color:#ffd76a">解放·${'壹贰叁'[stage - 1]}</span>` : ''}</div>
+    <div style="margin-top:5px;display:flex;gap:6px">
+      <button class="mini" id="btn-speed" style="padding:3px 8px;font-size:11px">倍速 ${BT.battleSpeedLabel()}</button>
+      <button class="mini ${G.autoBattle ? 'g' : ''}" id="btn-auto" style="padding:3px 8px;font-size:11px">自动 ${G.autoBattle ? '开' : '关'}</button>
+    </div>`;
   const mk = (label, sub, fn, dis, cls = '') => {
     const btn = document.createElement('button');
     btn.className = 'cbtn ' + cls;
@@ -692,14 +942,95 @@ function buildCommandUI() {
   mk('攻击', '斩击', () => chooseTarget(m, 'enemy', i => doCmd(m, { type: 'attack', target: i })));
   mk('技能', '术式/奥义', () => openSkills(m));
   mk('道具', `剩余${Object.values(G.bag).reduce((a, b2) => a + b2, 0)}`, () => openBagInBattle(m));
-  mk('格挡', '大幅提升格挡/弹反率', () => doCmd(m, { type: 'guard' }));
+  mk('格挡', '预判弹反 · 免伤并反击', () => doCmd(m, { type: 'guard' }));
+  // 连携：行动条相邻 + 羁绊达标才亮
+  const combos = BT.availableCombos(b, m);
+  if (combos.length) {
+    mk('连携', combos.map(c => c.name).join('/'), () => openCombos(m, combos), false, 'combo');
+  }
   if (b.objective) {
     const label = b.objective.type === 'purify' ? '净化' : '封门';
     if (b.objective.type !== 'rescue') mk(label, BT.objectiveText(b), () => doCmd(m, { type: 'objective' }), !BT.canObjective(b, m));
   }
   // 剧本用 escape 标记哪些战斗可以逃。此前只有这个标记，指令栏里从来没有出口。
   if (b.def && b.def.escape) mk('逃跑', '脱离战斗', () => doCmd(m, { type: 'escape' }));
+  const sp = $('btn-speed'), au = $('btn-auto');
+  if (sp) sp.onclick = e => { e.stopPropagation(); sfx('ui'); BT.cycleBattleSpeed(); buildCommandUI(); };
+  if (au) au.onclick = e => {
+    e.stopPropagation(); sfx('ui');
+    G.autoBattle = !G.autoBattle;
+    buildCommandUI();
+    if (G.autoBattle) autoTakeTurn();
+  };
   $('cmdmenu').classList.remove('hidden');
+  if (G.autoBattle) autoTakeTurn();
+}
+
+/* 自动战斗：挑一个合理的指令替玩家出手。
+   优先级：救濒死的同伴 → 能放的连携 → 够资源的解放/奥义 → 打弱点 → 普攻。 */
+function autoTakeTurn() {
+  const b = G.battle;
+  if (!b || b.over || b.ui.mode !== 'input') return;
+  const m = b.party[G.curActor];
+  if (!m || m.dead) return;
+  setTimeout(() => {
+    if (!G.autoBattle || !G.battle || G.battle !== b || b.ui.mode !== 'input') return;
+    const purge = b.objective?.type === 'purify' ? (b.objective.targets || []) : null;
+    const alive = b.enemies.map((e, i) => ({ e, i }))
+      .filter(x => !x.e.dead && (!purge || purge.includes(x.e.ref)));
+    if (!alive.length) return doCmd(m, { type: 'guard' });
+    const hurt = b.party.map((p, i) => ({ p, i })).filter(x => !x.p.dead && x.p.hp / x.p.maxHp < 0.35);
+    const downed = b.party.map((p, i) => ({ p, i })).filter(x => x.p.dead);
+    const has = id => m.skills.includes(id) && SKILLS[id] && m.mp >= (SKILLS[id].mp || 0);
+
+    // 目标战：轮到该角色且条件满足时，优先推进目标（净化 / 封门）
+    if (b.objective && BT.canObjective(b, m)) return doCmd(m, { type: 'objective' });
+    if (downed.length && has('fusheng')) return doCmd(m, { type: 'skill', skill: 'fusheng', target: downed[0].i });
+    if (hurt.length && has('liaoshang')) return doCmd(m, { type: 'skill', skill: 'liaoshang', target: hurt[0].i });
+    const combos = BT.availableCombos(b, m);
+    if (combos.length) return doCmd(m, { type: 'combo', combo: combos[0].id, target: alive[0].i });
+    // 够资源就放最高档的解放 / 奥义
+    const ults = m.skills.map(id => SKILLS[id]).filter(sk => sk && (sk.ult || sk.release) && m.mp >= (sk.mp || 0));
+    if (ults.length) {
+      ults.sort((a, c) => (c.mp || 0) - (a.mp || 0));
+      return doCmd(m, { type: 'skill', skill: ults[0].id, target: alive[0].i });
+    }
+    // 打弱点
+    for (const sk of m.skills.map(id => SKILLS[id]).filter(Boolean)) {
+      if (sk.type !== 'atk' || m.mp < (sk.mp || 0)) continue;
+      const tg = alive.find(x => (x.e.weak || []).includes(sk.elem));
+      if (tg) return doCmd(m, { type: 'skill', skill: sk.id, target: tg.i });
+    }
+    doCmd(m, { type: 'attack', target: alive[0].i });
+  }, 220);
+}
+
+/* 连携选择 */
+function openCombos(m, combos) {
+  const b = G.battle;
+  hideSubmenu();
+  let el = $('skilllist');
+  if (!el) { el = document.createElement('div'); el.id = 'skilllist'; $('cmdmenu').appendChild(el); }
+  el.innerHTML = `<div class="sk-head"><span>${m.name} 的连携</span><span style="color:#ffb98a">发动后参与者本回合一起消耗</span></div>
+    <div class="sk-grid">${combos.map(c => `<button class="sk" data-c="${c.id}">
+      <span class="c" style="color:#ffd76a">Lv${c.bond}</span>
+      <div class="n">${c.name}</div>
+      <div class="d">${c.members.map(id => ACTORS[id].name).join(' + ')}　${c.desc}</div>
+    </button>`).join('')}
+      <button class="sk" data-c="__cancel"><div class="n">← 返回</div></button>
+    </div>`;
+  el.classList.remove('hidden');
+  el.querySelectorAll('.sk').forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation(); sfx('ui');
+      const id = btn.dataset.c;
+      if (id === '__cancel') { hideSubmenu(); buildCommandUI(); return; }
+      const c = COMBOS[id];
+      hideSubmenu();
+      if (c.target === 'one') chooseTarget(m, 'enemy', i => doCmd(m, { type: 'combo', combo: id, target: i }));
+      else doCmd(m, { type: 'combo', combo: id });
+    };
+  });
 }
 /* 目标选择界面。
    此前攻击和敌方道具永远打「第一个活着的敌人」，单体治疗和友方道具永远作用在
@@ -863,8 +1194,30 @@ G.sfx = sfx;
 /* ============================================================
    商店
    ============================================================ */
+/* 第二部的商店没有固定货架：按队伍等级现场生成一批，
+   每次进店都不一样，逛店本身变成一件有期待的事。 */
+const DYNAMIC_SHOPS = {
+  spirit: { name: '仙灵之野 · 换物处', consum: ['potion_hi', 'ether', 'revive', 'elixir'], n: 6 },
+  edge: { name: '断天之径 · 无名者的摊子', consum: ['potion_hi', 'elixir', 'revive', 'bomb', 'seal'], n: 7 },
+  divine: { name: '神域 · 静室补给', consum: ['elixir', 'revive', 'bomb', 'seal', 'ether'], n: 8 },
+  last: { name: '终幕之前 · 最后一次整备', consum: ['elixir', 'revive', 'bomb'], n: 8 },
+};
+function shopDef(id) {
+  const dyn = DYNAMIC_SHOPS[id];
+  if (!dyn) return SHOPS[id];
+  const cache = G.shopStock || (G.shopStock = {});
+  if (!cache[id]) {
+    const lv = Math.max(1, Math.round(G.party.reduce((a, m) => a + m.level, 0) / Math.max(1, G.party.length)));
+    setLootContext({ ngPlus: G.flags.ngPlus || 0, flags: G.flags });
+    const stock = rollShopStock(lv, dyn.n, { luck: (G.flags.ngPlus || 0) * 0.3 });
+    cache[id] = [...dyn.consum, ...stock.map(e => e.id)];
+  }
+  return { name: dyn.name, items: cache[id] };
+}
+
 function openShop(id) {
-  const shop = SHOPS[id];
+  const shop = shopDef(id);
+  if (!shop) { goAfterShop(); return; }
   G.mode = 'shop';
   $('dialogue').classList.add('hidden');
   $('choices').classList.add('hidden');
@@ -877,9 +1230,9 @@ function openShop(id) {
     const price = it.price || 0;
     const owned = G.bag[k] || 0;
     const eq = EQUIPS[k];
-    const tag = eq ? `<span class="tag eq">${eq.slot === 'weapon' ? '武器' : eq.slot === 'armor' ? '护甲' : '饰品'}</span>` : `<span class="tag">持有 ${owned}</span>`;
+    const tag = eq ? `<span class="tag eq">${eq.rarity || ''}${eq.slot === 'weapon' ? '武器' : eq.slot === 'armor' ? '护甲' : '饰品'}</span>` : `<span class="tag">持有 ${owned}</span>`;
     return `<div class="shop-row">
-        <div><b style="color:#ffd76a">${it.name}</b> ${tag}
+        <div><b style="color:${eq && eq.col ? eq.col : '#ffd76a'}">${it.name}</b> ${tag}
           <div style="font-size:11.5px;color:#bbb2dd;margin-top:3px">${it.desc}</div>
           <div style="font-size:11px;color:#8fe6ff;margin-top:2px">${statLine(eq || it)}</div>
         </div>
@@ -999,32 +1352,277 @@ function togglePanel(kind, open) {
 }
 function openPartyPanel() {
   enterPanel('party');
-  $('panel-title').textContent = '◈ 队伍状态　持有 ' + G.gold + ' 金';
+  const unspent = G.party.reduce((a, m) => a + (m.points || 0) + (m.sp || 0), 0);
+  $('panel-title').textContent = `◈ 队伍状态　持有 ${G.gold} 金${unspent ? `　· 有 ${unspent} 点未分配` : ''}`;
   const body = $('panel-body');
   body.innerHTML = G.party.map(m => {
-    const def = ACTORS[m.id];
+    const bp = BD.bondProgress(G, m.id);
+    const pend = (m.points || 0) + (m.sp || 0);
     return `<div class="pcard">
       <img src="${portraitURL(m.portrait)}" alt="">
       <div class="pi">
-        <div class="pn">${m.name} <span style="font-size:11.5px;color:#bbb2dd">Lv.${m.level} · ${m.title}</span></div>
+        <div class="pn">${m.name} <span style="font-size:11.5px;color:#bbb2dd">Lv.${m.level} · ${m.title}</span>
+          ${pend ? `<span class="tag" style="background:#5a3a12;color:#ffd76a">可分配 ${pend}</span>` : ''}</div>
         <div class="bar hp"><i style="width:${(m.hp / m.maxHp * 100).toFixed(1)}%"></i></div>
         <div class="pv">HP ${Math.ceil(m.hp)} / ${m.maxHp}</div>
         <div class="bar mp"><i style="width:${(m.mp / m.maxMp * 100).toFixed(1)}%"></i></div>
-        <div class="pv">MP ${Math.ceil(m.mp)} / ${m.maxMp}　攻击 ${m.atk}　防御 ${m.def}　速度 ${m.spd}</div>
-        <div class="bar ht"><i style="width:${Math.round((m.mp / Math.max(1, m.maxMp)) * 100)}%"></i></div>
-        <div class="pv">${m.resource === 'rage' ? '怒气' : '术力'} ${Math.ceil(m.mp)}/${m.maxMp}　格挡${Math.round((m.blk || 0) * 100)}% 弹反${Math.round((m.par || 0) * 100)}%　EXP ${m.exp}/${expToNext(m.level)}</div>
-        <div>${m.skills.map(s => `<span class="tag">${SKILLS[s]?.name || s}</span>`).join('')}</div>
-        <div>${m.equips.filter(Boolean).map(e => `<span class="tag eq">${EQUIPS[e]?.name}</span>`).join('') || '<span class="tag">未装备</span>'}</div>
+        <div class="pv">${m.resource === 'rage' ? '怒气' : '术力'} ${Math.ceil(m.mp)} / ${m.maxMp}　攻击 ${m.atk}　防御 ${m.def}　速度 ${m.spd}</div>
+        <div class="pv">会心${Math.round((m.cri || 0) * 100)}%　格挡${Math.round((m.blk || 0) * 100)}%　弹反${Math.round((m.par || 0) * 100)}%　EXP ${m.exp}/${expToNext(m.level)}</div>
+        <div class="pv">羁绊 Lv.${bp.lv}${bp.full ? '（满）' : `　${bp.cur}/${bp.need}`}</div>
+        <div>${m.skills.map(sk => `<span class="tag">${SKILLS[sk]?.name || sk}</span>`).join('')}</div>
+        <div>${m.equips.filter(Boolean).map(e => {
+      const eq = EQUIPS[e];
+      return `<span class="tag eq" style="${eq && eq.col ? `color:${eq.col}` : ''}">${eq?.name || e}</span>`;
+    }).join('') || '<span class="tag">未装备</span>'}</div>
+        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+          <button class="mini" data-grow="${m.id}">养成${pend ? ' ●' : ''}</button>
+          <button class="mini g" data-equip="${m.id}">装备</button>
+        </div>
       </div>
     </div>`;
   }).join('') + `<div style="grid-column:1/-1;font-size:12px;color:#bbb2dd;margin-top:6px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="mini" id="go-relics">◇ 遗物 ${Object.keys(G.relics || {}).length}/${RELICS.length}</button>
+        <button class="mini" id="go-bonds">◈ 羁绊</button>
+        <button class="mini" id="go-codex">✦ 图鉴</button>
+      </div>
       <p>当前目标：${G.flags.currentObjective || '陪小铃完成村里的事情。'}</p>
       <p>旅程支援：${[['forestAid', '森林根系'], ['harborAid', '港町船队'], ['northAid', '北境灯塔']].map(([key, label]) => `${G.flags[key] ? '✓' : '○'} ${label}`).join('　')}</p>
       <p>封门准备：${G.flags.sealKnowledge ? '✓ 已掌握完整封门法' : '○ 尚未读完完整术式'}；三地支援齐全可解除共同封门的代价。</p>
-      <p>同伴往事：${[['leiBond', '雷'], ['ryzeBond', '璃'], ['cangBond', '苍']].map(([key, label]) => `${G.flags[key] ? '✓' : '○'} ${label}`).join('　')}</p>
-      道具：${Object.keys(G.bag).filter(k => G.bag[k] > 0).map(k => `${ITEMS[k]?.name || EQUIPS[k]?.name || k}×${G.bag[k]}`).join('、') || '无'}
+      道具：${Object.keys(G.bag).filter(k => G.bag[k] > 0 && !EQUIPS[k]).map(k => `${ITEMS[k]?.name || k}×${G.bag[k]}`).join('、') || '无'}
     </div>`;
+  body.querySelectorAll('[data-grow]').forEach(b => b.onclick = e => { e.stopPropagation(); sfx('ui'); openGrowth(b.dataset.grow); });
+  body.querySelectorAll('[data-equip]').forEach(b => b.onclick = e => { e.stopPropagation(); sfx('ui'); openEquipScreen(b.dataset.equip, openPartyPanel); });
+  $('go-relics').onclick = e => { e.stopPropagation(); sfx('ui'); openRelics(); };
+  $('go-bonds').onclick = e => { e.stopPropagation(); sfx('ui'); openBonds(); };
+  $('go-codex').onclick = e => { e.stopPropagation(); sfx('ui'); openCodex(); };
   $('panel').classList.remove('hidden');
+}
+
+/* ============================================================
+   营地
+   ============================================================
+   每章之间的据点。把此前散落在各处的东西收到一个地方：
+   休整、同伴对话（涨羁绊）、养成调整、补给。 */
+function openCamp(sceneDef) {
+  const talked = G.flags.campTalk || (G.flags.campTalk = {});
+  const key = G.sceneId;
+  const rows = G.party.filter(m => m.id !== 'kaito').map(m => {
+    const done = talked[`${key}_${m.id}`];
+    const bp = BD.bondProgress(G, m.id);
+    return `<div class="shop-row">
+      <div><b>${m.name}</b>　<span style="color:#ffd76a;font-size:12px">羁绊 Lv.${bp.lv}</span>
+        <div style="font-size:11.5px;color:#bbb2dd;margin-top:2px">${done ? '这一站已经聊过了。' : CAMP_TALK[m.id] || '想说点什么吗？'}</div></div>
+      <button class="mini" data-talk="${m.id}" ${done ? 'disabled' : ''}>${done ? '已聊' : '聊聊'}</button>
+    </div>`;
+  }).join('');
+
+  const restCost = 30 + G.party[0].level * 8;
+  openPanel('△ 营地', `<div style="grid-column:1/-1">
+    <div style="font-size:12px;color:#bbb2dd;margin-bottom:10px">战斗后只回复两成生命。要走远路，得先在这里把状态补回来。</div>
+    <div class="shop-row">
+      <div><b>休整</b><div style="font-size:11.5px;color:#bbb2dd;margin-top:2px">全队回复至满，并解除倒下状态。</div></div>
+      <button class="mini" id="camp-rest" ${G.gold < restCost ? 'disabled' : ''}>${restCost} 金</button>
+    </div>
+    <div style="color:#ffd76a;font-weight:700;margin:14px 0 6px">同伴</div>
+    ${rows || '<div style="color:#8a7d8c;font-size:12px">暂时只有你一个人。</div>'}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+      <button class="mini" id="camp-party">◈ 队伍 / 养成</button>
+      ${sceneDef.shop ? '<button class="mini" id="camp-shop">◆ 补给</button>' : ''}
+      <button class="mini g" id="camp-go">继续前进 →</button>
+    </div>
+  </div>`);
+
+  $('camp-rest').onclick = e => {
+    e.stopPropagation();
+    if (G.gold < restCost) return;
+    G.gold -= restCost;
+    for (const m of G.party) { m.dead = false; m.hp = m.maxHp; if (m.resource !== 'rage') m.mp = m.maxMp; }
+    sfx('heal'); toast('※ 全队恢复了');
+    openCamp(sceneDef);
+  };
+  document.querySelectorAll('[data-talk]').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const id = b.dataset.talk;
+    talked[`${key}_${id}`] = true;
+    const r = BD.addBond(G, id, 'talk');
+    sfx('ui');
+    toast(r.leveled ? `※ 与 ${ACTORS[id].name} 的羁绊提升到 Lv.${r.to}！` : `※ 与 ${ACTORS[id].name} 的羁绊加深了`);
+    openCamp(sceneDef);
+  });
+  $('camp-party').onclick = e => { e.stopPropagation(); openPartyPanel(); };
+  const cs = $('camp-shop');
+  if (cs) cs.onclick = e => { e.stopPropagation(); closePanel(); openShop(sceneDef.shop); };
+  $('camp-go').onclick = e => {
+    e.stopPropagation();
+    closePanel();
+    G.mode = 'scene';
+    const sc2 = G.scene;
+    if (sc2.shop) { openShop(sc2.shop); return; }
+    if (sc2.enemies) { startBattleFromScene(sc2); return; }
+    if (sc2.choices) { showChoices(sc2.choices); return; }
+    if (sc2.next) { G.campDone = false; gotoScene(sc2.next); return; }
+    gotoTitle();
+  };
+}
+
+/* 营地闲聊的一句提示，真正的内容在羁绊等级里体现 */
+const CAMP_TALK = {
+  cang: '他在翻那本记名字的册子。',
+  lei: '她在缠枪柄上的布，缠到第三层了。',
+  ryze: '她坐在火边，手里捏着那枚纸太阳。',
+};
+
+/* ============================================================
+   养成：属性点 + 天赋树
+   ============================================================ */
+function openGrowth(memberId) {
+  const m = G.party.find(p => p.id === memberId);
+  if (!m) return;
+  const talents = GR.TALENTS[m.id] || [];
+  const branches = GR.BRANCHES[m.id] || [];
+
+  const statRows = GR.STATS.map(st => `<div class="shop-row">
+      <div><b style="color:${st.col}">${st.name}</b>　<span style="color:#bbb2dd;font-size:11.5px">${st.desc}</span>
+        <div style="font-size:12px;color:#8fe6ff;margin-top:2px">已投入 ${m.alloc[st.id] || 0}</div></div>
+      <button class="mini" data-stat="${st.id}" ${(m.points || 0) < 1 ? 'disabled' : ''}>+1</button>
+    </div>`).join('');
+
+  const treeCols = branches.map(br => {
+    const nodes = talents.filter(t => t.br === br);
+    return `<div style="flex:1;min-width:190px">
+      <div style="color:#ffd76a;font-weight:700;margin-bottom:6px">${br}</div>
+      ${nodes.map(t => {
+      const rank = (m.talents && m.talents[t.id]) || 0;
+      const chk = GR.canLearn(m, t.id);
+      const done = rank >= t.max;
+      return `<div class="shop-row" style="align-items:flex-start">
+          <div style="flex:1">
+            <b style="color:${done ? '#ffd76a' : rank ? '#8fe6ff' : '#e8e0f0'}">${t.name || t.br}</b>
+            <span style="font-size:11px;color:#8a7d8c">${rank}/${t.max}</span>
+            <div style="font-size:11.5px;color:#bbb2dd;margin-top:2px">${t.desc}</div>
+            ${!chk.ok && !done ? `<div style="font-size:11px;color:#8a7d8c;margin-top:2px">${chk.why}</div>` : ''}
+          </div>
+          <button class="mini" data-tal="${t.id}" ${chk.ok ? '' : 'disabled'}>+</button>
+        </div>`;
+    }).join('')}
+    </div>`;
+  }).join('');
+
+  openPanel(`◈ ${m.name} 的养成`, `
+    <div style="grid-column:1/-1">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;font-size:13px">
+        <span>属性点 <b style="color:#ffd76a">${m.points || 0}</b></span>
+        <span>技能点 <b style="color:#ffd76a">${m.sp || 0}</b></span>
+        <span style="color:#bbb2dd">攻${m.atk} 防${m.def} 速${m.spd} 生命${m.maxHp} ${m.resource === 'rage' ? '怒气' : '术力'}${m.maxMp}</span>
+      </div>
+      <div style="color:#ffd76a;font-weight:700;margin:10px 0 6px">属性点</div>
+      ${statRows}
+      <div style="color:#ffd76a;font-weight:700;margin:16px 0 6px">天赋树　<span style="font-size:11.5px;color:#bbb2dd;font-weight:400">同一分支要点满上一层才能往下走</span></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">${treeCols}</div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="mini g" id="grow-back">← 返回队伍</button>
+        <button class="mini" id="grow-respec">洗点重来</button>
+      </div>
+    </div>`);
+
+  document.querySelectorAll('[data-stat]').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    if ((m.points || 0) < 1) return;
+    m.points--;
+    m.alloc[b.dataset.stat] = (m.alloc[b.dataset.stat] || 0) + 1;
+    recalc(m); sfx('levelup'); openGrowth(memberId);
+  });
+  document.querySelectorAll('[data-tal]').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const r = GR.learnTalent(m, b.dataset.tal);
+    if (!r.ok) { toast(r.why); return; }
+    recalc(m); sfx('levelup'); openGrowth(memberId);
+  });
+  $('grow-back').onclick = e => { e.stopPropagation(); openPartyPanel(); };
+  $('grow-respec').onclick = e => {
+    e.stopPropagation();
+    const r = GR.respec(m);
+    recalc(m); sfx('heal');
+    toast(`退回 ${r.points} 属性点、${r.sp} 技能点`);
+    openGrowth(memberId);
+  };
+}
+
+/* ============================================================
+   羁绊
+   ============================================================ */
+function openBonds() {
+  const rows = G.party.map(m => {
+    const bp = BD.bondProgress(G, m.id);
+    const unlocked = Object.values(COMBOS).filter(c => c.members.includes(m.id) && bp.lv >= c.bond);
+    const locked = Object.values(COMBOS).filter(c => c.members.includes(m.id) && bp.lv < c.bond);
+    return `<div class="shop-row" style="align-items:flex-start">
+      <div style="flex:1">
+        <b>${m.name}</b>　<span style="color:#ffd76a">羁绊 Lv.${bp.lv}</span>
+        <div class="bar ht" style="margin:5px 0"><i style="width:${bp.full ? 100 : Math.round(bp.cur / bp.need * 100)}%"></i></div>
+        <div style="font-size:11.5px;color:#bbb2dd">${bp.full ? '已达上限' : `再积累 ${bp.need - bp.cur} 点升到 Lv.${bp.lv + 1}`}</div>
+        <div style="margin-top:5px">${unlocked.map(c => `<span class="tag eq">${c.name}</span>`).join('')}${locked.map(c => `<span class="tag" style="opacity:.45">${c.name}（Lv${c.bond}）</span>`).join('')}</div>
+      </div>
+    </div>`;
+  }).join('');
+  openPanel('◈ 羁绊', `<div style="grid-column:1/-1">
+    ${rows}
+    <div style="font-size:12px;color:#bbb2dd;margin-top:10px">
+      <p>积累方式：${Object.values(BD.BOND_SOURCES).map(x => `${x.name} +${x.v}`).join('　')}</p>
+      <p>连携技需要两人在【出手顺序】上相邻才会在战斗中亮起；四人连携只要全员存活。</p>
+    </div>
+    <button class="mini g" id="bond-back" style="margin-top:12px">← 返回队伍</button>
+  </div>`);
+  $('bond-back').onclick = e => { e.stopPropagation(); openPartyPanel(); };
+}
+
+/* ============================================================
+   遗物
+   ============================================================ */
+function openRelics() {
+  const got = G.relics || {};
+  const rows = RELICS.map(r => {
+    const have = !!got[r.id];
+    return `<div class="shop-row" style="align-items:flex-start;${have ? '' : 'opacity:.5'}">
+      <div style="flex:1">
+        <b style="color:${have ? '#ffd76a' : '#8a7d8c'}">${have ? r.name : '？？？'}</b>
+        <div style="font-size:11.5px;color:#8fe6ff;margin-top:2px">${have ? r.bonusText : '尚未找到'}</div>
+        ${have ? `<div style="font-size:12px;color:#bbb2dd;margin-top:4px;line-height:1.7">${r.memory}</div>` : `<div style="font-size:11.5px;color:#6b6072;margin-top:4px">${r.hint}</div>`}
+      </div>
+    </div>`;
+  }).join('');
+  openPanel(`◇ 遗物　${Object.keys(got).length}/${RELICS.length}`, `<div style="grid-column:1/-1">
+    <div style="font-size:12px;color:#bbb2dd;margin-bottom:8px">路上捡到的东西。每一件都记得一段事，也都在战斗里留下一点影响。</div>
+    ${rows}
+    <button class="mini g" id="relic-back" style="margin-top:12px">← 返回队伍</button>
+  </div>`);
+  $('relic-back').onclick = e => { e.stopPropagation(); openPartyPanel(); };
+}
+
+/* ============================================================
+   图鉴
+   ============================================================ */
+function openCodex() {
+  const seen = G.codex || {};
+  const list = Object.values(ENEMIES).filter(e => e.id !== 'training_dummy');
+  const rows = list.map(e => {
+    const n = seen[e.id] || 0;
+    if (!n) return `<div class="shop-row" style="opacity:.4"><div><b>？？？</b><div style="font-size:11.5px;color:#8a7d8c">尚未遭遇</div></div></div>`;
+    return `<div class="shop-row" style="align-items:flex-start">
+      <div style="flex:1">
+        <b style="color:${e.boss ? '#ffd76a' : '#e8e0f0'}">${e.name}</b>　<span style="font-size:11px;color:#8a7d8c">击破 ${n}</span>
+        <div style="font-size:11.5px;color:#8fe6ff;margin-top:2px">弱点：${(e.weak || []).map(w => ELEM[w]?.name || w).join('/') || '无'}　HP ${e.hp}　攻 ${e.atk}　防 ${e.def}　速 ${e.spd}</div>
+        ${e.quote ? `<div style="font-size:12px;color:#bbb2dd;margin-top:3px">「${e.quote}」</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  const found = list.filter(e => seen[e.id]).length;
+  openPanel(`✦ 魔物图鉴　${found}/${list.length}`, `<div style="grid-column:1/-1">
+    ${rows}
+    <button class="mini g" id="codex-back" style="margin-top:12px">← 返回队伍</button>
+  </div>`);
+  $('codex-back').onclick = e => { e.stopPropagation(); openPartyPanel(); };
 }
 
 /* ============================================================
@@ -1041,17 +1639,132 @@ function gotoTitle() {
   $('panel').classList.add('hidden');
   $('ending').classList.add('hidden');
   $('loading').classList.add('hidden');
-  $('btn-continue').disabled = !localStorage.getItem(SAVE_KEY);
-  $('btn-continue').style.opacity = localStorage.getItem(SAVE_KEY) ? 1 : .4;
+  $('btn-continue').disabled = !anySave();
+  $('btn-continue').style.opacity = anySave() ? 1 : .4;
 }
+/* 通用面板：给存档槽、羁绊、遗物、天赋这些新界面共用 */
+function openPanel(title, html) {
+  enterPanel('generic');
+  $('panel').classList.remove('hidden');
+  $('panel-title').textContent = title;
+  $('panel-body').innerHTML = html;
+}
+
+/* 存档槽面板：0 号是自动存档（只能读不能写），1~3 手动。 */
+function openSlots(mode) {
+  sfx('ui');
+  const rows = [];
+  for (let i = 0; i < SAVE_SLOTS; i++) {
+    const info = slotInfo(i);
+    const label = i === 0 ? '自动存档' : `存档 ${i}`;
+    const when = info ? new Date(info.t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+    const body = info
+      ? `${info.chapter}　Lv.${info.lv}${info.ng ? `　<span style="color:#ffd76a">周目 ${info.ng + 1}</span>` : ''}<div style="font-size:11px;color:#8a7d8c">${when}</div>`
+      : '<span style="color:#8a7d8c">空</span>';
+    const dis = (mode === 'save' && i === 0) || (mode === 'load' && !info);
+    rows.push(`<button class="shop-row slotbtn" data-slot="${i}" ${dis ? 'disabled' : ''} style="width:100%;text-align:left;${dis ? 'opacity:.4' : ''}">
+      <div><b>${label}</b><div style="font-size:12px;color:#bbb2dd;margin-top:2px">${body}</div></div>
+      <div style="color:#ffd76a">${dis ? '' : (mode === 'save' ? '写入' : '读取')}</div>
+    </button>`);
+  }
+  openPanel(mode === 'save' ? '保存到哪个存档？' : '读取哪个存档？',
+    `<div style="display:grid;gap:8px">${rows.join('')}</div>`);
+  document.querySelectorAll('.slotbtn').forEach(b => {
+    b.onclick = ev => {
+      ev.stopPropagation();
+      const i = Number(b.dataset.slot);
+      closePanel();
+      if (mode === 'save') saveGame(i); else loadGame(i);
+    };
+  });
+}
+
+/* ============================================================
+   结算板 + 二周目
+   ============================================================
+   四个结局此前靠旗标判定，玩家通关后完全不知道自己差在哪，
+   也就没有再打一遍的理由。这里把走过的路摊开给玩家看。 */
+function openResultBoard() {
+  const lv = G.party[0]?.level || 1;
+  const relicN = Object.keys(G.relics || {}).length;
+  const codexN = Object.keys(G.codex || {}).length;
+  const aids = [['forestAid', '森林根系'], ['harborAid', '港町船队'], ['northAid', '北境灯塔']];
+  const bondRows = G.party.map(m => {
+    const bp = BD.bondProgress(G, m.id);
+    return `<span class="tag ${bp.lv >= 4 ? 'eq' : ''}">${m.name} Lv.${bp.lv}</span>`;
+  }).join('');
+  const missed = [];
+  if (!G.flags.allAid) missed.push('三地支援没有集齐 —— SECRET END 的条件');
+  if (relicN < RELICS.length) missed.push(`还有 ${RELICS.length - relicN} 件遗物没找到`);
+  if (!G.flags.part2) missed.push('没有走进门的另一边（需要 TRUE / SECRET 结局）');
+  if (!G.flags.innerLock) missed.push('没有解开门的内锁');
+  if (G.party.some(m => BD.bondLevel(G, m.id) < 4)) missed.push('有同伴的羁绊没到 Lv.4 —— 四人连携【不熄之约】');
+
+  const ng = (G.flags.ngPlus || 0) + 1;
+  openPanel('◆ 旅程结算', `<div style="grid-column:1/-1">
+    <div style="font-size:13px;line-height:2">
+      <div>抵达结局：<b style="color:#ffd76a">${ENDINGS[G.lastEnding]?.label || '—'}　${ENDINGS[G.lastEnding]?.title || ''}</b></div>
+      ${G.flags.part1Ending ? `<div>第一部结局：<b>${ENDINGS[G.flags.part1Ending]?.label}</b></div>` : ''}
+      <div>队伍等级：<b>Lv.${lv}</b>　持有金币 ${G.gold}</div>
+      <div>遗物：<b>${relicN}/${RELICS.length}</b>　图鉴：<b>${codexN}</b> 种</div>
+      <div>旅程支援：${aids.map(([k, n]) => `${G.flags[k] ? '✓' : '○'} ${n}`).join('　')}</div>
+      <div>羁绊：${bondRows}</div>
+    </div>
+    ${missed.length ? `<div style="margin-top:14px">
+      <div style="color:#ffd76a;font-weight:700;margin-bottom:6px">你错过的</div>
+      <div style="font-size:12.5px;color:#bbb2dd;line-height:1.9">${missed.map(x => '· ' + x).join('<br>')}</div>
+    </div>` : '<div style="margin-top:14px;color:#ffd76a">这一趟，一样都没落下。</div>'}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px">
+      <button class="mini" id="res-ng">开始第 ${ng} 周目（继承等级 / 遗物 / 羁绊 / 装备）</button>
+      <button class="mini g" id="res-title">回到标题</button>
+    </div>
+  </div>`);
+  $('res-ng').onclick = e => { e.stopPropagation(); startNewGamePlus(); };
+  $('res-title').onclick = e => { e.stopPropagation(); closePanel(); gotoTitle(); };
+}
+
+/* 二周目：继承养成与收藏，重走剧情。
+   这个剧本天然适合——主题就是门与重复的历史。 */
+function startNewGamePlus() {
+  const ng = (G.flags.ngPlus || 0) + 1;
+  const keepRelics = G.relics, keepBonds = G.bonds, keepCodex = G.codex;
+  const keepParty = G.party.map(m => ({
+    id: m.id, level: m.level, equips: m.equips, alloc: m.alloc,
+    points: m.points, sp: m.sp, talents: m.talents, bonus: m.bonus,
+  }));
+  const keepBag = {};
+  for (const [k, v] of Object.entries(G.bag)) if (EQUIPS[k]) keepBag[k] = v;
+
+  G.flags = { ngPlus: ng, sceneRewards: {} };
+  G.relics = keepRelics; G.bonds = keepBonds; G.codex = keepCodex;
+  G.gold = Math.floor(G.gold * 0.4);
+  G.bag = { ...keepBag, potion: 5, potion_hi: 3 };
+  G.party = keepParty.map(p => {
+    const m = makeMember(p.id, p.level);
+    m.equips = p.equips; m.alloc = p.alloc; m.points = p.points;
+    m.sp = p.sp; m.talents = p.talents; m.bonus = p.bonus;
+    recalc(m);
+    m.hp = m.maxHp; m.mp = m.resource === 'rage' ? 0 : m.maxMp;
+    return m;
+  });
+  closePanel();
+  $('ending').classList.add('hidden');
+  $('hud').classList.remove('hidden');
+  G.mode = 'scene'; G.campDone = false;
+  toast(`※ 第 ${ng + 1} 周目开始：敌人更强，掉落品质更高`, 3000);
+  gotoScene('prologue');
+}
+
 function showLoading(title, text) {
   $('loading').classList.remove('hidden');
   $('load-chapter').textContent = title || G.chapter;
   $('load-text').textContent = text || '命运正在转动……';
   setMusic('calm');
 }
-function showEnding(kind) {
+function showEnding(kind, continueTo) {
   const e = ENDINGS[kind];
+  G.endingContinue = continueTo || null;
+  if (!continueTo) G.lastEnding = kind;
   G.mode = 'ending';
   setMusic('ending');
   $('ending').classList.remove('hidden');
@@ -1078,28 +1791,42 @@ function newGame() {
   $('loading').classList.add('hidden');
   gotoScene('prologue');
 }
-function saveGame() {
-  const data = {
-    v: 2, t: Date.now(), sceneId: SCENES[G.sceneId]?.once ? G.sceneId : (G.scene?.next || G.sceneId), chapter: G.chapter,
+function saveData() {
+  return {
+    v: 3, t: Date.now(), sceneId: SCENES[G.sceneId]?.once ? G.sceneId : (G.scene?.next || G.sceneId), chapter: G.chapter,
     battleCheckpoint: G.battleCheckpoint,
     flags: G.flags, gold: G.gold, bag: G.bag,
+    loot: collectLoot(),            // 随机生成的装备必须跟着存档走
+    relics: G.relics, bonds: G.bonds, codex: G.codex,
     party: G.party.map(m => ({
       id: m.id, level: m.level, exp: m.exp, hp: m.hp, mp: m.mp,
       equips: m.equips, skills: m.skills, bonus: m.bonus,
+      alloc: m.alloc, points: m.points, sp: m.sp, talents: m.talents,
     })),
   };
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); toast('◇ 已保存进度'); }
-  catch (e) { toast('保存失败：' + e.message); }
 }
-function loadGame() {
-  const raw = localStorage.getItem(SAVE_KEY);
-  if (!raw) { toast('没有可用的存档'); return; }
+function saveGame(slot = 1, quiet = false) {
+  try {
+    localStorage.setItem(slotKey(slot), JSON.stringify(saveData()));
+    if (!quiet) toast(slot === 0 ? '◇ 已自动存档' : `◇ 已保存到存档 ${slot}`);
+  } catch (e) { toast('保存失败：' + e.message); }
+}
+function autoSave() { saveGame(0, true); }
+function loadGame(slot = 1) {
+  const raw = localStorage.getItem(slotKey(slot)) || (slot === 1 ? localStorage.getItem(LEGACY_KEY) : null);
+  if (!raw) { toast('这个存档是空的'); return; }
   try {
     const d = JSON.parse(raw);
+    restoreLoot(d.loot);          // 先把随机装备注册回 EQUIPS，否则 recalc 查不到
+    G.relics = d.relics || {};
+    G.bonds = d.bonds || {};
+    G.codex = d.codex || {};
     G.party = d.party.map(p => {
       const m = makeMember(p.id, p.level);
       m.exp = p.exp || 0; m.equips = p.equips || m.equips; m.skills = p.skills || m.skills;
       m.bonus = p.bonus || m.bonus;
+      m.alloc = p.alloc || m.alloc;
+      m.points = p.points || 0; m.sp = p.sp || 0; m.talents = p.talents || {};
       recalc(m);
       m.hp = Math.min(m.maxHp, Math.max(1, p.hp));
       m.mp = m.resource === 'rage' ? 0 : Math.min(m.maxMp, p.mp ?? m.maxMp);
@@ -1197,13 +1924,28 @@ $('btn-bag').onclick = e => {
     sfx('heal'); $('btn-bag').onclick({ stopPropagation() { } });
   });
 };
-$('btn-save').onclick = e => { e.stopPropagation(); saveGame(); };
+$('btn-save').onclick = e => { e.stopPropagation(); openSlots('save'); };
 $('btn-title').onclick = e => { e.stopPropagation(); if (confirm('返回标题画面？未保存的进度会丢失。')) gotoTitle(); };
 $('btn-new').onclick = e => { e.stopPropagation(); sfx('levelup'); newGame(); };
-$('btn-continue').onclick = e => { e.stopPropagation(); sfx('ui'); loadGame(); };
+$('btn-continue').onclick = e => { e.stopPropagation(); sfx('ui'); openSlots('load'); };
 $('btn-gallery').onclick = e => { e.stopPropagation(); sfx('ui'); openGallery(); };
 $('btn-help').onclick = e => { e.stopPropagation(); sfx('ui'); openGallery(); };
-$('btn-again').onclick = e => { e.stopPropagation(); gotoTitle(); };
+$('btn-again').onclick = e => {
+  e.stopPropagation();
+  sfx('ui');
+  if (G.endingContinue) {           // 第一部结局：放完继续第二部
+    const nx = G.endingContinue;
+    G.endingContinue = null;
+    $('ending').classList.add('hidden');
+    G.mode = 'scene';
+    $('hud').classList.remove('hidden');
+    $('dialogue').classList.remove('hidden');
+    G.campDone = false;
+    gotoScene(nx);
+    return;
+  }
+  openResultBoard();
+};
 document.addEventListener('pointerdown', () => ac(), { once: true });
 
 /* ============================================================
@@ -1386,6 +2128,16 @@ window.__newGame = function (level = 1, members = ['kaito']) {
   return G.party.map(m => m.name + 'Lv' + m.level + '[' + m.skills.join(',') + ']').join(' ');
 };
 window.__setScene = function (id) { gotoScene(id); return id; };
+/* 无头测试：把全队拉到指定等级并重算属性（含属性点/天赋/遗物） */
+window.__levelTo = function (lv) {
+  for (const m of G.party) {
+    while (m.level < lv) { m.level++; GR.grantLevelPoints(m, 1); }
+    m.skills = ACTORS[m.id].skills.filter(x => x.lv <= m.level).map(x => x.id);
+    recalc(m);
+    m.hp = m.maxHp; m.mp = m.resource === 'rage' ? 0 : m.maxMp;
+  }
+  return G.party.map(m => m.name + m.level).join(',');
+};
 window.__autoRun = function (maxSteps = 400, maxMs = 120000) {
   // 自动通剧情：推进对话 + 自动战斗 + 自动选第一个选项
   let steps = 0;
@@ -1417,7 +2169,11 @@ window.__autoRun = function (maxSteps = 400, maxMs = 120000) {
         else {
           // 简易 AI：能用奥义就用，其次用能负担的最强攻击技，最后普攻
           const ult = m.skills.map(s => SKILLS[s]).find(s => s && s.ult && (s.mp || 0) <= m.mp);
-          const target = b.enemies.findIndex(e => !e.dead && (b.objective?.type !== 'purify' || e.ref === 'curse_root'));
+          /* 净化战要先清掉 objective.targets 里的那些，本体打不死。
+             此前这里把目标写死成 curse_root，第二部的玄鹿战（目标是 withered_root）
+             因此永远找不到可打的敌人，全队一直格挡直到team wipe，再从失败重试，无限循环。 */
+          const purge = b.objective?.type === 'purify' ? (b.objective.targets || []) : null;
+          const target = b.enemies.findIndex(e => !e.dead && (!purge || purge.includes(e.ref)));
           if (BT.canObjective(b, m)) doCmd(m, { type: 'objective' });
           else if (target < 0) doCmd(m, { type: 'guard' });
           else if (ult) { doCmd(m, { type: 'skill', skill: ult.id, target }); }
@@ -1432,6 +2188,11 @@ window.__autoRun = function (maxSteps = 400, maxMs = 120000) {
         }
       }
     } else if (G.mode === 'shop') { closePanel(); goAfterShop(); }
+    else if (G.mode === 'panel') {
+      // 营地等面板会把 G.mode 切到 panel；无头测试里直接点「继续前进」
+      const go = document.getElementById('camp-go');
+      if (go) go.click(); else closePanel();
+    }
     else if (G.mode === 'scene') {
       if (G.scene && G.scene.choices) pickChoice(G.scene.choices.find(choiceAvailable));
       else __advance(1);

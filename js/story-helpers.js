@@ -10,16 +10,10 @@ export const choice = (text, goto, action = [], hint = '') => ({ text, goto, act
 export const flag = (name, value = true) => ({ set: { [name]: value } });
 export const branch = (name, yes, no) => ({ branch: { branch: name, yes, no } });
 
-// 调查项目一次性完成，三条线索收齐才开放出口；存档保留每项进度。
+// 调查段落改为线性叙述：三条线索依次播完，不再让玩家逐项点选。
 export function investigation(id, chapter, intro, entries, next) {
-  const nodes = {};
-  const keys = entries.map((_, i) => `${id}_${i}`);
-  nodes[id] = scene(chapter, intro, null, { choices: [
-    ...entries.map((entry, i) => ({ ...choice(entry.title, keys[i]), unless: keys[i] })),
-    { ...choice('整理线索，继续前进。', next, [], '完成上方所有调查后可继续。'), requireAll: keys },
-  ] });
-  entries.forEach((entry, i) => {
-    nodes[keys[i]] = scene(chapter, entry.lines, id, { pre: [flag(keys[i]), ...(entry.actions || [])] });
-  });
-  return nodes;
+  // 原本的选项标题保留成旁白，衔接三段线索，读起来不会突然跳场。
+  const lines = [...intro, ...entries.flatMap(e => [['旁白', `（${e.title}）`], ...e.lines])];
+  const pre = entries.flatMap(e => e.actions || []);
+  return { [id]: scene(chapter, lines, next, pre.length ? { pre } : {}) };
 }

@@ -39,7 +39,8 @@ export const ACTORS = {
     weaponSkill: ['xinzhan', 'lianren', 'leiming', 'jiaoyan', 'miehun'],
     skills: [
       { id: 'xinzhan', lv: 1 }, { id: 'lianren', lv: 3 }, { id: 'liepo', lv: 6 },
-      { id: 'leiming', lv: 9 }, { id: 'jiaoyan', lv: 12 }, { id: 'miehun', lv: 15 },
+      { id: 'xinyan', lv: 8 }, { id: 'leiming', lv: 9 }, { id: 'jiaoyan', lv: 12 },
+      { id: 'miehun', lv: 15 }, { id: 'zhenmiehun', lv: 20 },
     ],
     quote: '「我的剑，不会为仇恨而挥——它为守护而出鞘！」',
     winQuote: '还站得起来吗？那就继续。',
@@ -101,7 +102,7 @@ export const SKILLS = {
   lianren: {
     id: 'lianren', name: '连刃·三连斩', mp: 14, type: 'atk', elem: 'none', power: 0.62, hits: 3,
     target: 'one', desc: '连续三次斩击，命中数越多热血越高。', rage: 16,
-    fx: 'slash', multi: true,
+    fx: 'flurry', multi: true,
   },
   liepo: {
     id: 'liepo', name: '裂地·炎爆斩', mp: 22, type: 'atk', elem: 'fire', power: 1.75, hits: 1,
@@ -111,17 +112,30 @@ export const SKILLS = {
   leiming: {
     id: 'leiming', name: '雷鸣·千鸟突', mp: 26, type: 'atk', elem: 'thunder', power: 2.05, hits: 1,
     target: 'one', desc: '雷光贯穿单体，高概率使其眩晕。', rage: 20,
-    fx: 'thunder', inflict: { id: 'stun', chance: 0.35 },
+    fx: 'bolt', inflict: { id: 'stun', chance: 0.35 },
   },
   jiaoyan: {
     id: 'jiaoyan', name: '焦炎·狮子奋迅', mp: 34, type: 'buff', target: 'self',
     desc: '炎之斗气爆发：攻击力大幅上升，且行动更快。', rage: 25,
-    fx: 'aura', buff: { id: 'atkUp', turns: 3 }, buff2: { id: 'haste', turns: 3 },
+    fx: 'blaze', buff: { id: 'atkUp', turns: 3 }, buff2: { id: 'haste', turns: 3 },
+  },
+  /* 怒气三段解放：25 随时能放但用掉就攒不到高段，60 是标准奥义，
+     100 要一直挨打才攒得到，有翻车风险但回报最大。 */
+  xinyan: {
+    id: 'xinyan', name: '心焰·炽刃', mp: 25, type: 'atk', elem: 'fire', power: 1.45, hits: 2,
+    target: 'one', desc: '【解放·壹】怒气凝成炽刃，双击并点燃。', rage: 0,
+    fx: 'fire', multi: true, release: 1, inflict: { id: 'burn', chance: 0.7 },
   },
   miehun: {
-    id: 'miehun', name: '奥义·灭魂炎狱斩', mp: 58, type: 'atk', elem: 'fire', power: 1.05, hits: 5,
-    target: 'one', desc: '【奥义】五段斩在敌人体内燃起炎狱。', rage: 0,
-    fx: 'fire', ult: true, multi: true, inflict: { id: 'burn', chance: 0.9 },
+    id: 'miehun', name: '奥义·灭魂炎狱斩', mp: 60, type: 'atk', elem: 'fire', power: 1.05, hits: 5,
+    target: 'one', desc: '【解放·贰】五段斩在敌人体内燃起炎狱。', rage: 0,
+    fx: 'fire', ult: true, multi: true, release: 2, inflict: { id: 'burn', chance: 0.9 },
+  },
+  zhenmiehun: {
+    id: 'zhenmiehun', name: '真·灭魂炎狱斩', mp: 100, type: 'atk', elem: 'fire', power: 1.3, hits: 5,
+    target: 'all', desc: '【解放·叁】炎狱吞没全场，并烧回自身三成生命。', rage: 0,
+    fx: 'fire', ult: true, multi: true, release: 3, selfHeal: 0.3,
+    inflict: { id: 'burn', chance: 1 },
   },
 
   /* —— 苍 —— */
@@ -140,7 +154,7 @@ export const SKILLS = {
   },
   shengguang: {
     id: 'shengguang', name: '圣光·裁罪', mp: 22, type: 'atk', elem: 'holy', power: 1.65, hits: 1,
-    target: 'one', desc: '苍白的审判之光，对魔性之物格外有效。', rage: 14, fx: 'thunder',
+    target: 'one', desc: '苍白的审判之光，对魔性之物格外有效。', rage: 14, fx: 'holy',
   },
   leiting: {
     id: 'leiting', name: '雷霆', mp: 24, type: 'atk', elem: 'thunder', power: 1.60, hits: 1,
@@ -179,7 +193,7 @@ export const SKILLS = {
   /* —— 璃 —— */
   baoxue: {
     id: 'baoxue', name: '暴雪', mp: 20, type: 'atk', elem: 'ice', power: 1.5, hits: 1,
-    target: 'all', desc: '暴风雪覆盖全场，有机会让敌人迟缓。', rage: 14, fx: 'ice',
+    target: 'all', desc: '暴风雪覆盖全场，有机会让敌人迟缓。', rage: 14, fx: 'frost',
     inflict: { id: 'slow', chance: 0.5 },
   },
   bingfeng: {
@@ -190,11 +204,47 @@ export const SKILLS = {
   juedui: {
     id: 'juedui', name: '奥义·绝对零度', mp: 150, type: 'atk', elem: 'ice', power: 2.25, hits: 1,
     target: 'all', desc: '【奥义】连时空都冻结的极寒。', rage: 0,
-    fx: 'ice', ult: true, inflict: { id: 'frozen', chance: 0.5 },
+    fx: 'frost', ult: true, inflict: { id: 'frozen', chance: 0.5 },
   },
 
   /* —— 通用/共享 —— */
   'guard': { id: 'guard', name: '格挡', mp: 0, type: 'guard', target: 'self', desc: '摆出防御姿态，减伤并积攒热血。' },
+};
+
+/* ---------------- 连携技 ----------------
+   条件：两人在行动条顺序上相邻 + 羁绊达标。发动时消耗两人的当前回合。
+   这是羁绊系统在战斗里的出口——培养羁绊不再只是结局分支的开关。 */
+export const COMBOS = {
+  yanbing: {
+    id: 'yanbing', name: '炎冰·双极', members: ['kaito', 'ryze'], bond: 2,
+    power: 1.9, hits: 3, elem: 'fire', target: 'one', fx: 'fire',
+    desc: '璃先封冰，凯再炎爆。目标处于冰封时伤害翻倍。',
+    bonusVs: { status: 'frozen', mul: 2 },
+  },
+  shuangren: {
+    id: 'shuangren', name: '双刃突进', members: ['kaito', 'lei'], bond: 2,
+    power: 1.35, hits: 4, elem: 'none', target: 'one', fx: 'pierce',
+    desc: '凯突进撕开缺口，雷贴身补刀。必定会心。',
+    alwaysCrit: true,
+  },
+  cangbing: {
+    id: 'cangbing', name: '苍冰结界', members: ['cang', 'ryze'], bond: 3,
+    power: 0, type: 'support', target: 'party', fx: 'heal',
+    desc: '全体回复并披上冰甲，两回合内防御大幅提升。',
+    healRatio: 0.35, buff: { id: 'defUp', turns: 2 },
+  },
+  jifeng: {
+    id: 'jifeng', name: '疾风祝福', members: ['cang', 'lei'], bond: 3,
+    power: 0, type: 'support', target: 'party', fx: 'aura',
+    desc: '苍为全队加持，雷带着全队抢先手。',
+    buff: { id: 'haste', turns: 3 }, pushAll: 34,
+  },
+  buxi: {
+    id: 'buxi', name: '不熄之约', members: ['kaito', 'cang', 'lei', 'ryze'], bond: 4,
+    power: 2.4, hits: 4, elem: 'holy', target: 'all', fx: 'thunder',
+    desc: '四人同时出手。只有全员羁绊 Lv4 以上才会亮起。',
+    finale: true,
+  },
 };
 
 /* ---------------- 装备 ---------------- */
@@ -237,6 +287,11 @@ export const SHOPS = {
   harbor: { name: '港町商会', items: ['potion', 'potion_hi', 'ether', 'revive', 'seal', 'smoke', 'chain', 'blue_staff', 'hunter_spear', 'ring_fast'] },
   north: { name: '北境补给站', items: ['potion_hi', 'elixir', 'revive', 'bomb', 'flame_sword', 'storm_spear', 'ring_life', 'holy_cloak'] },
   final: { name: '深渊前哨 · 最后的交易', items: ['potion_hi', 'elixir', 'revive', 'bomb', 'demon_mail', 'bond_ring'] },
+  /* 第二部：只列消耗品，装备货架由 loot.js 按队伍等级现场生成 */
+  spirit: { name: '仙灵之野 · 换物处', items: ['potion_hi', 'ether', 'revive', 'elixir'] },
+  edge: { name: '断天之径 · 无名者的摊子', items: ['potion_hi', 'elixir', 'revive', 'bomb', 'seal'] },
+  divine: { name: '神域 · 静室补给', items: ['elixir', 'revive', 'bomb', 'seal', 'ether'] },
+  last: { name: '终幕之前 · 最后一次整备', items: ['elixir', 'revive', 'bomb'] },
 };
 
 /* ---------------- 敌人 ----------------
@@ -283,7 +338,7 @@ export const ENEMIES = {
     weak: ['fire'],
     quote: '离开……这片森林……',
     skills: [{ id: 'atk', w: 4 }, { id: 'rootbind', w: 2 }, { id: 'heavy', w: 4 }, { id: 'quake', w: 4 }],
-    boss: true,
+    theme: '古森遗誓', boss: true,
   },
   ice_witch: {
     id: 'ice_witch', name: '冰之魔女·丝薇雅', shape: 'humanoid', scale: 1.1,
@@ -292,7 +347,7 @@ export const ENEMIES = {
     weak: ['fire'],
     quote: '在永恒的冬天里沉睡吧。',
     skills: [{ id: 'atk', w: 3 }, { id: 'ice_lance', w: 3 }, { id: 'blizzard', w: 5 }, { id: 'ice_coffin', w: 2 }, { id: 'frost_nova', w: 3 }],
-    boss: true,
+    theme: '失落冰庭', boss: true,
   },
   zain: {
     id: 'zain', name: '暗影四天王·泽恩', shape: 'humanoid', scale: 1.15,
@@ -301,7 +356,7 @@ export const ENEMIES = {
     weak: ['thunder', 'holy'],
     quote: '「热血」？真是廉价的词汇。',
     skills: [{ id: 'atk', w: 3 }, { id: 'dark_slash', w: 4 }, { id: 'shadow_step', w: 3 }, { id: 'drain', w: 2 }, { id: 'dark_wave', w: 4 }, { id: 'dark_seal', w: 2 }],
-    boss: true,
+    theme: '影廊禁卫', boss: true,
   },
   baixue: {
     id: 'baixue', name: '冰之四天王·白雪', shape: 'humanoid', scale: 1.12,
@@ -310,7 +365,7 @@ export const ENEMIES = {
     weak: ['fire'],
     quote: '勇气？那不过是没有尝过绝望的错觉。',
     skills: [{ id: 'atk', w: 4 }, { id: 'ice_lance', w: 3 }, { id: 'blizzard', w: 3 }, { id: 'ice_coffin', w: 3 }, { id: 'frost_nova', w: 2 }],
-    boss: true,
+    theme: '失落冰庭', boss: true,
   },
   demon_general: {
     id: 'demon_general', name: '魔将·古兰', shape: 'demon', scale: 1.2,
@@ -319,7 +374,7 @@ export const ENEMIES = {
     weak: ['ice', 'holy'],
     quote: '人类的城池，一座一座烧掉就好。',
     skills: [{ id: 'atk', w: 5 }, { id: 'heavy', w: 4 }, { id: 'dark_slash', w: 3 }, { id: 'quake', w: 2 }],
-    boss: true,
+    theme: '赤狱战场', boss: true,
   },
   demon_king: {
     id: 'demon_king', name: '魔王·阿斯特', shape: 'king', scale: 1.35,
@@ -331,7 +386,7 @@ export const ENEMIES = {
       { id: 'atk', w: 4 }, { id: 'dark_slash', w: 4 }, { id: 'abyss', w: 3 },
       { id: 'king_roar', w: 2 }, { id: 'meteor', w: 3 }, { id: 'drain', w: 2 },
     ],
-    boss: true,
+    theme: '旧日英雄', boss: true,
   },
   demon_king_final: {
     id: 'demon_king_final', name: '终焉魔王·阿斯特·真', shape: 'king', scale: 1.55,
@@ -343,16 +398,298 @@ export const ENEMIES = {
       { id: 'atk', w: 3 }, { id: 'dark_slash', w: 4 }, { id: 'abyss', w: 3 },
       { id: 'king_roar', w: 3 }, { id: 'meteor', w: 3 }, { id: 'drain', w: 2 }, { id: 'annihilate', w: 2 },
     ],
-    boss: true,
+    theme: '旧日英雄', boss: true,
   },
 };
 
 // 新旅程的敌人复用现有绘制轮廓，拥有独立数值和名称。
 Object.assign(ENEMIES, {
   curse_root: { ...ENEMIES.forest_guard, id: 'curse_root', name: '咒缚根', boss: false, hp: 170, atk: 12, def: 4, spd: 16, exp: 12, gold: 0, quote: '（黑根扎进树心。）', skills: [{ id: 'rootbind', w: 1 }] },
-  harbor_guard: { ...ENEMIES.demon_soldier, id: 'harbor_guard', name: '商会武装护卫', hp: 420, atk: 37, def: 14, exp: 48, gold: 55, weak: ['thunder'], quote: '凭证呢？退后！' },
-  relic_guard: { ...ENEMIES.demon_soldier, id: 'relic_guard', name: '遗迹石像', hp: 1050, atk: 48, def: 28, spd: 22, exp: 95, gold: 65, weak: ['ice', 'holy'], quote: '（古老的机关重新运转。）' },
-  memory_blade: { ...ENEMIES.zain, id: 'memory_blade', name: '记忆中的刀影', hp: 1800, atk: 54, def: 22, spd: 34, exp: 180, gold: 0, weak: ['holy', 'thunder'], quote: '（回去吧。饭已经好了。）', skills: [{ id: 'atk', w: 4 }, { id: 'heavy', w: 2 }] },
+  harbor_guard: { ...ENEMIES.demon_soldier, id: 'harbor_guard', name: '商会武装护卫', hp: 420, atk: 68, def: 14, exp: 48, gold: 55, weak: ['thunder'], quote: '凭证呢？退后！' },
+  relic_guard: { ...ENEMIES.demon_soldier, id: 'relic_guard', name: '遗迹石像', hp: 1050, atk: 102, def: 28, spd: 22, exp: 95, gold: 65, weak: ['ice', 'holy'], quote: '（古老的机关重新运转。）' },
+  memory_blade: { ...ENEMIES.zain, id: 'memory_blade', name: '记忆中的刀影', hp: 1800, atk: 124, def: 22, spd: 34, exp: 180, gold: 0, weak: ['holy', 'thunder'], quote: '（回去吧。饭已经好了。）', skills: [{ id: 'atk', w: 4 }, { id: 'heavy', w: 2 }] },
+});
+
+/* ---------------- 第二部 · 门的另一边 ----------------
+   仙灵（Lv20+）、天绝（Lv27+）、神器（Lv34+）、超神器（Lv42+）四个档位，
+   与 512 件装备图鉴的后四个品质一一对应：打到哪一层，就掉哪一层的东西。
+   theme 字段决定首领掉落会走图鉴里的哪个主题。 */
+Object.assign(ENEMIES, {
+  /* — 第七章 · 仙灵之野 — */
+  spirit_moth: {
+    id: 'spirit_moth', name: '灵蛾', shape: 'bird',
+    palette: { body: '#8fd8c8', trim: '#e8fff8', eye: '#fff3c4', wing: '#a8e8d8' },
+    baseLevel: 20, hp: 2600, atk: 210, def: 96, spd: 46, exp: 520, gold: 260, hot: 16,
+    weak: ['fire'], quote: '（翅膀上的鳞粉正在褪色。）',
+    skills: [{ id: 'atk', w: 6 }, { id: 'pollen', w: 4 }, { id: 'dazzle', w: 3 }],
+  },
+  withered_root: {
+    id: 'withered_root', name: '枯灵根', shape: 'demon',
+    palette: { body: '#4a4030', trim: '#8a7a50', eye: '#d8c88a' },
+    baseLevel: 20, hp: 3400, atk: 190, def: 118, spd: 24, exp: 560, gold: 280, hot: 16,
+    weak: ['fire', 'holy'], quote: '（它在找水。这里已经没有水了。）',
+    skills: [{ id: 'atk', w: 5 }, { id: 'rootbind', w: 4 }, { id: 'drain', w: 3 }],
+  },
+  xuanlu: {
+    id: 'xuanlu', name: '玄鹿', shape: 'wolf', scale: 1.25,
+    palette: { body: '#3a4a3a', trim: '#a8d8a0', eye: '#e8ffd8', fang: '#ffffff' },
+    baseLevel: 21, hp: 8200, atk: 262, def: 140, spd: 38, exp: 2200, gold: 1300, hot: 17,
+    weak: ['fire'], theme: '万木仙庭',
+    quote: '（它低下头。角上缠着还没枯的藤。）',
+    skills: [{ id: 'atk', w: 4 }, { id: 'rootbind', w: 3 }, { id: 'quake', w: 3 }, { id: 'pollen', w: 3 }],
+    boss: true,
+    phases: [{ at: 0.4, lines: ['（角上的藤开始发光。它不是在攻击，是在求救。）'], gain: { def: 1.2 }, col: '#a8d8a0' }],
+  },
+  qingluan: {
+    id: 'qingluan', name: '青鸾', shape: 'bird', scale: 1.3,
+    palette: { body: '#2a6a8a', trim: '#ff8a1a', eye: '#fff3c4', wing: '#48b8d8' },
+    baseLevel: 23, hp: 9000, atk: 290, def: 128, spd: 54, exp: 2400, gold: 1400, hot: 17,
+    weak: ['ice'], theme: '丹霞火山',
+    quote: '门关上那天，我们就开始烧了。',
+    skills: [{ id: 'atk', w: 3 }, { id: 'plume_storm', w: 4 }, { id: 'phoenix_dive', w: 3 }, { id: 'meteor', w: 2 }],
+    boss: true,
+    phases: [
+      { at: 0.55, lines: ['你们把门关上，是为了活。我不怪你们。'], gain: { spd: 1.18 }, addSkills: ['phoenix_dive'], col: '#ff8a1a' },
+      { at: 0.22, lines: ['但你们得听完我烧完之前要说的话。'], gain: { atk: 1.28 }, clearBuffs: true, col: '#ffd76a' },
+    ],
+  },
+  jiuwei: {
+    id: 'jiuwei', name: '九尾', shape: 'wolf', scale: 1.28,
+    palette: { body: '#8a2a4a', trim: '#ffd76a', eye: '#ff6a8a', fang: '#fff2e0' },
+    baseLevel: 24, hp: 10200, atk: 306, def: 132, spd: 60, exp: 2600, gold: 1500, hot: 17,
+    weak: ['holy'], theme: '幽梦仙乡',
+    quote: '你们要找的答案，我这里有九个版本。挑一个？',
+    skills: [{ id: 'atk', w: 3 }, { id: 'mirage', w: 4 }, { id: 'drain', w: 3 }, { id: 'dark_slash', w: 3 }],
+    boss: true,
+    phases: [
+      { at: 0.6, lines: ['第一个版本：你们是对的。'], gain: { spd: 1.2 }, addSkills: ['mirage'], col: '#ff6a8a' },
+      { at: 0.25, lines: ['第九个版本：门后面本来就没有人。你信哪个？'], gain: { atk: 1.3 }, clearBuffs: true, col: '#ffd76a' },
+    ],
+  },
+  baize: {
+    id: 'baize', name: '白泽', shape: 'king', scale: 1.35,
+    palette: { body: '#e8e4f2', trim: '#8a7ad8', eye: '#6a5ab8', cape: '#c8c0e4' },
+    baseLevel: 26, hp: 9200, atk: 418, def: 152, spd: 48, exp: 3000, gold: 1800, hot: 18,
+    weak: ['dark'], theme: '神兽遗谷',
+    quote: '我知道所有事。包括你们不想听的那一件。',
+    skills: [{ id: 'atk', w: 3 }, { id: 'truth_lash', w: 4 }, { id: 'dark_seal', w: 3 }, { id: 'king_roar', w: 2 }],
+    boss: true,
+    phases: [
+      { at: 0.5, lines: ['门不是魔王造的。'], gain: { atk: 1.16 }, addSkills: ['truth_lash'], col: '#8a7ad8' },
+      { at: 0.2, lines: ['是神造的。为了把会吵的东西，全部关在外面。'], gain: { spd: 1.2 }, clearBuffs: true, col: '#ffd76a' },
+    ],
+  },
+
+  /* — 第八章 · 断天之径 — */
+  edict_sentry: {
+    id: 'edict_sentry', name: '禁制哨戒', shape: 'humanoid', scale: 1.1,
+    palette: { hair: '#c8c8d8', cloth: '#3a3a52', trim: '#ff3b4e', skin: '#d8d8e8', eye: '#ff3b4e', weapon: 'twin' },
+    baseLevel: 27, hp: 5200, atk: 330, def: 176, spd: 50, exp: 900, gold: 520, hot: 18,
+    weak: ['thunder'], quote: '此路已被删除。',
+    skills: [{ id: 'atk', w: 5 }, { id: 'erase', w: 3 }, { id: 'dark_seal', w: 3 }],
+  },
+  name_wraith: {
+    id: 'name_wraith', name: '无名者', shape: 'humanoid',
+    palette: { hair: '#6a6a7a', cloth: '#22222e', trim: '#8a8a9a', skin: '#9a9aaa', eye: '#e8e8f8', weapon: 'sword' },
+    baseLevel: 27, hp: 4600, atk: 318, def: 160, spd: 54, exp: 860, gold: 480, hot: 18,
+    weak: ['holy'], quote: '（它张嘴，却发不出自己的名字。）',
+    skills: [{ id: 'atk', w: 6 }, { id: 'drain', w: 3 }, { id: 'silence_field', w: 3 }],
+  },
+  zangxing: {
+    id: 'zangxing', name: '葬星', shape: 'king', scale: 1.45,
+    palette: { body: '#10142a', trim: '#8fa8ff', eye: '#ffffff', cape: '#1a2450' },
+    baseLevel: 29, hp: 17000, atk: 452, def: 198, spd: 52, exp: 4200, gold: 2400, hot: 19,
+    weak: ['fire'], theme: '星陨荒原',
+    quote: '星星落下来的时候，没有人会记得它叫什么。',
+    skills: [{ id: 'atk', w: 3 }, { id: 'starfall', w: 4 }, { id: 'meteor', w: 3 }, { id: 'erase', w: 2 }],
+    boss: true,
+    phases: [
+      { at: 0.6, lines: ['名字是最先掉下去的东西。'], gain: { atk: 1.15 }, addSkills: ['starfall'], col: '#8fa8ff' },
+      { at: 0.28, lines: ['你们记得的那些，我一并收走。'], gain: { atk: 1.25, spd: 1.12 }, clearBuffs: true, col: '#ffffff' },
+    ],
+  },
+  jimie: {
+    id: 'jimie', name: '寂灭', shape: 'demon', scale: 1.5,
+    palette: { body: '#0a0a10', trim: '#4a4a5a', eye: '#8a8a9a' },
+    baseLevel: 31, hp: 12500, atk: 624, def: 224, spd: 44, exp: 4700, gold: 2700, hot: 19,
+    weak: ['holy', 'thunder'], theme: '长夜死境',
+    quote: '……',
+    skills: [{ id: 'atk', w: 4 }, { id: 'silence_field', w: 4 }, { id: 'abyss', w: 3 }, { id: 'erase', w: 3 }],
+    boss: true,
+    phases: [
+      { at: 0.55, lines: ['（它没有说话。整个场地的声音矮了一截。）'], gain: { def: 1.2 }, addSkills: ['silence_field'], col: '#4a4a5a' },
+      { at: 0.2, lines: ['（连脚步声也消失了。）'], gain: { atk: 1.3, spd: 1.2 }, clearBuffs: true, col: '#8a8a9a' },
+    ],
+  },
+  nierming: {
+    id: 'nierming', name: '逆命', shape: 'humanoid', scale: 1.4,
+    palette: { hair: '#ffd76a', cloth: '#2a1030', trim: '#c86bff', skin: '#e8d8e8', eye: '#c86bff', weapon: 'twin' },
+    baseLevel: 33, hp: 15000, atk: 560, def: 212, spd: 64, exp: 5200, gold: 3000, hot: 19,
+    weak: ['none'], theme: '命轮裂隙',
+    quote: '我已经赢过你们了。只是你们还没走到那一步。',
+    skills: [{ id: 'atk', w: 3 }, { id: 'rewind', w: 4 }, { id: 'shadow_step', w: 3 }, { id: 'dark_seal', w: 2 }],
+    boss: true,
+    phases: [
+      { at: 0.5, lines: ['第一次回溯。'], heal: 0.25, gain: { spd: 1.15 }, col: '#c86bff' },
+      { at: 0.2, lines: ['第二次。……没有第三次了，对吧。'], gain: { atk: 1.3 }, clearBuffs: true, col: '#ffd76a' },
+    ],
+  },
+
+  /* — 第九章 · 神域七柱 — */
+  god_flame: {
+    id: 'god_flame', name: '炎之神·迦罗', shape: 'king', scale: 1.5,
+    palette: { body: '#3a0c08', trim: '#ffb43d', eye: '#ff6a1a', cape: '#8f1226' },
+    baseLevel: 35, hp: 16000, atk: 700, def: 258, spd: 56, exp: 7000, gold: 3600, hot: 20,
+    weak: ['ice'], theme: '原初炎庭', quote: '我给过人类火。人类拿它烧了一整座山。',
+    skills: [{ id: 'atk', w: 3 }, { id: 'meteor', w: 4 }, { id: 'divine_judge', w: 3 }, { id: 'starfall', w: 2 }],
+    boss: true,
+    phases: [{ at: 0.5, lines: ['所以我收回来了。有意见？'], gain: { atk: 1.22 }, addSkills: ['divine_judge'], col: '#ffb43d' }],
+  },
+  god_frost: {
+    id: 'god_frost', name: '霜之神·希兰', shape: 'king', scale: 1.5,
+    palette: { body: '#0a1e38', trim: '#bfe4ff', eye: '#8fe6ff', cape: '#2c5480' },
+    baseLevel: 35, hp: 16200, atk: 762, def: 272, spd: 52, exp: 7000, gold: 3600, hot: 20,
+    weak: ['fire'], theme: '太古雪国', quote: '安静是我能给的最好的礼物。',
+    skills: [{ id: 'atk', w: 3 }, { id: 'frost_nova', w: 4 }, { id: 'ice_coffin', w: 3 }, { id: 'divine_judge', w: 2 }],
+    boss: true,
+    phases: [{ at: 0.5, lines: ['你们连这个也要拒绝。'], gain: { def: 1.2, spd: 1.1 }, addSkills: ['divine_judge'], col: '#8fe6ff' }],
+  },
+  god_thunder: {
+    id: 'god_thunder', name: '雷之神·迅', shape: 'king', scale: 1.45,
+    palette: { body: '#2a2a10', trim: '#ffe14d', eye: '#fff6c0', cape: '#6a5a10' },
+    baseLevel: 36, hp: 15200, atk: 852, def: 260, spd: 74, exp: 7200, gold: 3700, hot: 20,
+    weak: ['dark'], theme: '天雷神庭', quote: '快一点结束，对大家都好。',
+    skills: [{ id: 'atk', w: 4 }, { id: 'divine_judge', w: 4 }, { id: 'shadow_step', w: 3 }],
+    boss: true,
+    phases: [{ at: 0.45, lines: ['还不够快。'], gain: { spd: 1.3 }, col: '#ffe14d' }],
+  },
+  god_forest: {
+    id: 'god_forest', name: '森之神·娑', shape: 'demon', scale: 1.55,
+    palette: { body: '#16301a', trim: '#7ad86a', eye: '#e8ffd8' },
+    baseLevel: 36, hp: 15400, atk: 898, def: 286, spd: 42, exp: 7200, gold: 3700, hot: 20,
+    weak: ['fire'], theme: '苍生神木', quote: '树不会问为什么要活着。',
+    skills: [{ id: 'atk', w: 4 }, { id: 'rootbind', w: 3 }, { id: 'quake', w: 3 }, { id: 'divine_judge', w: 3 }],
+    boss: true,
+    phases: [{ at: 0.5, lines: ['你们问得太多了。'], gain: { def: 1.25 }, heal: 0.08, col: '#7ad86a' }],
+  },
+  god_sea: {
+    id: 'god_sea', name: '海之神·澜', shape: 'king', scale: 1.5,
+    palette: { body: '#08243a', trim: '#48d8ff', eye: '#e8ffff', cape: '#1c5a80' },
+    baseLevel: 37, hp: 16000, atk: 756, def: 276, spd: 54, exp: 7400, gold: 3800, hot: 20,
+    weak: ['thunder'], theme: '星海神殿', quote: '潮水带走了多少名字，你们数得清吗？',
+    skills: [{ id: 'atk', w: 3 }, { id: 'tide', w: 4 }, { id: 'frost_nova', w: 3 }, { id: 'divine_judge', w: 2 }],
+    boss: true,
+    phases: [{ at: 0.5, lines: ['数不清。所以别数了。'], gain: { atk: 1.2 }, addSkills: ['tide'], col: '#48d8ff' }],
+  },
+  god_night: {
+    id: 'god_night', name: '夜之神·缇', shape: 'humanoid', scale: 1.4,
+    palette: { hair: '#1a1020', cloth: '#0a0810', trim: '#6a4a8a', skin: '#c8b8d8', eye: '#c86bff', weapon: 'twin' },
+    baseLevel: 37, hp: 15200, atk: 772, def: 268, spd: 68, exp: 7400, gold: 3800, hot: 20,
+    weak: ['holy'], theme: '幽月王座', quote: '睡吧。醒着太辛苦了。',
+    skills: [{ id: 'atk', w: 3 }, { id: 'dark_wave', w: 4 }, { id: 'silence_field', w: 3 }, { id: 'divine_judge', w: 2 }],
+    boss: true,
+    phases: [{ at: 0.45, lines: ['你们为什么不肯睡。'], gain: { spd: 1.2, atk: 1.15 }, col: '#c86bff' }],
+  },
+  god_light: {
+    id: 'god_light', name: '光之神·曜', shape: 'king', scale: 1.55,
+    palette: { body: '#3a3018', trim: '#fff3c4', eye: '#ffffff', cape: '#c8a04a' },
+    baseLevel: 39, hp: 16800, atk: 820, def: 298, spd: 60, exp: 8200, gold: 4200, hot: 21,
+    weak: ['dark'], theme: '白昼王座', quote: '我照过所有角落。角落里什么都没有。',
+    skills: [{ id: 'atk', w: 3 }, { id: 'divine_judge', w: 5 }, { id: 'starfall', w: 3 }, { id: 'king_roar', w: 2 }],
+    boss: true,
+    phases: [
+      { at: 0.6, lines: ['我看过了。真的什么都没有。'], gain: { atk: 1.18 }, col: '#fff3c4' },
+      { at: 0.25, lines: ['……那你们在照着什么走？'], gain: { spd: 1.2 }, clearBuffs: true, col: '#ffffff' },
+    ],
+  },
+
+  /* — 终幕 · 超神器 — */
+  law_order: {
+    id: 'law_order', name: '时序', shape: 'king', scale: 1.6,
+    palette: { body: '#1a1830', trim: '#c8c0ff', eye: '#ffffff', cape: '#3a3060' },
+    baseLevel: 43, hp: 19000, atk: 1180, def: 322, spd: 82, exp: 12000, gold: 6000, hot: 21,
+    weak: ['none'], theme: '时序禁器', quote: '你们已经输了。只是顺序还没到。',
+    skills: [{ id: 'atk', w: 3 }, { id: 'rewind', w: 4 }, { id: 'divine_judge', w: 3 }, { id: 'erase', w: 3 }],
+    boss: true,
+    phases: [
+      { at: 0.6, lines: ['把这一段倒回去。'], heal: 0.15, gain: { spd: 1.2 }, col: '#c8c0ff' },
+      { at: 0.25, lines: ['……倒不回去了。'], gain: { atk: 1.3 }, clearBuffs: true, col: '#ffffff' },
+    ],
+  },
+  law_cause: {
+    id: 'law_cause', name: '因果', shape: 'demon', scale: 1.6,
+    palette: { body: '#2a1018', trim: '#ff8a8a', eye: '#ffd76a' },
+    baseLevel: 45, hp: 21000, atk: 1046, def: 340, spd: 64, exp: 13000, gold: 6500, hot: 21,
+    weak: ['holy'], theme: '命途禁器', quote: '你烧了村子，所以你要救人。这很公平。',
+    skills: [{ id: 'atk', w: 3 }, { id: 'karma', w: 4 }, { id: 'abyss', w: 3 }, { id: 'divine_judge', w: 3 }],
+    boss: true,
+    phases: [
+      { at: 0.55, lines: ['你父亲开了门，所以你必须关上它。'], gain: { atk: 1.2 }, addSkills: ['karma'], col: '#ff8a8a' },
+      { at: 0.22, lines: ['你们不接受？那就由你们来还。'], gain: { atk: 1.28, spd: 1.15 }, clearBuffs: true, col: '#ffd76a' },
+    ],
+  },
+  law_end: {
+    id: 'law_end', name: '终焉', shape: 'king', scale: 1.8,
+    palette: { body: '#050308', trim: '#fde68a', eye: '#ffffff', cape: '#2a0a12' },
+    baseLevel: 48, hp: 24000, atk: 980, def: 366, spd: 72, exp: 26000, gold: 9999, hot: 22,
+    weak: ['fire'], theme: '终末遗器',
+    quote: '我不是谁。我是「安静下来」这件事本身。',
+    skills: [
+      { id: 'atk', w: 3 }, { id: 'divine_judge', w: 4 }, { id: 'starfall', w: 3 },
+      { id: 'karma', w: 3 }, { id: 'erase', w: 3 }, { id: 'silence_field', w: 2 }, { id: 'annihilate', w: 3 },
+    ],
+    boss: true,
+    phases: [
+      { at: 0.78, lines: ['为什么还在响。'], gain: { atk: 1.10 }, addSkills: ['starfall'], col: '#fde68a' },
+      { at: 0.55, lines: ['我给过你们很多次安静的机会。'], gain: { atk: 1.14, spd: 1.08 }, addSkills: ['karma'], col: '#ff8a8a' },
+      { at: 0.32, lines: ['健次郎也吵。阿斯特也吵。你们全都一样。'], gain: { atk: 1.18 }, clearBuffs: true, col: '#ffd76a' },
+      { at: 0.12, lines: ['……那就一直吵下去吧。吵到我听不见为止。'], gain: { atk: 1.25, spd: 1.15 }, heal: 0.04, col: '#ffffff', music: 'hot' },
+    ],
+  },
+});
+
+/* ---------------- 首领阶段 ----------------
+   血量跌破阈值时换台词、换数值、换技能表。
+   此前首领从第一回合到第三十七回合行为完全不变，这是「战斗太长」真正的来源。 */
+Object.assign(ENEMIES.forest_guard, {
+  phases: [
+    { at: 0.5, lines: ['（守卫的胸口裂开，黑根整片翻涌出来。）'], gain: { atk: 1.12 }, addSkills: ['quake'], col: '#5aa04a' },
+  ],
+});
+Object.assign(ENEMIES.ice_witch, {
+  phases: [
+    { at: 0.55, lines: ['有点意思。那这个呢？'], gain: { spd: 1.15 }, addSkills: ['frost_nova'], col: '#8fe6ff' },
+    { at: 0.22, lines: ['在永恒的冬天里沉睡吧——！'], gain: { atk: 1.22 }, clearBuffs: true, col: '#e8ffff' },
+  ],
+});
+Object.assign(ENEMIES.zain, {
+  phases: [
+    { at: 0.6, lines: ['你们追不上我。'], gain: { spd: 1.2 }, addSkills: ['shadow_step'], col: '#c86bff' },
+    { at: 0.25, lines: ['那就连影子一起，全部吃掉。'], gain: { atk: 1.25 }, addSkills: ['dark_wave'], clearBuffs: true, col: '#ff3b4e' },
+  ],
+});
+Object.assign(ENEMIES.baixue, {
+  phases: [
+    { at: 0.5, lines: ['勇气？让我看看它能撑多久。'], gain: { atk: 1.18, def: 1.1 }, addSkills: ['ice_coffin'], col: '#8fe6ff' },
+  ],
+});
+Object.assign(ENEMIES.demon_general, {
+  phases: [
+    { at: 0.45, lines: ['好！就是这个！再来！'], gain: { atk: 1.3 }, addSkills: ['quake'], clearBuffs: true, col: '#ff6a1a' },
+  ],
+});
+Object.assign(ENEMIES.demon_king, {
+  phases: [
+    { at: 0.65, lines: ['……你们还站着。'], gain: { atk: 1.15, spd: 1.1 }, addSkills: ['dark_wave'], col: '#ff2a3c' },
+    { at: 0.3, lines: ['那就让这个世界安静下来。'], gain: { atk: 1.25 }, addSkills: ['meteor'], clearBuffs: true, col: '#ffd76a' },
+  ],
+});
+Object.assign(ENEMIES.demon_king_final, {
+  phases: [
+    { at: 0.7, lines: ['吵。'], gain: { atk: 1.12, spd: 1.08 }, addSkills: ['king_roar'], col: '#ff2a3c' },
+    { at: 0.42, lines: ['五百年了，还是这么吵。'], gain: { atk: 1.18 }, addSkills: ['annihilate'], clearBuffs: true, col: '#8f0f22' },
+    { at: 0.15, lines: ['——健次郎。你教出来的这些东西，真难听。'], gain: { atk: 1.3, spd: 1.15 }, heal: 0.05, col: '#ffd76a', music: 'hot' },
+  ],
 });
 
 /* ---------------- 敌人技能 ---------------- */
@@ -368,20 +705,61 @@ export const ENEMY_SKILLS = {
   blizzard: { id: 'blizzard', name: '暴风雪', power: 1.15, elem: 'ice', target: 'all', inflict: { id: 'slow', chance: 0.35 } },
   ice_coffin: { id: 'ice_coffin', name: '冰棺', power: 1.7, elem: 'ice', inflict: { id: 'frozen', chance: 0.4 } },
   frost_nova: { id: 'frost_nova', name: '霜之新星', power: 1.5, elem: 'ice', target: 'all', inflict: { id: 'defDown', chance: 0.5 } },
-  dark_slash: { id: 'dark_slash', name: '暗影斩', power: 1.65, elem: 'dark' },
-  dark_wave: { id: 'dark_wave', name: '暗影波动', power: 1.25, elem: 'dark', target: 'all' },
-  dark_seal: { id: 'dark_seal', name: '影缚·封术', power: 1.45, elem: 'dark', inflict: { id: 'seal', chance: 0.55 } },
-  shadow_step: { id: 'shadow_step', name: '影渡', power: 1.2, elem: 'dark', hits: 2 },
+  dark_slash: { id: 'dark_slash', name: '暗影斩', power: 1.65, elem: 'dark', fx: 'shadow' },
+  dark_wave: { id: 'dark_wave', name: '暗影波动', power: 1.25, elem: 'dark', fx: 'shadow', target: 'all' },
+  dark_seal: { id: 'dark_seal', name: '影缚·封术', power: 1.45, elem: 'dark', fx: 'shadow', inflict: { id: 'seal', chance: 0.55 } },
+  shadow_step: { id: 'shadow_step', name: '影渡', power: 1.2, elem: 'dark', fx: 'shadow', hits: 2 },
   drain: { id: 'drain', name: '生命吸取', power: 1.3, elem: 'dark', drain: 0.6 },
   quake: { id: 'quake', name: '震地', power: 1.35, elem: 'none', target: 'all', inflict: { id: 'stun', chance: 0.25 } },
-  abyss: { id: 'abyss', name: '深渊之颚', power: 1.8, elem: 'dark', inflict: { id: 'defDown', chance: 0.4 } },
-  king_roar: { id: 'king_roar', name: '魔王咆哮', power: 1.4, elem: 'dark', target: 'all', inflict: { id: 'defDown', chance: 0.6 } },
+  abyss: { id: 'abyss', name: '深渊之颚', power: 1.8, elem: 'dark', fx: 'shadow', inflict: { id: 'defDown', chance: 0.4 } },
+  king_roar: { id: 'king_roar', name: '魔王咆哮', power: 1.4, elem: 'dark', fx: 'shadow', target: 'all', inflict: { id: 'defDown', chance: 0.6 } },
   meteor: { id: 'meteor', name: '陨星坠落', power: 2.0, elem: 'fire', target: 'all' },
-  annihilate: { id: 'annihilate', name: '终焉之刃', power: 2.6, elem: 'dark', target: 'all', gauge: -28 },
+  /* — 第二部新增 — */
+  pollen: { id: 'pollen', name: '灵粉', power: 1.1, elem: 'holy', fx: 'holy', target: 'all', inflict: { id: 'slow', chance: 0.4 } },
+  dazzle: { id: 'dazzle', name: '眩翅', power: 1.3, elem: 'holy', fx: 'holy', inflict: { id: 'stun', chance: 0.3 } },
+  plume_storm: { id: 'plume_storm', name: '焚羽暴', power: 1.5, elem: 'fire', fx: 'fire', target: 'all', inflict: { id: 'burn', chance: 0.5 } },
+  phoenix_dive: { id: 'phoenix_dive', name: '涅槃俯冲', power: 2.2, elem: 'fire', fx: 'fire', hits: 2 },
+  mirage: { id: 'mirage', name: '九相幻影', power: 1.25, elem: 'dark', fx: 'shadow', hits: 3, gauge: -18 },
+  truth_lash: { id: 'truth_lash', name: '真言鞭', power: 1.9, elem: 'holy', fx: 'holy', pierceDef: 0.35 },
+  erase: { id: 'erase', name: '抹除', power: 1.75, elem: 'none', fx: 'shadow', inflict: { id: 'seal', chance: 0.5 } },
+  silence_field: { id: 'silence_field', name: '寂灭领域', power: 1.35, elem: 'dark', fx: 'shadow', target: 'all', inflict: { id: 'seal', chance: 0.45 } },
+  starfall: { id: 'starfall', name: '葬星坠', power: 2.1, elem: 'none', fx: 'holy', target: 'all' },
+  rewind: { id: 'rewind', name: '回溯', power: 1.6, elem: 'none', fx: 'shadow', gauge: -30 },
+  tide: { id: 'tide', name: '潮没', power: 1.8, elem: 'ice', fx: 'frost', target: 'all', inflict: { id: 'slow', chance: 0.5 } },
+  divine_judge: { id: 'divine_judge', name: '神权裁决', power: 2.05, elem: 'holy', fx: 'holy', pierceDef: 0.3, inflict: { id: 'defDown', chance: 0.5 } },
+  karma: { id: 'karma', name: '业报', power: 1.95, elem: 'dark', fx: 'shadow', target: 'all', drain: 0.4 },
+  annihilate: { id: 'annihilate', name: '终焉之刃', power: 2.6, elem: 'dark', fx: 'shadow', target: 'all', gauge: -28 },
 };
 
+/* ---------------- 敌人等级缩放 ----------------
+   此前这段公式在 battle.js、tools/validate.mjs、tools/balance.mjs 各抄了一份，
+   加了 baseLevel 之后三处会立刻算出不同的结果（工具报出来的首领 ATK 是实际的六倍）。
+   现在只留这一处，三边共用。 */
+export function enemyStatsAt(ref, lv) {
+  const d = typeof ref === 'string' ? ENEMIES[ref] : ref;
+  if (!d) return null;
+  const k = Math.max(0, lv - (d.baseLevel || 1));
+  const hpK = (d.boss && lv >= 18) ? 0.032 : 0.075;
+  return {
+    def: d,
+    maxHp: Math.floor(d.hp * (1 + k * hpK)),
+    atk: Math.floor(d.atk * (1 + k * 0.11)),
+    defv: Math.floor(d.def * (1 + k * 0.10)),
+    spd: d.spd + k,
+    exp: Math.floor(d.exp * (1 + k * 0.22)),
+    gold: Math.floor(d.gold * (1 + k * 0.2)),
+    scaleK: k,
+  };
+}
+
 /* ---------------- 成长曲线 ---------------- */
-export function expToNext(level) { return Math.floor(42 + level * level * 3.2); }
+/* 第二部把等级上限推到 50，所以后段曲线要放缓，
+   否则 Lv30 之后每一级都要打十几场。 */
+export const MAX_LEVEL = 50;
+export function expToNext(level) {
+  const base = 42 + level * level * 3.2;
+  return Math.floor(level > 27 ? base * (1 - (level - 27) * 0.014) : base);
+}
 
 export function statsAt(def, level, equips = []) {
   const g = def.grow, b = def.base;

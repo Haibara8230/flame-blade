@@ -16,7 +16,6 @@ export const CHAPTER_ONE = {
   p_training: {
     chapter: '序章 · 最后一个普通早晨', bg: 'village_day',
     enemies: [{ ref: 'training_dummy', level: 1 }], escape: false,
-    onWin: [{ heal: 'party' }],
     win: [
       ['旁白', '（木桩摇了两下，垂下了绑着布团的横臂。父亲收起牵绳。）'],
       ['健次郎', '刚才为什么收刀？'],

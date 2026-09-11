@@ -2,7 +2,13 @@
    battle.js — 回合制战斗系统
    特色：热血槽 / 奥义演出 / 格挡弹反 / 连击多段 / 属性弱点
    ============================================================ */
-import { ACTORS, SKILLS, ENEMIES, ENEMY_SKILLS, EQUIPS, ITEMS, STATUS, statsAt } from './characters.js';
+import { ACTORS, SKILLS, COMBOS, ENEMIES, ENEMY_SKILLS, EQUIPS, ITEMS, STATUS, statsAt, enemyStatsAt } from './characters.js';
+import { eqBonus as equipBonus, eqElemBonus as equipElem } from './loot.js';
+import { talentBonus, talentElem } from './growth.js';
+
+/* 装备词缀与天赋用同一套键名，战斗里永远查这两个合并后的函数。 */
+function eqBonus(unit, key) { return equipBonus(unit, key) + talentBonus(unit, key); }
+function eqElemBonus(unit, elem) { return equipElem(unit, elem) + talentElem(unit, elem); }
 import * as SP from './sprites.js';
 
 const TAU = Math.PI * 2;
@@ -13,14 +19,32 @@ const chance = p => Math.random() < p;
 const H_BAR_Y = 30;
 
 /* 战斗节奏倍率：越小越快（影响所有动作时长） */
-export const BATTLE_SPEED = 0.68;
+/* 演出基准速度。setBattleSpeed() 让玩家在 ×1 / ×2 / ×3 之间切换。 */
+const BASE_SPEED = 0.68;
+export const SPEED_STEPS = [1, 2, 3];
+let speedIdx = 0;
+export let BATTLE_SPEED = BASE_SPEED;
+export function battleSpeedLabel() { return '×' + SPEED_STEPS[speedIdx]; }
+export function cycleBattleSpeed() {
+  speedIdx = (speedIdx + 1) % SPEED_STEPS.length;
+  BATTLE_SPEED = BASE_SPEED / SPEED_STEPS[speedIdx];
+  return battleSpeedLabel();
+}
+export function setBattleSpeedIndex(i) {
+  speedIdx = clamp(i | 0, 0, SPEED_STEPS.length - 1);
+  BATTLE_SPEED = BASE_SPEED / SPEED_STEPS[speedIdx];
+  return battleSpeedLabel();
+}
+export function battleSpeedIndex() { return speedIdx; }
 
 /* 行动条：单位的 gauge 按 spd 速率涨到 GOAL 就出手，出手后减去 GOAL 并保留溢出，
    所以速度高的单位能在慢速单位出手一次的间隔里行动两次。 */
 const GOAL = 100;
 
 /* 愤怒资源的获取量（只有 resource==='rage' 的角色会收到） */
-const RAGE = { hit: 1.25, taken: 28, block: 10, parry: 20, kill: 8, guardCmd: 12 };
+/* 凯的人设是「为守护而出鞘」，但此前 par 0.08 几乎不触发，怒气一场都攒不到奥义。
+   现在格挡与弹反是怒气的主要来源，主角的循环变成「接下这一刀，再还回去」。 */
+const RAGE = { hit: 1.25, taken: 28, block: 14, parry: 35, kill: 8, guardCmd: 10 };
 
 /* 站位（960x540 画布） */
 const ENEMY_POS = [
@@ -59,22 +83,31 @@ export function createBattle(game, def, stage) {
   B.enemies = def.enemies.map((e, i) => {
     const d = ENEMIES[e.ref];
     const lv = e.level;
-    const k = lv - 1;
+    /* baseLevel：这份数值是「按几级写的」。
+       第一部的敌人从 1 级线性放大没问题，但第二部一路到 Lv48，
+       再线性放大会让攻防涨到失控（防御一度算到 900+，伤害归零）。
+       所以第二部的敌人直接写成终盘数值，baseLevel 指出它的基准。
+       缩放公式在 characters.js 里只有一份，工具与运行时共用。 */
+    const st = enemyStatsAt(d, lv);
+    const k = st.scaleK;
     const pos = ENEMY_POS[row][i] || ENEMY_POS[row][ENEMY_POS[row].length - 1];
     const scale = enemyScale(d) * (1 + k * 0.028);
-    // 最终决战的首领不随等级过度膨胀，避免变成消耗战
-    const hpK = (d.boss && lv >= 18) ? 0.032 : 0.075;
-    const maxHp = Math.floor(d.hp * (1 + k * hpK));
+    const maxHp = st.maxHp;
     return {
       i, ref: d.id, def: d, name: d.name, shape: d.shape, palette: d.palette,
       level: lv, maxHp, hp: maxHp,
-      atk: Math.floor(d.atk * (1 + k * 0.11)), defv: Math.floor(d.def * (1 + k * 0.10)),
-      spd: d.spd + k, exp: Math.floor(d.exp * (1 + k * 0.22)), gold: Math.floor(d.gold * (1 + k * 0.2)),
+      atk: st.atk, defv: st.defv,
+      spd: st.spd, exp: st.exp, gold: st.gold,
       boss: !!d.boss, skills: d.skills, quote: d.quote, weak: d.weak || null,
       scale, x: pos.x, y: pos.y, baseX: pos.x, baseY: pos.y,
       pose: 'idle', hurtP: null, atkP: null, dead: false, dying: 0,
       status: [], buffs: { atk: 1, def: 1, spd: 1 },
       gauge: rnd(0, 15), isEnemy: true,
+      /* 击破槽：打中弱点累积，满了进入 BREAK（眩晕 + 行动条清零 + 易伤）。
+         首领需要更多次，杂兵两三下就能打断。 */
+      breakMax: d.boss ? (lv >= 18 ? 8 : 6) : 3,
+      breakGauge: 0, broken: 0,
+      phases: (d.phases || []).map(ph => ({ ...ph, done: false })),
       phase: 1, said: false, offY: 0,
     };
   });
@@ -89,14 +122,28 @@ export function createBattle(game, def, stage) {
       gauge: rnd(0, 15),
       resource: (ACTORS[m.id] && ACTORS[m.id].resource) || 'mp',
       guardStance: false, cmd: null, acted: false,
+      lastStandUsed: false,
     };
   });
+  // 「先手」词缀：开战时行动条起步更高
+  for (const m of B.party) {
+    const fs = eqBonus(m, 'firstStrike');
+    if (fs) m.gauge = clamp(m.gauge + fs, 0, GOAL - 1);
+  }
   B.byId = {};
   for (const m of B.party) {
     B.byId[m.id] = m;
     if (m.resource === 'rage') m.mp = 0;   // 愤怒从零攒起
   }
 
+  B.combosUsed = {};
+  B.bondLevel = id => (game.bondLevel ? game.bondLevel(id) : 0);
+  B.comboBonus = () => {
+    // 璃的「同行」天赋：连携技伤害提升
+    let best = 0;
+    for (const m of B.party) best = Math.max(best, (game.talentBonus ? game.talentBonus(m, 'bondPlus') : 0) * 0.10);
+    return best;
+  };
   B.objective = def.objective ? { ...def.objective, progress: 0, completed: [] } : null;
   B.supportUsed = {};
   for (const mod of def.modifiers || []) if (game.flags?.[mod.flag]) {
@@ -169,15 +216,27 @@ function shake(B, v) { B.shake = Math.max(B.shake, v); }
 function flash(B, v) { B.flash = Math.max(B.flash, v); }
 
 function damage(B, target, amount, opt = {}) {
+  if (target.broken > 0) amount *= 1.5;      // BREAK 期间易伤
   amount = Math.max(1, Math.floor(amount));
   if (opt.drain && opt.from) {
     const heal = Math.floor(amount * opt.drain);
     opt.from.hp = Math.min(opt.from.maxHp, opt.from.hp + heal);
     addFloat(B, `+${heal}`, opt.from.x, opt.from.y - 120, '#7dffa8', 26);
   }
+  // 「不倒」词缀：每场一次，致命伤害后残留 1 点生命
+  if (!target.isEnemy && amount >= target.hp && !target.lastStandUsed && eqBonus(target, 'lastStand') > 0) {
+    target.lastStandUsed = true;
+    amount = Math.max(0, target.hp - 1);
+    addFloat(B, '不倒！', target.x, target.y - 150, '#ffd76a', 30, true);
+    addLog(B, `<span class="hl">※ ${target.name} 凭「不倒」撑住了这一击！</span>`);
+  }
   target.hp = Math.max(0, target.hp - amount);
-  // 净化战不能靠击杀守卫取胜，伤害只会压制本体。
-  if (B.objective?.type === 'purify' && target.ref === 'forest_guard') target.hp = Math.max(1, target.hp);
+  /* 净化战不能靠击杀本体取胜，伤害只会压制它。
+     此前这里把本体写死成 forest_guard，于是第二部的玄鹿战可以被直接打死，
+     净化流程形同虚设。改成「不在 objective.targets 里的那个就是本体」。 */
+  if (B.objective?.type === 'purify' && !(B.objective.targets || []).includes(target.ref)) {
+    target.hp = Math.max(1, target.hp);
+  }
   const col = opt.col || (opt.crit ? '#ffe14d' : '#ff5566');
   addFloat(B, (opt.crit ? '会心 ' : '') + amount, target.x + rnd(-18, 18), target.y - 110, col, opt.crit ? 42 : 32, opt.crit);
   target.hurtP = 0;
@@ -187,10 +246,92 @@ function damage(B, target, amount, opt = {}) {
   if (target.hp <= 0) {
     target.dead = true; target.pose = 'dead'; target.dying = 0;
     addLog(B, `<span class="dmg">${target.name} 被击倒了！</span>`);
-    if (opt.by) gainRage(B, opt.by, RAGE.kill);
+    if (opt.by) {
+      gainRage(B, opt.by, RAGE.kill);
+      const gk = talentBonus(opt.by, 'gaugeOnKill');   // 雷「猎手」：击倒推条
+      if (gk) shiftGauge(B, opt.by, gk);
+      const kh = eqBonus(opt.by, 'killHeal');          // 「收割」
+      if (kh > 0 && !opt.by.dead) {
+        const h = Math.floor(opt.by.maxHp * kh);
+        opt.by.hp = Math.min(opt.by.maxHp, opt.by.hp + h);
+        addFloat(B, `+${h}`, opt.by.x, opt.by.y - 120, '#7dffa8', 26);
+      }
+    }
+  } else if (target.isEnemy) {
+    checkPhases(B, target);
+  }
+  // 「吸血」：我方造成伤害回血
+  if (opt.by && !opt.by.isEnemy && !opt.by.dead) {
+    const ls = eqBonus(opt.by, 'lifesteal');
+    if (ls > 0) {
+      const h = Math.max(1, Math.floor(amount * ls));
+      opt.by.hp = Math.min(opt.by.maxHp, opt.by.hp + h);
+      addFloat(B, `+${h}`, opt.by.x, opt.by.y - 126, '#7dffa8', 22);
+    }
+  }
+  // 「荆棘」：我方受伤时反弹给攻击者
+  if (!target.isEnemy && opt.attacker && opt.attacker.isEnemy && !opt.attacker.dead) {
+    const th = eqBonus(target, 'thorns');
+    if (th > 0) {
+      const back = Math.max(1, Math.floor(amount * th));
+      opt.attacker.hp = Math.max(0, opt.attacker.hp - back);
+      addFloat(B, `${back}`, opt.attacker.x, opt.attacker.y - 118, '#ffb0b0', 22);
+      if (opt.attacker.hp <= 0) { opt.attacker.dead = true; opt.attacker.pose = 'dead'; opt.attacker.dying = 0; }
+    }
   }
   const out = amount;
   return out;
+}
+
+/* 弱点击破：打中弱点累积击破槽，满了敌人被 BREAK。
+   此前弱点只是一次性 ×1.5 飘个字，玩家没有理由记住谁怕什么。 */
+function gainBreak(B, target, n = 1) {
+  if (!target || target.dead || !target.isEnemy || target.broken > 0) return;
+  target.breakGauge = Math.min(target.breakMax, target.breakGauge + n);
+  if (target.breakGauge < target.breakMax) {
+    addFloat(B, `击破 ${target.breakGauge}/${target.breakMax}`, target.x, target.y - 168, '#8fe6ff', 20);
+    return;
+  }
+  target.breakGauge = 0;
+  target.broken = 2;                       // 持续两回合易伤
+  target.gauge = 0;                        // 行动条清零，出手被推到最后
+  applyStatus(B, target, 'stun', 1);
+  addLog(B, `<span class="hl">※ BREAK！${target.name} 的架势被打散了！</span>`);
+  addFloat(B, 'BREAK!', target.x, target.y - 150, '#ffe14d', 44, true);
+  addFx(B, 'burst', target.x, target.y - 80, '#ffe14d', { dur: 0.7, r: 110, n: 18 });
+  flash(B, 0.55); shake(B, 18);
+  B.hitstop = 0.16;
+}
+
+/* 首领阶段转换：血量跌破阈值时换台词、换数值、换技能表。
+   此前首领从第一回合到第三十七回合行为完全不变。 */
+function checkPhases(B, e) {
+  if (!e || e.dead || !e.phases || !e.phases.length) return;
+  const ratio = e.hp / e.maxHp;
+  for (const ph of e.phases) {
+    if (ph.done || ratio > ph.at) continue;
+    ph.done = true;
+    e.phase++;
+    if (ph.gain) {
+      if (ph.gain.atk) e.atk = Math.floor(e.atk * ph.gain.atk);
+      if (ph.gain.def) e.defv = Math.floor(e.defv * ph.gain.def);
+      if (ph.gain.spd) e.spd = Math.max(1, Math.floor(e.spd * ph.gain.spd));
+    }
+    if (ph.clearBuffs) { e.status = []; e.buffs = { atk: 1, def: 1, spd: 1 }; }
+    if (ph.addSkills) e.skills = [...e.skills, ...ph.addSkills.map(id => ({ id, w: 4 }))];
+    if (ph.heal) e.hp = Math.min(e.maxHp, e.hp + Math.floor(e.maxHp * ph.heal));
+    for (const line of ph.lines || []) {
+      B.floats.push({ kind: 'quote', txt: line, x: e.x, y: e.y - 130 * e.scale, life: 0, dur: 2.6, col: '#ffd76a' });
+      addLog(B, `<span class="hl">${e.name}：${line}</span>`);
+    }
+    addLog(B, `<span class="hl">※ ${e.name} 进入第 ${e.phase} 形态！</span>`);
+    addFloat(B, `第 ${e.phase} 形态`, e.x, e.y - 180, '#ff8048', 30, true);
+    addFx(B, 'burst', e.x, e.y - 80, ph.col || '#ff6a1a', { dur: 0.9, r: 140, n: 22 });
+    flash(B, 0.8); shake(B, 22);
+    B.hitstop = 0.2;
+    if (ph.music) B.game.onBattleMusic && B.game.onBattleMusic(ph.music);
+    if (ph.bg) B.bg = ph.bg;
+  }
 }
 
 /* 愤怒资源：只有 resource==='rage' 的角色会积攒，术力角色无视 */
@@ -198,7 +339,7 @@ export function gainRage(B, unit, v) {
   if (!unit || unit.dead || unit.isEnemy) return;
   if (unit.resource !== 'rage' || v <= 0) return;
   const before = unit.mp;
-  unit.mp = clamp(unit.mp + v * (unit.rageMul || 1), 0, unit.maxMp);
+  unit.mp = clamp(unit.mp + v * (unit.rageMul || 1) * (1 + eqBonus(unit, 'ragePlus')), 0, unit.maxMp);
   const gained = Math.round(unit.mp - before);
   if (gained > 0) addFloat(B, `怒+${gained}`, unit.x + rnd(-10, 10), unit.y - 132, '#ff9a3c', 20);
   if (canUlt(unit) && !unit.ultNotified) {
@@ -211,8 +352,19 @@ export function gainRage(B, unit, v) {
 /* 该角色当前资源是否够放奥义 */
 export function canUlt(m) {
   if (!m || m.dead) return false;
-  const ult = (m.skills || []).map(id => SKILLS[id]).find(sk => sk && sk.ult);
-  return !!ult && m.mp >= (ult.mp || 0);
+  const ults = (m.skills || []).map(id => SKILLS[id]).filter(sk => sk && (sk.ult || sk.release));
+  if (!ults.length) return false;
+  const cheapest = Math.min(...ults.map(sk => sk.mp || 0));
+  return m.mp >= cheapest;
+}
+
+/* 当前怒气能打开到第几段解放（给 HUD 显示用） */
+export function releaseStage(m) {
+  if (!m) return 0;
+  const rel = (m.skills || []).map(id => SKILLS[id]).filter(sk => sk && sk.release);
+  let best = 0;
+  for (const sk of rel) if (m.mp >= (sk.mp || 0)) best = Math.max(best, sk.release);
+  return best;
 }
 
 /* 资源占比（0~1），给 HUD 和隐藏结局判定用 */
@@ -252,10 +404,15 @@ export function computeDamage(B, atkUnit, defUnit, power, opt = {}) {
   if (!atkUnit || !defUnit) return { dmg: 0, crit: false };
   const atk = effAtk(atkUnit);
   let defv = effDef(defUnit);
-  if (opt.pierceDef) defv = Math.floor(defv * (1 - opt.pierceDef));
+  // 「贯穿」词缀与技能自带的破防叠加
+  const pierce = clamp((opt.pierceDef || 0) + eqBonus(atkUnit, 'pierce'), 0, 0.85);
+  if (pierce) defv = Math.floor(defv * (1 - pierce));
   /* 平衡公式：普攻（power=1）约造成 (1.05×攻击 − 0.95×防御) 的伤害
-     —— 保证一场战斗 3~6 回合，且高防敌人仍有明显减伤 */
-  const base = (atk * power * 1.02) - defv * 0.9 + 44 * power;
+     —— 保证一场战斗 3~6 回合，且高防敌人仍有明显减伤
+     防御按段数摊薄：多段技此前每一段都要扣满一次防御，段数越多越吃亏
+     （凯的 5 段奥义被扣 5 次，伤害只有璃单段奥义的三分之一）。 */
+  const hits = Math.max(1, opt.hits || 1);
+  const base = (atk * power * 1.02) - (defv * 0.9) / hits + 44 * power;
   const lvl = atkUnit.level || 1;
   const dlv = defUnit.level || 1;
   const lvK = 1 + (lvl - dlv) * 0.02;
@@ -263,9 +420,20 @@ export function computeDamage(B, atkUnit, defUnit, power, opt = {}) {
   let dmg = base * lvK * rand;
   const criRate = (atkUnit.cri || 0.06) + (opt.criBonus || 0) + (atkUnit.isEnemy ? 0.03 : 0);
   const crit = chance(criRate);
-  if (crit) dmg *= 1.72;
+  if (crit) dmg *= 1.72 + eqBonus(atkUnit, 'critDmg');     // 「致命」词缀
   // 属性克制
   if (opt.weak && opt.elem && opt.weak.includes(opt.elem)) { dmg *= 1.5; opt.isWeak = true; }
+  // 装备特效：属性伤害、猎弱、弑王
+  if (opt.elem && opt.elem !== 'none') dmg *= 1 + eqElemBonus(atkUnit, opt.elem);
+  // 天赋：凯「不退」残血增伤、璃「冰核」对冰封目标增伤
+  if (!atkUnit.isEnemy && atkUnit.hp / atkUnit.maxHp < 0.4) dmg *= 1 + talentBonus(atkUnit, 'lowHpAtk');
+  if ((defUnit.status || []).some(st => st.id === 'frozen')) dmg *= 1 + talentBonus(atkUnit, 'shatter');
+  // 苍「守护」/ 璃「同行」：全队减伤
+  if (!defUnit.isEnemy && opt.partyCut) dmg *= 1 - clamp(opt.partyCut, 0, 0.5);
+  if (opt.weakTarget) dmg *= 1 + eqBonus(atkUnit, 'weakHunter');
+  if (defUnit.boss) dmg *= 1 + eqBonus(atkUnit, 'bossBane');
+  // 「壁垒」：受到的伤害减免
+  if (!defUnit.isEnemy) dmg *= 1 - clamp(eqBonus(defUnit, 'flatCut'), 0, 0.45);
   // 状态影响
   const st = defUnit.status || [];
   if (st.some(s => s.id === 'defUp')) dmg *= 0.7;
@@ -282,7 +450,7 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
   const isEnemySkill = !!ENEMY_SKILLS[skillId];
   const es = ENEMY_SKILLS[skillId];
   const spec = isEnemySkill ? es : s;
-  if (!spec) return null;
+  if (!spec) return null;      // 连携技不走技能表，这里直接跳过
   if (!targets || !targets.length) return null;
 
   const elem = spec.elem || 'none';
@@ -297,8 +465,11 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
   const plan = targets.filter(Boolean).map(tg => {
     const arr = [];
     for (let h = 0; h < hits; h++) {
+      const tgWeak = tg.weak || tg.def?.weak;
       const r = computeDamage(B, atkUnit, tg, spec.power || 1, {
-        elem, criBonus: spec.criBonus || 0, pierceDef: spec.pierceDef || 0,
+        elem, criBonus: spec.criBonus || 0, pierceDef: spec.pierceDef || 0, hits,
+        weakTarget: !!(tgWeak && elem && tgWeak.includes(elem)),
+        partyCut: tg.isEnemy ? 0 : partyDamageCut(B),
       });
       arr.push(r);
     }
@@ -352,12 +523,15 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
       const weak = tg.weak || tg.def?.weak;
       let elemBonus = false;
       if (weak && weak.includes(elem)) { r.dmg = Math.floor(r.dmg * 1.5); elemBonus = true; }
+      if (elemBonus && !atkUnit.isEnemy && h === 0) gainBreak(B, tg, 1 + eqBonus(atkUnit, 'breakPlus'));
       const isEnemy = atkUnit.isEnemy;
       /* 防御判定：敌人打我方时先滚弹反、再滚格挡。
          概率来自角色属性 + 装备，选了「格挡」指令则本轮大幅提升。 */
       let guardMul = 1, guardKind = null;
       if (isEnemy && !tg.isEnemy) {
-        const par = clamp((tg.par || 0) + (tg.guardStance ? 0.12 : 0), 0, 0.85);
+        /* 预判格挡：下了格挡指令就进入架势，弹反窗口大幅放宽。
+           par 来自角色属性 + 装备（疾风之靴的 par+0.05 到这里才第一次有意义）。 */
+        const par = clamp((tg.par || 0) + (tg.guardStance ? 0.34 : 0), 0, 0.85);
         const blk = clamp((tg.blk || 0) + (tg.guardStance ? 0.45 : 0), 0, 0.92);
         if (chance(par)) { guardMul = 0; guardKind = 'parry'; }
         else if (chance(blk)) { guardMul = 0.38; guardKind = 'block'; }
@@ -370,30 +544,70 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
         addFloat(B, '弹反！', tg.x, tg.y - 118, '#fff6c0', 30);
         flash(B, 0.35); shake(B, 10);
       } else {
-        damage(B, tg, finalDmg, { crit: r.crit, col: r.crit ? '#ffe14d' : (elemBonus ? elemColor(elem) : undefined), by: isEnemy ? null : atkUnit, from: spec.drain ? atkUnit : null, drain: spec.drain });
+        damage(B, tg, finalDmg, { crit: r.crit, col: r.crit ? '#ffe14d' : (elemBonus ? elemColor(elem) : undefined), by: isEnemy ? null : atkUnit, attacker: atkUnit, from: spec.drain ? atkUnit : null, drain: spec.drain });
         if (isEnemy && !tg.isEnemy) gainRage(B, tg, clamp(RAGE.taken * finalDmg / Math.max(1, tg.maxHp), 2, 25));
       }
 
       // 命中特效
       const fxCol = elemColor(elem) === '#ffffff' ? (r.crit ? '#ffe14d' : '#ffffff') : elemColor(elem);
+      /* 命中特效。
+         每个 fx 名字对应技能描述里真正写的那件事——
+         「连续三次斩击」就画三道刀光，「雷光贯穿」就真的从天上劈下来，
+         「连时空都冻结」就冻整个画面，而不是所有技能共用一团爆光。 */
+      const ultBig = !!spec.ult;
       switch (fxName) {
         case 'slash':
           addFx(B, 'slash', tg.x, tg.y - 88, fxCol, { dur: 0.34, ang: -0.6 + rnd(-.4, .4), rx: 78, ry: 66 });
           if (hits > 1 && h < hits - 1) addFx(B, 'slash', tg.x, tg.y - 88, '#ffffff', { dur: 0.3, ang: 0.7 + rnd(-.4, .4), rx: 70, ry: 60 });
           break;
+        case 'flurry':                       // 连刃·三连斩：一次画满整组刀光
+          if (h === 0) addFx(B, 'flurry', tg.x, tg.y - 88, fxCol, { dur: 0.16 * hits + 0.3, n: hits, rx: 80 });
+          addFx(B, 'slash', tg.x, tg.y - 88, '#ffffff', { dur: 0.26, ang: (h % 2 ? 1 : -1) * 0.8, rx: 68, ry: 58 });
+          break;
         case 'pierce':
           addFx(B, 'pierce', tg.x, tg.y - 86, fxCol, { dur: 0.32 });
+          addFx(B, 'burst', tg.x, tg.y - 84, fxCol, { dur: 0.3, r: 44, n: 7 });
           break;
         case 'fire':
-          addFx(B, 'burst', tg.x, tg.y - 80, '#ff6a1a', { dur: 0.6, r: 90, n: 14 });
-          addFx(B, 'fire', tg.x, tg.y - 40, '#ff8a1a', { dur: 0.7 });
+          addFx(B, 'burst', tg.x, tg.y - 80, '#ff6a1a', { dur: 0.6, r: ultBig ? 140 : 90, n: ultBig ? 22 : 14 });
+          addFx(B, 'fire', tg.x, tg.y - 40, '#ff8a1a', { dur: ultBig ? 1.0 : 0.7, big: ultBig });
+          if (ultBig && h === hits - 1) { flash(B, 0.5); shake(B, 16); }
+          break;
+        case 'blaze':                        // 焦炎·狮子奋迅：脚下炎环 + 火柱
+          addFx(B, 'blaze', tg.x, tg.y, '#ff8a1a', { dur: 0.8 });
+          addFx(B, 'fire', tg.x, tg.y - 40, '#ffb43d', { dur: 0.7 });
           break;
         case 'ice':
           addFx(B, 'ice', tg.x, tg.y - 80, '#8fe6ff', { dur: 0.65 });
+          addFx(B, 'burst', tg.x, tg.y - 80, '#cfe8ff', { dur: 0.34, r: 52, n: 8 });
+          break;
+        case 'frost':                        // 绝对零度 / 暴雪：整个画面降温
+          if (h === 0) addFx(B, 'frostfield', 0, 0, '#8fe6ff', { dur: ultBig ? 1.1 : 0.75 });
+          addFx(B, 'ice', tg.x, tg.y - 80, '#e8ffff', { dur: 0.7 });
+          if (ultBig && h === 0) { flash(B, 0.45); B.hitstop = 0.12; }
           break;
         case 'thunder':
           addFx(B, 'thunder', tg.x, tg.y, '#ffe14d', { dur: 0.5 });
           addFx(B, 'burst', tg.x, tg.y - 80, '#ffe14d', { dur: 0.45, r: 70, n: 10 });
+          break;
+        case 'bolt':                         // 雷鸣·千鸟突：一道贯穿的雷
+          addFx(B, 'bolt', tg.x, tg.y - 80, '#ffe14d', { dur: 0.42 });
+          addFx(B, 'thunder', tg.x, tg.y, '#fff6c0', { dur: 0.45 });
+          addFx(B, 'burst', tg.x, tg.y - 80, '#ffe14d', { dur: 0.4, r: 80, n: 12 });
+          shake(B, 12);
+          break;
+        case 'holy':                         // 圣光：自上而下的光柱
+          addFx(B, 'holybeam', tg.x, tg.y - 40, '#fff3c4', { dur: 0.62 });
+          addFx(B, 'burst', tg.x, tg.y - 80, '#ffffff', { dur: 0.4, r: 66, n: 10 });
+          break;
+        case 'shadow':
+          addFx(B, 'shadow', tg.x, tg.y - 80, '#6a2a8a', { dur: 0.55 });
+          addFx(B, 'burst', tg.x, tg.y - 80, '#c86bff', { dur: 0.4, r: 60, n: 9 });
+          break;
+        case 'combo':                        // 连携技
+          addFx(B, 'combo', tg.x, tg.y - 80, fxCol, { dur: 0.7 });
+          addFx(B, 'burst', tg.x, tg.y - 80, '#ffffff', { dur: 0.5, r: 120, n: 18 });
+          flash(B, 0.6); shake(B, 18);
           break;
         default:
           addFx(B, 'burst', tg.x, tg.y - 80, fxCol, { dur: 0.45, r: 60 });
@@ -402,8 +616,21 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
 
       // 附加状态
       const inf = spec.inflict;
-      if (inf && !tg.dead && chance(inf.chance ?? 0.4)) {
+      const infChance = (inf ? (inf.chance ?? 0.4) : 0)
+        + (inf && inf.id === 'frozen' && !atkUnit.isEnemy ? talentBonus(atkUnit, 'freezePlus') : 0);
+      if (inf && !tg.dead && chance(infChance)) {
         applyStatus(B, tg, inf.id, inf.turns || STATUS[inf.id].turns);
+      }
+      // 「燃焰」词缀：我方攻击概率点燃
+      if (!atkUnit.isEnemy && !tg.dead && chance(eqBonus(atkUnit, 'burnChance'))) {
+        applyStatus(B, tg, 'burn', STATUS.burn.turns);
+      }
+      // 「余响」词缀：概率追加一次半伤攻击
+      if (!atkUnit.isEnemy && !tg.dead && h === hits - 1 && chance(eqBonus(atkUnit, 'echo'))) {
+        const ex = computeDamage(B, atkUnit, tg, (spec.power || 1) * 0.5, { elem, hits: 1 });
+        damage(B, tg, ex.dmg, { crit: ex.crit, col: '#ffd76a', by: atkUnit, attacker: atkUnit });
+        addFloat(B, '余响！', tg.x, tg.y - 158, '#ffd76a', 24);
+        addFx(B, 'slash', tg.x, tg.y - 88, '#ffd76a', { dur: 0.28, ang: 1.1, rx: 70, ry: 60 });
       }
       // 只在第一段生效，否则多段技会把目标一路推到条底
       if (spec.gauge && !tg.dead && h === 0) shiftGauge(B, tg, spec.gauge);
@@ -413,12 +640,34 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
         if (guardKind === 'parry') {
           addLog(B, `<span class="hl">※ 弹反！${tg.name} 完全抵消了这一击！</span>`);
           gainRage(B, tg, RAGE.parry);
+          // 弹反的回报：把攻击者的行动条打回去，并立刻还一刀
+          shiftGauge(B, atkUnit, -GOAL * 0.4);
+          if (!atkUnit.dead && h === 0) {
+            const back = computeDamage(B, tg, atkUnit, 0.85, { hits: 1 });
+            damage(B, atkUnit, back.dmg, { crit: back.crit, col: '#fff6c0', by: tg });
+            addFloat(B, '反击！', atkUnit.x, atkUnit.y - 140, '#fff6c0', 26);
+            addFx(B, 'slash', atkUnit.x, atkUnit.y - 88, '#fff6c0', { dur: 0.32, ang: 0.5, rx: 78, ry: 66 });
+            if (atkUnit.weak && tg.elemAffinity && atkUnit.weak.includes(tg.elemAffinity)) gainBreak(B, atkUnit, 1);
+          }
         } else {
           addLog(B, `※ ${tg.name} 挡下了这一击（伤害减免）。`);
           gainRage(B, tg, RAGE.block);
+          // 「还礼」词缀：普通格挡也触发反击
+          if (eqBonus(tg, 'guardCounter') > 0 && !atkUnit.dead && h === 0) {
+            const back = computeDamage(B, tg, atkUnit, 0.55, { hits: 1 });
+            damage(B, atkUnit, back.dmg, { crit: back.crit, col: '#8fd8ff', by: tg });
+            addFloat(B, '还礼', atkUnit.x, atkUnit.y - 140, '#8fd8ff', 22);
+          }
         }
       }
       if (!isEnemy && !tg.dead) gainRage(B, atkUnit, (SKILLS[skillId]?.rage || 10) / Math.max(1, hits) * RAGE.hit);
+      // 技能自带的自我回复（真·灭魂炎狱斩）
+      if (spec.selfHeal && h === hits - 1 && !atkUnit.isEnemy && !atkUnit.dead) {
+        const h2 = Math.floor(atkUnit.maxHp * spec.selfHeal);
+        atkUnit.hp = Math.min(atkUnit.maxHp, atkUnit.hp + h2);
+        addFloat(B, `+${h2}`, atkUnit.x, atkUnit.y - 130, '#ff9a3c', 30);
+        addFx(B, 'fire', atkUnit.x, atkUnit.y - 40, '#ff8a1a', { dur: 0.8 });
+      }
     }
     // 敌人被攻击后按血量说话
     if (!atkUnit.isEnemy) {
@@ -432,6 +681,16 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
   }
 }
 
+/* 全队减伤：苍的「守护」与璃的「同行」，取两者之和 */
+function partyDamageCut(B) {
+  let cut = 0;
+  for (const m of B.party) {
+    if (m.dead) continue;
+    cut += talentBonus(m, 'partyCut') + talentBonus(m, 'guardAlly');
+  }
+  return clamp(cut, 0, 0.45);
+}
+
 function elemColor(e) {
   return { none: '#ffffff', fire: '#ff8a1a', ice: '#8fe6ff', thunder: '#ffe14d', dark: '#b06bff', holy: '#fff3c4' }[e] || '#ffffff';
 }
@@ -440,6 +699,11 @@ function elemColor(e) {
    状态 / 增益
    ============================================================ */
 export function applyStatus(B, unit, id, turns) {
+  // 「守誓」词缀：概率免疫负面状态
+  if (unit && !unit.isEnemy && STATUS[id] && STATUS[id].bad && chance(eqBonus(unit, 'statusRes'))) {
+    addFloat(B, '抵抗！', unit.x, unit.y - 140, '#8fd8ff', 22);
+    return;
+  }
   const st = STATUS[id];
   if (!st) return;
   if (id === 'poison' && (unit.def?.immune || []).includes('poison')) return;
@@ -487,7 +751,7 @@ export function tickStatus(B, unit) {
       addFloat(B, `+${h}`, unit.x, unit.y - 120, '#7dffa8', 26);
       addFx(B, 'heal', unit.x, unit.y - 60, '#7dffa8', { dur: .5 });
     }
-    if (B.objective?.type === 'purify' && unit.ref === 'forest_guard') unit.hp = Math.max(1, unit.hp);
+    if (B.objective?.type === 'purify' && !(B.objective.targets || []).includes(unit.ref)) unit.hp = Math.max(1, unit.hp);
     if (unit.hp <= 0 && !unit.dead) {
       unit.dead = true; unit.pose = 'dead'; unit.dying = 0;
       addLog(B, `<span class="dmg">${unit.name} 倒下了！</span>`);
@@ -525,6 +789,11 @@ export function beginNextTurn(B) {
 /* 单位自己的回合开始：状态结算、资源回复、清掉上一次的格挡姿态 */
 function startOfTurn(B, u) {
   u.guardStance = false;
+  u.parryReady = false;
+  if (u.broken > 0) {
+    u.broken--;
+    if (u.broken === 0) addLog(B, `${u.name} 重新站稳了架势。`);
+  }
   tickStatus(B, u);
   if (u.dead) return;
   if (u.status.some(st => st.id === 'stun')) {
@@ -535,7 +804,16 @@ function startOfTurn(B, u) {
   }
   u.skip = false;
   // 术力角色在自己回合开始回蓝；愤怒角色没有被动回复
-  if (!u.isEnemy && u.resource !== 'rage') u.mp = Math.min(u.maxMp, u.mp + (u.mpRegen || 3));
+  if (!u.isEnemy && u.resource !== 'rage') u.mp = Math.min(u.maxMp, u.mp + (u.mpRegen || 3) + eqBonus(u, 'mpPlus'));
+  // 「回春」词缀
+  if (!u.isEnemy) {
+    const rg = eqBonus(u, 'hpRegen');
+    if (rg > 0 && u.hp < u.maxHp) {
+      const h = Math.max(1, Math.floor(u.maxHp * rg));
+      u.hp = Math.min(u.maxHp, u.hp + h);
+      addFloat(B, `+${h}`, u.x, u.y - 118, '#7dffa8', 20);
+    }
+  }
 }
 
 function afterTurnStart(B, u) {
@@ -565,6 +843,13 @@ export function takePlayerAction(B, m, cmd) {
 function endTurn(B) {
   checkBattleEnd(B);
   if (B.over) return;
+  // 雷「疾风·连闪」：概率行动后立刻再动一次
+  const u = B.active;
+  if (u && !u.isEnemy && !u.dead && chance(talentBonus(u, 'extraTurn'))) {
+    u.gauge = GOAL - 1;
+    addFloat(B, '连闪！', u.x, u.y - 150, '#8fe6ff', 26);
+    addLog(B, `<span class="hl">※ ${u.name} 的速度快到再动了一次！</span>`);
+  }
   beginNextTurn(B);
 }
 
@@ -591,7 +876,9 @@ function resolvePlayerCmd(B, m, cmd) {
       const sk = SKILLS[cmd.skill];
       if (!sk) break;
       if (isSealed(m)) { addLog(B, `<span class="dmg">${m.name} 被封印了，无法使用术式！</span>`); break; }
-      m.mp = Math.max(0, m.mp - (sk.mp || 0));
+      // 凯「炎道·薪尽」：解放的怒气消耗打折
+      const disc = sk.release ? (1 + talentBonus(m, 'releaseCost')) : 1;
+      m.mp = Math.max(0, m.mp - Math.round((sk.mp || 0) * Math.max(0.4, disc)));
       if (sk.type === 'heal') {
         execHeal(B, m, sk, cmd.target);
       } else if (sk.type === 'revive') {
@@ -607,6 +894,9 @@ function resolvePlayerCmd(B, m, cmd) {
       break;
     }
     case 'item': execItem(B, m, cmd.item, cmd.target); break;
+    case 'combo':
+      execCombo(B, m, cmd.combo, cmd.target);
+      break;
     case 'guard':
       m.guardStance = true;
       addLog(B, `<span class="hl">${m.name}</span> 摆出了防御姿态（格挡·弹反率大幅提升）。`);
@@ -615,6 +905,99 @@ function resolvePlayerCmd(B, m, cmd) {
     case 'escape':
       attemptEscape(B); break;
   }
+}
+
+/* ============================================================
+   连携技
+   ============================================================ */
+/* 行动条顺序上相邻的两人（或全队）+ 羁绊达标 → 亮起合击。
+   发动时同时消耗参与者本回合的行动。 */
+export function availableCombos(B, m) {
+  if (!m || m.dead || !B.bondLevel) return [];
+  const order = forecastOrder(B, 6).filter(u => !u.isEnemy && !u.dead);
+  const idx = order.findIndex(u => u.id === m.id);
+  const neighbours = new Set();
+  if (idx >= 0) {
+    if (order[idx + 1]) neighbours.add(order[idx + 1].id);
+    if (order[idx - 1]) neighbours.add(order[idx - 1].id);
+  }
+  const alive = new Set(B.party.filter(p => !p.dead).map(p => p.id));
+  const out = [];
+  for (const c of Object.values(COMBOS)) {
+    if (!c.members.includes(m.id)) continue;
+    if (!c.members.every(id => alive.has(id))) continue;
+    if (B.combosUsed && B.combosUsed[c.id]) continue;
+    const partners = c.members.filter(id => id !== m.id);
+    // 四人连携只要全员活着即可；双人连携需要出手顺序相邻
+    if (c.members.length === 2 && !partners.every(id => neighbours.has(id))) continue;
+    const minBond = Math.min(...c.members.map(id => B.bondLevel(id)));
+    if (minBond < c.bond) continue;
+    out.push(c);
+  }
+  return out;
+}
+
+export function execCombo(B, m, comboId, targetIdx) {
+  const c = COMBOS[comboId];
+  if (!c) return;
+  B.combosUsed = B.combosUsed || {};
+  B.combosUsed[c.id] = true;
+  const members = c.members.map(id => B.byId[id]).filter(u => u && !u.dead);
+  // 参与者的行动条全部清空，等价于都用掉了这一回合
+  for (const u of members) if (u.id !== m.id) u.gauge = 0;
+
+  B.cutin = {
+    name: c.name, portrait: (B.byId[c.members[0]] || m).portrait, combo: true,
+    members: members.map(u => u.portrait), life: 0, dur: 1.6,
+    after: () => {
+      flash(B, 1); shake(B, 24);
+      const targets = c.target === 'party' ? B.party.filter(u => !u.dead)
+        : c.target === 'all' ? B.enemies.filter(e => !e.dead)
+          : [pickEnemy(B, targetIdx)].filter(Boolean);
+      addLog(B, `<span class="hl">连携 · ${c.name}！</span>`);
+
+      if (c.type === 'support') {
+        for (const t of targets) {
+          if (c.healRatio) {
+            const h = Math.floor(t.maxHp * c.healRatio);
+            t.hp = Math.min(t.maxHp, t.hp + h);
+            addFloat(B, `+${h}`, t.x, t.y - 120, '#7dffa8', 30);
+            addFx(B, 'heal', t.x, t.y - 60, '#7dffa8', { dur: 0.7 });
+          }
+          if (c.buff) applyStatus(B, t, c.buff.id, c.buff.turns);
+          if (c.pushAll) shiftGauge(B, t, c.pushAll);
+          addFx(B, 'combo', t.x, t.y - 80, '#8fe6ff', { dur: 0.6 });
+        }
+        B.ui.queue.push({ dur: 0.7, start() { }, tick() { }, resolve() { } });
+        return;
+      }
+
+      const bonusMul = 1 + (B.comboBonus ? B.comboBonus(c) : 0);
+      const hits = c.hits || 1;
+      let t0 = 0;
+      B.ui.queue.push({
+        dur: 0.24 * hits + 0.5,
+        start() { for (const u of members) { u.pose = 'ready'; u.atkP = 0; } },
+        tick(k) {
+          const step = Math.floor(k * hits);
+          while (t0 <= step && t0 < hits) {
+            for (const tg of targets) {
+              if (tg.dead) continue;
+              let mul = 1;
+              if (c.bonusVs && (tg.status || []).some(st => st.id === c.bonusVs.status)) mul = c.bonusVs.mul;
+              const r = computeDamage(B, m, tg, (c.power || 1) * mul * bonusMul, {
+                elem: c.elem, hits, criBonus: c.alwaysCrit ? 1 : 0.15,
+              });
+              damage(B, tg, r.dmg, { crit: c.alwaysCrit || r.crit, col: '#ffd76a', by: m, attacker: m });
+              addFx(B, 'combo', tg.x, tg.y - 80, '#ffd76a', { dur: 0.55 });
+            }
+            t0++;
+          }
+        },
+        resolve() { for (const u of members) u.pose = 'idle'; },
+      });
+    },
+  };
 }
 
 function pickEnemy(B, i) {
@@ -653,7 +1036,7 @@ function execHeal(B, m, sk, targetIdx) {
       addFx(B, 'aura', m.x, m.y - 70, '#8fe6ff', { dur: .6, r: 80 });
       for (const u of list) {
         if (!u || u.dead) continue;
-        const heal = Math.floor(m.atk * sk.power * 2.6 + u.maxHp * (sk.power * 0.12) + 40);
+        const heal = Math.floor((m.atk * sk.power * 2.6 + u.maxHp * (sk.power * 0.12) + 40) * (1 + talentBonus(m, 'healPlus')));
         u.hp = Math.min(u.maxHp, u.hp + heal);
         addFloat(B, `+${heal}`, u.x, u.y - 120, '#7dffa8', 32);
         addFx(B, 'heal', u.x, u.y - 60, '#7dffa8', { dur: .8 });
@@ -681,7 +1064,7 @@ function execRevive(B, m, sk, targetIdx) {
       addLog(B, `<span class="hl">${m.name}</span> 使用了 <span class="hl">${sk.name}</span>！`);
       addFx(B, 'heal', t.x, t.y - 60, '#fff3c4', { dur: 1 });
       t.dead = false; t.pose = 'idle'; t.dying = 0;
-      t.hp = Math.floor(t.maxHp * (sk.power || 0.5));
+      t.hp = talentBonus(m, 'reviveFull') > 0 ? t.maxHp : Math.floor(t.maxHp * (sk.power || 0.5));
       addFloat(B, '复活！', t.x, t.y - 140, '#fff3c4', 30);
       addLog(B, `<span class="heal">${t.name} 重新站了起来！</span>`);
       gainRage(B, m, 18);
@@ -910,7 +1293,7 @@ export function updateBattle(B, dt, input) {
 
   // 奥义演出
   if (B.cutin) {
-    B.cutin.life += dt;
+    B.cutin.life += dt / Math.max(0.34, BATTLE_SPEED / 0.68);
     if (B.cutin.life >= B.cutin.dur) {
       const c = B.cutin; B.cutin = null; c.after && c.after();
     }
@@ -919,7 +1302,12 @@ export function updateBattle(B, dt, input) {
   // 队列推进
   const cur = B.ui.queue[0];
   if (cur) {
-    if (!cur._started) { cur._started = true; if (cur.dur > 0.08) cur.dur *= BATTLE_SPEED; cur.start && cur.start(); }    cur._t = (cur._t || 0) + dt;
+    if (!cur._started) {
+      cur._started = true;
+      if (cur.dur > 0.08) cur.dur *= BATTLE_SPEED;
+      cur.start && cur.start();
+    }
+    cur._t = (cur._t || 0) + dt;
     const k = clamp(cur._t / cur.dur, 0, 1);
     cur.tick && cur.tick(k);
     if (k >= 1) {
@@ -1076,15 +1464,145 @@ export function drawBattle(B, ctx, W, H) {
       }
       case 'fire': {
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
-        for (let i = 0; i < 9; i++) {
-          const a = i / 9 * TAU + k * 2;
-          const rr = 30 + k * 60;
+        const n = f.big ? 16 : 9, spread = f.big ? 110 : 60;
+        for (let i = 0; i < n; i++) {
+          const a = i / n * TAU + k * 2;
+          const rr = 30 + k * spread;
           ctx.globalAlpha = (1 - k) * .7;
-          const fg = ctx.createRadialGradient(f.x + Math.cos(a) * rr, f.y + Math.sin(a) * rr * .5, 0, f.x + Math.cos(a) * rr, f.y + Math.sin(a) * rr * .5, 26);
+          const R = f.big ? 38 : 26;
+          const fg = ctx.createRadialGradient(f.x + Math.cos(a) * rr, f.y + Math.sin(a) * rr * .5, 0, f.x + Math.cos(a) * rr, f.y + Math.sin(a) * rr * .5, R);
           fg.addColorStop(0, '#fff2b0'); fg.addColorStop(.4, f.col); fg.addColorStop(1, 'rgba(200,0,0,0)');
           ctx.fillStyle = fg;
-          ctx.beginPath(); ctx.arc(f.x + Math.cos(a) * rr, f.y + Math.sin(a) * rr * .5, 26, 0, TAU); ctx.fill();
+          ctx.beginPath(); ctx.arc(f.x + Math.cos(a) * rr, f.y + Math.sin(a) * rr * .5, R, 0, TAU); ctx.fill();
         }
+        ctx.restore();
+        break;
+      }
+
+      /* ---- 以下是为「让特效对得上技能描述」新增的演出 ---- */
+
+      // 千鸟突：雷光沿直线贯穿，落点炸开
+      case 'bolt': {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 1 - k;
+        ctx.strokeStyle = f.col; ctx.shadowColor = f.col; ctx.shadowBlur = 28;
+        for (let s2 = 0; s2 < 3; s2++) {
+          ctx.lineWidth = (7 - s2 * 2) * (1 - k * .6);
+          ctx.beginPath();
+          let px = f.x - 260, py = f.y - 130 + s2 * 8;
+          ctx.moveTo(px, py);
+          for (let i = 1; i <= 8; i++) {
+            px = f.x - 260 + (260 * i / 8) * Math.min(1, k * 2.4);
+            py = f.y - 130 + (130 * i / 8) + Math.sin(i * 2.2 + s2) * 22 * (1 - k);
+            ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+        ctx.restore();
+        break;
+      }
+
+      // 连斩：一组按时间错开的刀光，段数越多越密
+      case 'flurry': {
+        const cnt = f.n || 3;
+        for (let i = 0; i < cnt; i++) {
+          const kk = clamp(k * cnt - i, 0, 1);
+          if (kk <= 0 || kk >= 1) continue;
+          SP.drawSlash(ctx, f.x + Math.sin(i * 2.1) * 26, f.y + Math.cos(i * 1.7) * 20,
+            (f.rx || 76) * (0.8 + i * 0.08), kk, (i % 2 ? 1 : -1) * (0.5 + i * 0.22), f.col);
+        }
+        break;
+      }
+
+      // 绝对零度 / 暴雪：全屏降温 + 冰晶生成
+      case 'frostfield': {
+        ctx.save();
+        ctx.globalAlpha = Math.sin(k * Math.PI) * .35;
+        ctx.fillStyle = f.col; ctx.fillRect(0, 0, W, H);
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = Math.sin(k * Math.PI) * .9;
+        for (let i = 0; i < 26; i++) {
+          const a = (i * 137.5) * Math.PI / 180;
+          const rr = (i / 26) * 420 * (0.3 + k);
+          const x = W / 2 + Math.cos(a) * rr, y = H / 2 + Math.sin(a) * rr * .55;
+          const sz = 6 + (i % 4) * 4;
+          ctx.strokeStyle = '#e8ffff'; ctx.lineWidth = 2;
+          ctx.beginPath();
+          for (let b = 0; b < 6; b++) {
+            const ba = b / 6 * TAU + k * 1.4;
+            ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(ba) * sz, y + Math.sin(ba) * sz);
+          }
+          ctx.stroke();
+        }
+        ctx.restore();
+        break;
+      }
+
+      // 狮子奋迅：脚下炎环 + 上升的火柱，表示「斗气爆发」
+      case 'blaze': {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = (1 - k) * .95;
+        const rr = 40 + k * 70;
+        ctx.strokeStyle = f.col; ctx.lineWidth = 9 * (1 - k); ctx.shadowColor = f.col; ctx.shadowBlur = 26;
+        ctx.beginPath(); ctx.ellipse(f.x, f.y + 46, rr, rr * .34, 0, 0, TAU); ctx.stroke();
+        for (let i = 0; i < 12; i++) {
+          const a = i / 12 * TAU;
+          const px = f.x + Math.cos(a) * rr * .8;
+          const h = 90 * (1 - k) * (0.5 + (i % 3) * 0.25);
+          const g2 = ctx.createLinearGradient(px, f.y + 46, px, f.y + 46 - h);
+          g2.addColorStop(0, f.col); g2.addColorStop(1, 'rgba(255,240,160,0)');
+          ctx.fillStyle = g2;
+          ctx.fillRect(px - 7, f.y + 46 - h, 14, h);
+        }
+        ctx.restore();
+        break;
+      }
+
+      // 圣光审判：自上而下的光柱
+      case 'holybeam': {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = Math.sin(k * Math.PI) * .95;
+        const w = 70 * (1 - k * 0.4);
+        const g3 = ctx.createLinearGradient(f.x, 0, f.x, f.y + 40);
+        g3.addColorStop(0, 'rgba(255,255,255,0)');
+        g3.addColorStop(.45, f.col);
+        g3.addColorStop(1, '#ffffff');
+        ctx.fillStyle = g3;
+        ctx.fillRect(f.x - w / 2, 0, w, f.y + 40);
+        ctx.globalAlpha = (1 - k) * .8;
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.ellipse(f.x, f.y + 40, w * (0.6 + k), w * (0.2 + k * 0.1), 0, 0, TAU); ctx.stroke();
+        ctx.restore();
+        break;
+      }
+
+      // 暗影：向内收缩的黑雾环
+      case 'shadow': {
+        ctx.save(); ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = Math.sin(k * Math.PI) * .8;
+        for (let i = 0; i < 10; i++) {
+          const a = i / 10 * TAU + k * 3;
+          const rr = (1 - k) * 120 + 16;
+          const x = f.x + Math.cos(a) * rr, y = f.y + Math.sin(a) * rr * .6;
+          const g4 = ctx.createRadialGradient(x, y, 0, x, y, 34);
+          g4.addColorStop(0, f.col); g4.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g4;
+          ctx.beginPath(); ctx.arc(x, y, 34, 0, TAU); ctx.fill();
+        }
+        ctx.restore();
+        break;
+      }
+
+      // 连携技：两道交叉的巨大刀光 + 冲击环
+      case 'combo': {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = (1 - k);
+        ctx.strokeStyle = f.col; ctx.lineWidth = 16 * (1 - k); ctx.shadowColor = f.col; ctx.shadowBlur = 34;
+        ctx.beginPath(); ctx.ellipse(f.x, f.y, 150 * (0.4 + k), 44 * (0.4 + k), -0.7, 0, TAU); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(f.x, f.y, 150 * (0.4 + k), 44 * (0.4 + k), 0.7, 0, TAU); ctx.stroke();
+        ctx.lineWidth = 5 * (1 - k);
+        ctx.strokeStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(f.x, f.y, 60 + k * 190, 0, TAU); ctx.stroke();
         ctx.restore();
         break;
       }

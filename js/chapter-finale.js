@@ -86,7 +86,7 @@ export const FINALE = {
     ['璃', '这是试炼的最后一层。它借的是你的迟疑。'],
   ], 'r_memory_battle'),
   r_memory_battle: B('ruins', ['memory_blade'], 11, 'c3_holy', {
-    boss: true, onWin: [{ exp: 1100 }, { heal: 'party' }],
+    boss: true, onWin: [{ exp: 1100 }],
     win: [['旁白', '（影子收回了刀。没有输赢的叫喊，只有阶梯重新显现的轻响。）'], ['凯', '我会记住你。可我不能一直住在这里。']],
   }),
   c3_holy: S('ruins', [
@@ -146,7 +146,7 @@ export const FINALE = {
     boss: true, modifiers: [{ flag: 'prisonCovered', enemyHp: 0.9 }],
     lines: [['古兰', '顾着那些人，你还能好好挥刀？'], ['凯', '我知道身后是谁，比以前清楚。']],
     win: [['旁白', '（古兰的巨斧断成两截。他倒下时，凯先回过头。）'], ['凯', '人呢？都出去了？'], ['璃', '都出去了。'], ['旁白', '（凯这才放下刀，手抖得几乎握不住刀柄。）']],
-    onWin: [F('prisonSaved'), { heal: 'party' }],
+    onWin: [F('prisonSaved')],
   }),
   prison_after: S('castle', [
     ['古兰', '你不问……你父亲最后说了什么？'],
@@ -169,7 +169,7 @@ export const FINALE = {
   c4_white: B('castle', ['baixue'], 14, 'c4_believe', {
     boss: true, telegraph: { enemy: 'baixue', skill: 'frost_nova', every: 3 },
     win: [['旁白', '（冰座塌下，连向璃腕间的细线显现出来。她举起霜华，将它截断。）'], ['白雪', '你会后悔……'], ['璃', '那也由我自己来。']],
-    onWin: [{ exp: 1200 }, { heal: 'party' }, { item: 'demon_mail' }],
+    onWin: [{ exp: 1200 }, { item: 'demon_mail' }],
   }),
   c4_believe: S('castle', [
     ['旁白', '（璃站在破碎的冰座前，低头看自己的手。）'],
@@ -210,8 +210,7 @@ export const FINALE = {
   c5_king: B('final', ['demon_king'], 18, 'c5_final_check', {
     bg: 'castle', boss: true, telegraph: { enemy: 'demon_king', skill: 'meteor', every: 4 },
     win: [['旁白', '（王座裂开，阿斯特身上的黑布一层层剥落。没有血，只有苍白的光。）'], ['阿斯特', '五百年来，我把所有声音吞进身体里。'], ['阿斯特', '现在……把它们还给你们。'], ['旁白', '（魔城消失在白色里。璃伸出霜华，切断最后一道通向自己的细线。）'], ['璃', '他已经把自己变成门了。要关上的，是他。']],
-    onWin: [{ heal: 'party' }],
-  }),
+    }),
   c5_final_check: S('final', [['苍', '门已经脱离璃独立存在。现在需要破坏核心，然后完成封印。']], 'c5_promise'),
   c5_promise: S('final', [
     ['旁白', '（白光里，几声钟响从很远的地方传来。）'],
@@ -226,7 +225,7 @@ export const FINALE = {
     ['系统', '击破核心会解除压制、唤醒倒下的同伴；随后让璃、苍各执行一次【封门】。'],
   ], 'c5_final'),
   c5_final: B('final', ['demon_king_final'], 20, 'c5_resolve', {
-    boss: true, support: true, telegraph: { enemy: 'demon_king_final', skill: 'annihilate', every: 3 },
+    boss: true, theme: '旧日英雄', support: true, telegraph: { enemy: 'demon_king_final', skill: 'annihilate', every: 3 },
     objective: { type: 'seal', label: '击破核心，再由璃与苍各执行一次封门', actors: ['ryze', 'cang'] },
     win: [['旁白', '（核心的光灭了。璃与苍的术式终于在断开的边缘相接。）'], ['阿斯特', '你们还会……失去。'], ['凯', '那我们就记住。然后接住还在的人。'], ['旁白', '（阿斯特的轮廓散成灰，最后一缕灰也不再发光。）']],
   }),

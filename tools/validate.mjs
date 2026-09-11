@@ -1,6 +1,6 @@
 /* 剧情图校验：确保每个场景都有出路、引用存在、战斗场景有敌人 */
 import { SCENES, ENDINGS } from '../js/story.js';
-import { ACTORS, SKILLS, ENEMIES, ITEMS, EQUIPS, SHOPS, ELEM, STATUS, ENEMY_SKILLS, statsAt } from '../js/characters.js';
+import { ACTORS, SKILLS, ENEMIES, ITEMS, EQUIPS, SHOPS, ELEM, STATUS, ENEMY_SKILLS, statsAt, enemyStatsAt } from '../js/characters.js';
 import { PORTRAITS } from '../js/portraits.js';
 import { obtainable, openShops } from './reach.mjs';
 
@@ -31,6 +31,8 @@ function walk(id, from) {
   reachable.add(id);
   const sc = SCENES[id];
   if (sc.ending) { endingsUsed.add(sc.ending); if (!ENDINGS[sc.ending]) errs.push(`${id}: 未知结局 ${sc.ending}`); }
+  // partEnding：第一部的结局画面放完会继续进第二部，同样算「用到了」
+  if (sc.partEnding) { endingsUsed.add(sc.partEnding); if (!ENDINGS[sc.partEnding]) errs.push(`${id}: 未知结局 ${sc.partEnding}`); }
   if (sc.next) walk(sc.next, id);
   if (sc.choices) {
     for (const c of sc.choices) {
@@ -237,8 +239,8 @@ console.log('立绘结构: 全部通过（' + Object.keys(PORTRAITS).length + ' 
     if (!e.boss) continue;
     const lv = at[e.id];
     if (lv == null) { rows.push(`${e.name}(未登场)`); continue; }
-    const k = lv - 1, hpK = lv >= 18 ? 0.032 : 0.075;
-    const hp = Math.floor(e.hp * (1 + k * hpK)), atk = Math.floor(e.atk * (1 + k * 0.11));
+    const st = enemyStatsAt(e, lv);
+    const hp = st.maxHp, atk = st.atk;
     rows.push(`${e.name}@Lv${lv} HP${hp} ATK${atk}`);
     if (prev && atk < prev.atk) warns.push(`首领强度倒挂：${e.name}(有效ATK${atk}) 弱于更早登场的 ${prev.name}(${prev.atk})`);
     prev = { name: e.name, atk };
