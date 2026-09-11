@@ -134,6 +134,15 @@ let problems = [];
     `);
     const t = parseOr(touchState, { mode: null, inBattle: false, actor: null, cmdMenuVisible: false, cmdBtns: 0, cmdBtnSize: null, cmdInView: false }, d.name + ' 战斗UI状态');
 
+    const TAP_EXPR = `
+      const cv=document.getElementById('cv');
+      const r=cv.getBoundingClientRect();
+      const x=r.x+r.width/2, y=r.y+r.height*0.45;
+      const ev=(type)=>new PointerEvent(type,{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerType:'touch',isPrimary:true});
+      cv.dispatchEvent(ev('pointerdown'));
+      cv.dispatchEvent(ev('pointerup'));
+      return 'tap';
+    `;
     // 4) 剧情推进链路：退回剧情模式，点画面应推进一行台词
     await evalx(`window.__setScene('prologue'); return 'to-prologue';`);
     await sleep(900);
@@ -153,10 +162,27 @@ let problems = [];
     const a0 = parseOr(a1, { line: -1, scene: null, mode: null }, d.name + ' after');
     const advanced = (a0.line > b0.line) || (a0.scene !== b0.scene) || (a0.mode !== b0.mode);
 
+    /* 5) 抉择场景必须能用「真实点击」读完台词并弹出按钮。
+       这一项专门防一类回归：抉择按钮是台词读完后才出现的，若判断条件写成
+       「场景是否有 choices」而不是「按钮是否已弹出」，玩家从进入场景那一刻起
+       就再也点不动，按钮永远不会出现——三个分支点全成死路。
+       现有的 __advance / __autoRun 都是直接调内部函数，绕过了输入层，测不出这个。 */
+    await evalx(`window.__setScene('c1_choice1'); return 'ok';`);
+    await sleep(900);
+    for (let i = 0; i < 6; i++) { await evalx(TAP_EXPR); await sleep(300); }
+    const chRaw = await evalx(`return JSON.stringify({
+      line: window.__G.lineIdx,
+      lines: (window.__G.scene && window.__G.scene.lines || []).length,
+      choHidden: document.getElementById('choices').classList.contains('hidden'),
+      btns: document.querySelectorAll('.choice').length,
+      scene: window.__G.sceneId })`);
+    const ch = parseOr(chRaw, { line: -1, lines: 0, choHidden: true, btns: 0, scene: null }, d.name + ' 抉择场景');
+
     console.log(`  舞台: ${g.w}x${g.h} @(${g.x},${g.y})  视口: ${g.vw}x${g.vh}  touch-ui=${g.touchUI}`);
     console.log(`  模式=${t.mode} 战斗中=${t.inBattle} 出手者=${t.actor}  指令栏=${t.cmdMenuVisible ? '显示' : '隐藏'} 按钮=${t.cmdBtns}个 ${t.cmdBtnSize} 在视口内=${t.cmdInView}`);
     console.log(`  旋转提示=${rotateShown === true ? '显示' : '隐藏'}`);
     console.log(`  触摸点击=${tapRes}  剧情推进=${advanced ? '✔' : '✗'} (${b0.mode}|${b0.scene} → ${a0.mode}|${a0.scene})`);
+    console.log(`  抉择场景：真实点击 6 次后 台词 ${ch.line}/${ch.lines} 行、按钮 ${ch.btns} 个、已弹出=${!ch.choHidden}`);
 
     if (d.mobile && !portrait && g.w < 200) problems.push(`${d.name}: 舞台宽度异常 ${g.w}`);
     if (g.x < -1 || g.y < -1) problems.push(`${d.name}: 舞台被移出可视区 @(${g.x},${g.y})`);
@@ -169,6 +195,8 @@ let problems = [];
       if (g.w > g.vw + 1) problems.push(`${d.name}: 舞台横向溢出 ${g.w}>${g.vw}`);
     }
     if (d.mobile && !advanced) problems.push(`${d.name}: 触摸点击未推进剧情`);
+    if (ch.choHidden) problems.push(`${d.name}: 抉择场景点不动——连点 6 次后按钮仍未弹出（台词停在 ${ch.line}/${ch.lines}）`);
+    else if (ch.btns < 2) problems.push(`${d.name}: 抉择按钮只渲染了 ${ch.btns} 个`);
     if (!portrait) {
       // 战斗里一次只给一个角色下指令，指令栏必须有 4 个按钮且够大、够得着
       if (!t.inBattle) problems.push(`${d.name}: 没能进入战斗（mode=${t.mode}）`);

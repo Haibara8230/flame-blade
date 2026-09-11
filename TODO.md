@@ -128,3 +128,41 @@ README 已加注说明，但没有重拍。
   显示上够用，但写无头测试时事件会被截断——排查问题时容易误判成「功能没触发」。
 - `tools/shot.cjs` 只打印 `exceptionDetails.text`（恒为 `"Uncaught"`），
   拿不到真实错误信息，调试时很费劲。应改为读 `exception.description`。
+
+---
+
+## C. 测试覆盖的盲区（2026-09-11 追加）
+
+### C1. 自动化测试全部绕过输入层 —— 已部分补上
+
+三个抉择场景点不动的 bug（玩家实际过不了第一章）能一直存在，是因为
+**所有无头测试都直接调内部函数，从来没走过真实的输入链路**：
+
+- `__advance()` 直接调 `nextLineCheck()`
+- `__autoRun()` 对抉择场景直接调 `pickChoice(choices[0])`，连台词都跳过
+- `__autoBattle()` 直接调 `doCmd()`
+
+所以「点击 → 输入状态 → 推进」这条路上的判断错误一个都测不出来。
+
+已在 `tools/mobile.cjs` 里补了一项：用真实 `PointerEvent` 连点 6 次走完
+`c1_choice1`，断言台词读完且按钮弹出（并已反向验证该断言确实能抓到这个 bug）。
+
+**仍未覆盖**：`c3_meet` / `c4_reveal` 只靠同一处代码保证；战斗指令、商店、
+装备更换、存档读档都还没有真实输入路径的测试。
+
+### C2. 自动 AI 打不赢终战，四个结局只测到一个
+
+`tools/playthrough.cjs` 全流程跑下来稳定走到 **BAD END**——自动 AI 不会治疗、
+不用道具、不会攒资源放奥义，终战必败。
+
+后果是 TRUE / NORMAL / SECRET 三个结局**从来没有被端到端验证过**，
+只有 `validate.mjs` 静态检查过「可达性」。
+
+要真正覆盖，`__autoRun` 的 AI 需要会补血和用道具，或者提供一个
+「强制指定结局路线」的测试钩子。
+
+### C3. `tools/shot.cjs` 的错误信息不可用
+
+只打印 `exceptionDetails.text`（恒为 `"Uncaught"`），真实错误在
+`exceptionDetails.exception.description` 里。排查那个 `hideSubmenu` 未定义
+的问题时，只能靠把错误写到 `window` 上再读回来。应该直接改掉。

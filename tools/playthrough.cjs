@@ -81,4 +81,6 @@ const done = c => { try { proc && proc.kill(); } catch (e) { } setTimeout(() => 
   try { ws.close(); } catch (e) { }
   done(0);
 })().catch(e => { console.error('FATAL', e && e.message); done(1); });
-setTimeout(() => { console.error('GLOBAL TIMEOUT'); done(2); }, 290000);
+/* 行动条改版后每个单位单独出手，一场首领战的行动数（以及挂机所需的真实时间）
+   比原来的批量回合制多得多，290 秒已经跑不完全程了。 */
+setTimeout(() => { console.error('GLOBAL TIMEOUT'); done(2); }, 780000);

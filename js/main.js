@@ -208,6 +208,12 @@ window.addEventListener('keyup', e => {
   const k = KEYMAP[e.key];
   if (k) keysDown[k] = false;
 });
+/* 抉择按钮当前是否已经弹出。
+   注意不能用 `G.scene.choices` 代替——那只说明「这个场景最终会有抉择」，
+   而抉择按钮是在台词全部读完后才出现的。用前者当条件会让玩家从进入场景那一刻
+   就再也无法推进台词，按钮也永远不会弹出。 */
+function choicesOpen() { return !$('choices').classList.contains('hidden'); }
+
 /* 触摸：一次触碰可能在 canvas 和其上的 UI 元素各触发一次 pointerdown，
    用 handled 标记防止一次点击被算作两次「确认」 */
 let pdHandled = false;
@@ -216,7 +222,7 @@ stage.addEventListener('pointerdown', e => {
   pdHandled = false;
   if (G.mode === 'scene' && e.target === cv) {
     if (G.typed < G.fullText.length) { pdHandled = true; return; }   // 正在打字 → 先补全文字
-    if (G.scene && G.scene.choices) { pdHandled = true; return; }    // 抉择中 → 请点按钮
+    if (choicesOpen()) { pdHandled = true; return; }                 // 按钮已弹出 → 请点按钮
     input.confirmPressed = true;                                    // 否则推进对话
     pdHandled = true;
     return;
@@ -1158,7 +1164,7 @@ function loop(now) {
     if (input.confirmPressed) {
       const done = G.typed >= G.fullText.length;
       if (!done) { G.typed = G.fullText.length; G.typing = 0; $('dlg-text').innerHTML = formatLine(G.fullText); $('dlg-next').classList.remove('hidden'); }
-      else if (!G.scene || !G.scene.choices) nextLineCheck();
+      else if (!choicesOpen()) nextLineCheck();
     }
   }
   if (G.mode === 'battle' && G.battle) {
