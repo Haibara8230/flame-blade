@@ -696,6 +696,10 @@ function doCmd(m, cmd) {
 function hideCommandUI() {
   $('cmd-buttons').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#ffd76a;font-size:14px;letter-spacing:3px;padding:10px">— 行动中 —</div>';
 }
+function hideSubmenu() {
+  const el = $('skilllist');
+  if (el) el.classList.add('hidden');
+}
 function openSkills(m) {
   hideSubmenu();
   let el = $('skilllist');
@@ -1406,4 +1410,5 @@ window.__canvasStats = function () {  const c = document.getElementById('cv');
 gotoTitle();
 requestAnimationFrame(loop);
 window.__G = G;
+window.__BT = BT;
 window.__SCENES = SCENES;

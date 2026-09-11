@@ -68,7 +68,7 @@ const done = c => { try { proc && proc.kill(); } catch (e) { } setTimeout(() => 
   for (let round = 0; round < 60; round++) {
     const r = await evalx("window.__stopRun=false; window.__autoRun(6000, 20000)");
     await sleep(21000);
-    const st = await evalx("JSON.stringify({mode:window.__G.mode, scene:window.__G.sceneId, line:window.__G.lineIdx, chapter:window.__G.chapter, party:window.__G.party.map(m=>m.name+m.level), turn:window.__G.battle?window.__G.battle.turn:null, ehp:window.__G.battle?window.__G.battle.enemies.map(e=>e.hp):null, hot:window.__G.party.map(m=>Math.ceil(m.hot||0))})");
+    const st = await evalx("JSON.stringify({mode:window.__G.mode, scene:window.__G.sceneId, line:window.__G.lineIdx, chapter:window.__G.chapter, party:window.__G.party.map(m=>m.name+m.level), turn:window.__G.battle?window.__G.battle.turn:null, ehp:window.__G.battle?window.__G.battle.enemies.map(e=>e.hp):null, res:window.__G.party.map(m=>m.resource+Math.round(m.mp)+'/'+m.maxMp)})");
     console.log('round', round, r, st);
     if (typeof st === 'string' && st.includes('"mode":"ending"')) { await shot('ending'); break; }
     if (st === last && round > 0) { console.log('no progress, stopping'); break; }

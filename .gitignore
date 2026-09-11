@@ -7,6 +7,8 @@ screenshots/_probe/
 screenshots/_reg/
 screenshots/_tmp/
 screenshots/_x/
+shots-final/        # playthrough.cjs 的输出
+tools/shots/        # shot.cjs 的输出
 
 # ---- 编辑器 / 系统 ----
 .vscode/
