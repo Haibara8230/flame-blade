@@ -161,6 +161,7 @@ for (const a of Object.values(ACTORS)) {
   for (const sk of [...Object.values(SKILLS), ...Object.values(ENEMY_SKILLS)]) {
     if (sk.inflict) applied.add(sk.inflict.id);
     if (sk.buff) applied.add(sk.buff.id);
+    if (sk.buff2) applied.add(sk.buff2.id);
   }
   for (const it of Object.values(ITEMS)) if (it.seal) applied.add('stun');   // 封魔符实际施加的是 stun
   for (const k of Object.keys(STATUS)) {

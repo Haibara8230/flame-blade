@@ -84,3 +84,54 @@ for (const r of results) {
 }
 const bad = results.filter(r => !r.ended);
 console.log(bad.length ? `\nX ${bad.length} 场没有正常结束（可能卡死）` : '\n✔ 全部战斗正常结束，没有卡死');
+
+/* ============================================================
+   行动条的推条 / 拉条与速度状态
+   这几项只能靠「真的打一场再看出手顺序变了没有」来验证：
+   validate 看不出效果，balance 的模型按静态 spd 算，也算不出瞬时的加减速。
+   ============================================================ */
+function mechTest(actorId, skillId, expect, verbose = true) {
+  const party = ['kaito', 'cang', 'lei', 'ryze'].map(id => makeMember(id, 18));
+  const sc = { id: 'mech', bg: 'snow', enemies: [{ ref: 'ice_hound', level: 12 }, { ref: 'ice_hound', level: 12 }] };
+  const game = { party, sfx() {}, requestPlayerTurn(b) { b.ui.mode = 'input'; }, onBattleWin() {}, onBattleLose() {}, onBattleEscape() {} };
+  const B = createBattle(game, sc, sc);
+  const m = B.party.find(p => p.id === actorId);
+  // 等到轮到他；其他人一律格挡，避免打死敌人
+  for (let i = 0; i < 60000 && !(B.ui.mode === 'input' && B.active === m); i++) {
+    updateBattle(B, 1 / 60, {});
+    if (B.ui.mode === 'input' && B.active !== m) takePlayerAction(B, B.active, { type: 'guard' });
+  }
+  m.mp = m.maxMp;
+  const g0 = { e: B.enemies.map(e => e.gauge), p: B.party.map(p => p.gauge) };
+  takePlayerAction(B, m, { type: 'skill', skill: skillId, target: 0 });
+  for (let i = 0; i < 900 && (B.ui.queue.length || B.cutin); i++) updateBattle(B, 1 / 60, {});
+  const g1 = { e: B.enemies.map(e => e.gauge), p: B.party.map(p => p.gauge) };
+  // 行动条会随时间自然上涨，所以看的是「相对位移」：目标与其它单位的差值变化
+  const drift = (g1.e[1] - g0.e[1]);
+  const rel = Math.round((g1.e[0] - g0.e[0]) - drift);
+  const res = {
+    敌1相对位移: rel,
+    施术者spd倍率: m.buffs.spd,
+    施术者状态: m.status.map(s => s.id).join('|') || '-',
+    敌方状态: B.enemies.map(e => e.status.map(s => s.id).join('|') || '-').join(','),
+    我方行动条: g0.p.map((v, i) => Math.round(v) + '→' + Math.round(g1.p[i])).join(' '),
+  };
+  const ok = expect(res, B);
+  if (ok || verbose) console.log(`  ${ok ? '✔' : '✗'} ${SKILLS[skillId].name}　${JSON.stringify(res, null, 0)}`);
+  return ok;
+}
+
+console.log('\n=== 行动条机制 ===');
+/* 概率型效果要多次取样，否则断言本身是随机失败的 */
+function mechTestRetry(actorId, skillId, expect, tries = 6) {
+  for (let i = 0; i < tries; i++) if (mechTest(actorId, skillId, expect, i === tries - 1)) return true;
+  return false;
+}
+
+const mech = [
+  mechTest('lei', 'lianshe', r => r.敌1相对位移 <= -15),              // 拉条 -22
+  mechTest('kaito', 'jiaoyan', r => r.施术者spd倍率 > 1 && r.施术者状态.includes('haste')),
+  mechTestRetry('ryze', 'baoxue', (r, B) => B.enemies.some(e => e.status.some(s => s.id === 'slow'))),
+];
+console.log(mech.every(Boolean) ? '✔ 推条/拉条与速度状态均生效' : 'X 有机制未生效');
+if (!mech.every(Boolean)) process.exitCode = 1;

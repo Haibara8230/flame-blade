@@ -203,6 +203,19 @@ export function canUlt(m) {
 /* 资源占比（0~1），给 HUD 和隐藏结局判定用 */
 /* 被「封印」时不能使用技能与奥义（只剩普攻 / 格挡 / 道具）。
    此前 STATUS.seal 定义了、图标也有，但既没有技能会施加它，被施加了也没有任何效果。 */
+/* 推条 / 拉条：直接加减目标的行动条。
+   正数 = 提前出手（推条），负数 = 推迟出手（拉条）。
+   上限留 1 点余量，否则 scheduleNext 算出的等待时间会变成 0 或负数。 */
+export function shiftGauge(B, u, delta) {
+  if (!u || u.dead || !delta) return;
+  const before = u.gauge;
+  u.gauge = clamp(u.gauge + delta, 0, GOAL - 1);
+  const moved = Math.round(u.gauge - before);
+  if (!moved) return;
+  addFloat(B, moved > 0 ? `行动 +${moved}` : `行动 ${moved}`, u.x, u.y - 150,
+    moved > 0 ? '#8fe6ff' : '#c86bff', 22);
+}
+
 export function isSealed(u) {
   return !!(u && u.status && u.status.some(s => s.id === 'seal'));
 }
@@ -373,10 +386,12 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
       if (elemBonus) addFloat(B, '弱点！', tg.x, tg.y - 148, '#48d8ff', 24);
 
       // 附加状态
-      const inf = spec.inflict || (spec.id === 'bite' ? null : null);
+      const inf = spec.inflict;
       if (inf && !tg.dead && chance(inf.chance ?? 0.4)) {
         applyStatus(B, tg, inf.id, inf.turns || STATUS[inf.id].turns);
       }
+      // 只在第一段生效，否则多段技会把目标一路推到条底
+      if (spec.gauge && !tg.dead && h === 0) shiftGauge(B, tg, spec.gauge);
       // 格挡/弹反的视觉与怒气回馈
       if (guardKind) {
         addFx(B, 'guard', tg.x, tg.y - 70, guardKind === 'parry' ? '#fff6c0' : '#8fd8ff', { dur: 0.4, perfect: guardKind === 'parry' });
@@ -429,6 +444,8 @@ function applyBuff(B, buff, targets) {
     else t.status.push({ id: buff.id, turns: buff.turns });
     if (buff.id === 'atkUp') t.buffs.atk = 1.5;
     if (buff.id === 'defUp') t.buffs.def = 1.4;
+    if (buff.id === 'haste') t.buffs.spd = 1.6;
+    if (buff.id === 'slow') t.buffs.spd = 0.6;
     addFloat(B, st.icon + st.name, t.x, t.y - 130, '#ffe14d', 22);
     addFx(B, 'aura', t.x, t.y - 70, '#ffe14d', { dur: 0.55, r: 76 });
   }
@@ -465,6 +482,7 @@ export function tickStatus(B, unit) {
   for (const r of removed) {
     if (r.id === 'atkUp') unit.buffs.atk = 1;
     if (r.id === 'defUp') unit.buffs.def = 1;
+    if (r.id === 'haste' || r.id === 'slow') unit.buffs.spd = 1;
   }
   unit.status = unit.status.filter(s => s.turns > 0);
 }
@@ -616,6 +634,7 @@ function execHeal(B, m, sk, targetIdx) {
         addLog(B, `<span class="heal">${u.name} 回复了 ${heal} 点生命。</span>`);
       }
       if (sk.buff) applyBuff(B, sk.buff, list.filter(u => u && !u.dead));
+      if (sk.gauge) for (const u of list) shiftGauge(B, u, sk.gauge);
     },
     tick(k) { if (k > .8) m.pose = 'idle'; },
     resolve() { gainRage(B, m, 12); },
@@ -652,6 +671,8 @@ function execBuff(B, m, sk) {
       m.pose = 'ready';
       addLog(B, `<span class="hl">${m.name}</span> 发动了 <span class="hl">${sk.name}</span>！`);
       applyBuff(B, sk.buff, [m]);
+      if (sk.buff2) applyBuff(B, sk.buff2, [m]);
+      if (sk.gauge) shiftGauge(B, m, sk.gauge);
       flash(B, 0.35);
       shake(B, 8);
       gainRage(B, m, sk.rage || 12);
@@ -1251,4 +1272,4 @@ export function battleLogHTML(B) {
   return B.log.map(l => `<div class="${l.cls}">${l.txt}</div>`).join('');
 }
 
-export default { createBattle, updateBattle, drawBattle, beginNextTurn, takePlayerAction, forecastOrder, battleLogHTML, gainRage, canUlt, resourceRatio, isSealed, computeDamage, checkBattleEnd };
+export default { createBattle, updateBattle, drawBattle, beginNextTurn, takePlayerAction, forecastOrder, battleLogHTML, gainRage, canUlt, resourceRatio, isSealed, shiftGauge, computeDamage, checkBattleEnd };

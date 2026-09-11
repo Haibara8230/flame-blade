@@ -23,6 +23,8 @@ export const STATUS = {
   stun: { name: '眩晕', turns: 1, bad: true, icon: '✷' },
   defDown: { name: '防御↓', turns: 3, bad: true, icon: '▼' },
   seal: { name: '封印', turns: 2, bad: true, icon: '✖' },
+  haste: { name: '加速', turns: 3, bad: false, icon: '»' },
+  slow: { name: '迟缓', turns: 3, bad: true, icon: '«' },
 };
 
 /* ---------------- 队伍角色 ---------------- */
@@ -113,8 +115,8 @@ export const SKILLS = {
   },
   jiaoyan: {
     id: 'jiaoyan', name: '焦炎·狮子奋迅', mp: 34, type: 'buff', target: 'self',
-    desc: '炎之斗气爆发：3回合内攻击力大幅上升。', rage: 25,
-    fx: 'aura', buff: { id: 'atkUp', turns: 3 },
+    desc: '炎之斗气爆发：攻击力大幅上升，且行动更快。', rage: 25,
+    fx: 'aura', buff: { id: 'atkUp', turns: 3 }, buff2: { id: 'haste', turns: 3 },
   },
   miehun: {
     id: 'miehun', name: '奥义·灭魂炎狱斩', mp: 58, type: 'atk', elem: 'fire', power: 1.05, hits: 5,
@@ -150,8 +152,8 @@ export const SKILLS = {
   },
   zhenyan: {
     id: 'zhenyan', name: '奥义·苍之绝唱', mp: 120, type: 'heal', power: 0.85, target: 'party',
-    desc: '【奥义】苍蓝之光笼罩全军，大幅回复并附加再生。', rage: 0,
-    fx: 'heal', ult: true, buff: { id: 'regen', turns: 4 },
+    desc: '【奥义】苍蓝之光笼罩全军：大幅回复、附加再生，并让全队立刻抢到先手。', rage: 0,
+    fx: 'heal', ult: true, buff: { id: 'regen', turns: 4 }, gauge: 45,
   },
 
   /* —— 雷 —— */
@@ -161,7 +163,8 @@ export const SKILLS = {
   },
   lianshe: {
     id: 'lianshe', name: '连突·四连枪', mp: 16, type: 'atk', elem: 'none', power: 0.55, hits: 4,
-    target: 'one', desc: '四连突刺，暴击率提升。', rage: 17, fx: 'pierce', multi: true, criBonus: 0.2,
+    target: 'one', desc: '四连突刺，暴击率提升，并把目标的行动条往后打。', rage: 17,
+    fx: 'pierce', multi: true, criBonus: 0.2, gauge: -22,
   },
   zhuihun: {
     id: 'zhuihun', name: '追魂枪', mp: 22, type: 'atk', elem: 'dark', power: 1.9, hits: 1,
@@ -176,7 +179,8 @@ export const SKILLS = {
   /* —— 璃 —— */
   baoxue: {
     id: 'baoxue', name: '暴雪', mp: 20, type: 'atk', elem: 'ice', power: 1.5, hits: 1,
-    target: 'all', desc: '暴风雪覆盖全场。', rage: 14, fx: 'ice',
+    target: 'all', desc: '暴风雪覆盖全场，有机会让敌人迟缓。', rage: 14, fx: 'ice',
+    inflict: { id: 'slow', chance: 0.5 },
   },
   bingfeng: {
     id: 'bingfeng', name: '冰封之棺', mp: 26, type: 'atk', elem: 'ice', power: 1.7, hits: 1,
@@ -347,7 +351,7 @@ export const ENEMY_SKILLS = {
   frostbite: { id: 'frostbite', name: '霜噬', power: 1.4, elem: 'ice', inflict: { id: 'frozen', chance: 0.3 } },
   rootbind: { id: 'rootbind', name: '束缚之根', power: 0.9, elem: 'none', inflict: { id: 'stun', chance: 0.5 } },
   ice_lance: { id: 'ice_lance', name: '冰之枪', power: 1.55, elem: 'ice' },
-  blizzard: { id: 'blizzard', name: '暴风雪', power: 1.15, elem: 'ice', target: 'all' },
+  blizzard: { id: 'blizzard', name: '暴风雪', power: 1.15, elem: 'ice', target: 'all', inflict: { id: 'slow', chance: 0.35 } },
   ice_coffin: { id: 'ice_coffin', name: '冰棺', power: 1.7, elem: 'ice', inflict: { id: 'frozen', chance: 0.4 } },
   frost_nova: { id: 'frost_nova', name: '霜之新星', power: 1.5, elem: 'ice', target: 'all', inflict: { id: 'defDown', chance: 0.5 } },
   dark_slash: { id: 'dark_slash', name: '暗影斩', power: 1.65, elem: 'dark' },
@@ -359,7 +363,7 @@ export const ENEMY_SKILLS = {
   abyss: { id: 'abyss', name: '深渊之颚', power: 1.8, elem: 'dark', inflict: { id: 'defDown', chance: 0.4 } },
   king_roar: { id: 'king_roar', name: '魔王咆哮', power: 1.4, elem: 'dark', target: 'all', inflict: { id: 'defDown', chance: 0.6 } },
   meteor: { id: 'meteor', name: '陨星坠落', power: 2.0, elem: 'fire', target: 'all' },
-  annihilate: { id: 'annihilate', name: '终焉之刃', power: 2.6, elem: 'dark', target: 'all' },
+  annihilate: { id: 'annihilate', name: '终焉之刃', power: 2.6, elem: 'dark', target: 'all', gauge: -28 },
 };
 
 /* ---------------- 成长曲线 ---------------- */
