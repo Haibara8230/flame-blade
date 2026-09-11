@@ -3,6 +3,7 @@
    模型改为：算出全场每「轮」（= 全体 gauge 各涨满一次的时间）里各单位的出手次数期望。 */
 import { ACTORS, ENEMIES, ENEMY_SKILLS, SKILLS, EQUIPS, statsAt, enemyStatsAt } from '../js/characters.js';
 import { rollEquip } from '../js/loot.js';
+import { combatPower, enemyPower } from '../js/power.js';
 import { SCENES } from '../js/story.js';
 import { obtainable } from './reach.mjs';
 
@@ -123,7 +124,7 @@ for (const [sid, sc] of Object.entries(SCENES)) {
 }
 
 console.log('=== 战斗平衡模拟（期望值） ===');
-console.log('场次'.padEnd(26), '我方HP', '敌方HP', '我方/轮', '敌/轮', '预计轮数', '评价');
+console.log('场次'.padEnd(26), '我方HP', '敌方HP', '我方/轮', '敌/轮', '预计轮数', '生存', '战力偏离', '评价');
 let problems = [];
 for (const [name, pkey, foes, , tutorial] of STAGES) {
   const heroes = PARTY[pkey].map(([id, lv, eq]) => mkHero(id, lv, eq, PARTY[pkey].gear));
@@ -200,6 +201,19 @@ for (const [name, pkey, foes, , tutorial] of STAGES) {
   if (!verdict.includes('✔ 手感良好')) {
     if (!tutorial) problems.push(name + ' → ' + verdict.join('/') + '（轮数 ' + rounds + '、生存 ' + survive + '）');
   }
-  console.log(name.padEnd(26), String(totalHp).padStart(6), String(eHp).padStart(7), String(pOut).padStart(9), String(eOut).padStart(8), String(rounds).padStart(8), ' 存活' + survive + '轮', verdict.join(' '));
+  /* 战力对比：和回合数模型互相印证。
+     回合数看的是「打多久」，战力比看的是「双方厚度差多少」。
+     两个指标同时跑偏，才说明真的失衡。 */
+  const pCP = heroes.reduce((a, h) => a + combatPower(h), 0);
+  const eCP = es.reduce((a, e) => a + enemyPower(e), 0);
+  /* 直接比总和没有意义：四个人打一只首领，总战力本来就该高一截。
+     按人数差折一个「应有的比值」，再看实际偏离多少。
+     偏离 1.0 越远，说明这场越不对劲。 */
+  const ratio = pCP / Math.max(1, eCP);
+  const expected = 1 + 0.55 * Math.max(0, heroes.length - es.length);
+  const dev = ratio / expected;
+  if (!tutorial && dev < 0.62) verdict.push('战力吃紧');
+  if (!tutorial && dev > 1.75) verdict.push('战力碾压');
+  console.log(name.padEnd(26), String(totalHp).padStart(6), String(eHp).padStart(7), String(pOut).padStart(9), String(eOut).padStart(8), String(rounds).padStart(8), ' 存活' + survive + '轮', ' 战力' + dev.toFixed(2), verdict.join(' '));
 }
 console.log('\n结论:', problems.length ? '需要调整：' + problems.join('；') : '全部战斗手感在合理区间 ✔');

@@ -9,6 +9,7 @@ import { rollDrops, rollShopStock, restoreLoot, collectLoot, setLootContext } fr
 import { RELICS, relicBonus, syncRelics } from './relics.js';
 import * as GR from './growth.js';
 import * as BD from './bonds.js';
+import * as PW from './power.js';
 import * as SP from './sprites.js';
 import * as BT from './battle.js';
 
@@ -1359,24 +1360,64 @@ function goAfterShop() {
 function openEquipScreen(memberId, back) {
   const m = G.party.find(p => p.id === memberId);
   const body = $('panel-body');
-  $('panel-title').textContent = `◈ ${m.name} 的装备调整`;
-  const owned = Object.keys(G.bag).filter(k => G.bag[k] > 0 && EQUIPS[k]);
+  const nowCP = PW.combatPower(m);
+  $('panel-title').textContent = `◈ ${m.name} 的装备　战力 ${nowCP}`;
+
+  const SLOTS = ['weapon', 'armor', 'acc'];
+  const SLOT_CN = { weapon: '武器', armor: '护甲', acc: '饰品' };
+  /* 只列这个角色用得上的：武器按类别限定（刀剑给凯、长枪弓弩给雷、法杖给苍与璃），
+     护甲饰品人人可用。此前所有人共用一张清单，璃的栏里堆满了自己拿不动的大剑。 */
+  const owned = Object.keys(G.bag)
+    .filter(k => G.bag[k] > 0 && EQUIPS[k] && PW.canEquip(m.id, EQUIPS[k]));
+
+  const rowFor = (k, equipped) => {
+    const e = EQUIPS[k];
+    const lv = PW.equipLevel(e);
+    const type = PW.equipType(e);
+    const delta = equipped ? 0 : PW.powerWith(m, k) - nowCP;
+    const t = PW.powerTier(delta);
+    return `<div class="shop-row" style="align-items:flex-start">
+      <div style="flex:1;min-width:0">
+        <b style="color:${e.col || '#ffd76a'}">${e.name}</b>
+        <span class="tag" style="margin-left:6px">Lv.${lv}</span>
+        ${e.rarity ? `<span class="tag" style="color:${e.col};border-color:${e.col}66">${e.rarity}</span>` : ''}
+        ${type ? `<span class="tag">${type}</span>` : ''}
+        ${equipped ? '<span class="tag eq">已装备</span>' : ''}
+        <div style="font-size:11px;color:#8fe6ff;margin-top:3px">${statLine(e)}</div>
+        ${e.desc && e.effList && e.effList.length ? `<div style="font-size:11.5px;color:#bbb2dd;margin-top:2px;line-height:1.6">${e.desc}</div>` : ''}
+        ${e.lore ? `<div style="font-size:11px;color:#8a7d8c;margin-top:2px;font-style:italic">${e.lore}</div>` : ''}
+      </div>
+      <div style="text-align:right;white-space:nowrap">
+        ${equipped ? '' : `<div style="font-size:12px;color:${t.col};font-weight:700">战力 ${t.sign}${delta}</div>
+        <button class="mini" data-wear="${k}">装备</button>`}
+      </div>
+    </div>`;
+  };
+
   body.innerHTML = `<div style="grid-column:1/-1">
-    ${['weapon', 'armor', 'acc'].map(slot => {
-    const cur = m.equips[['weapon', 'armor', 'acc'].indexOf(slot)];
-    return `<div style="margin-bottom:10px">
-        <div style="color:#ffd76a;font-size:13px;margin-bottom:5px">${slot === 'weapon' ? '武器' : slot === 'armor' ? '护甲' : '饰品'} — 当前：${cur ? EQUIPS[cur].name : '无'}</div>
-        ${owned.filter(k => EQUIPS[k].slot === slot).map(k => `<div class="shop-row">
-            <div><b>${EQUIPS[k].name}</b><div style="font-size:11px;color:#8fe6ff">${statLine(EQUIPS[k])}</div></div>
-            <button class="mini" data-wear="${k}">装备</button></div>`).join('') || '<div style="font-size:12px;color:#a99">—— 没有可换的装备 ——</div>'}
+    <div style="font-size:12px;color:#bbb2dd;margin-bottom:10px">
+      只显示 ${m.name} 能装备的东西。「战力」是攻防血速与全部特效折算后的综合评分，
+      换装前可以先看变化值。
+    </div>
+    ${SLOTS.map(slot => {
+    const cur = m.equips[SLOTS.indexOf(slot)];
+    const list = owned.filter(k => EQUIPS[k].slot === slot)
+      .sort((a, b) => PW.powerWith(m, b) - PW.powerWith(m, a));
+    return `<div style="margin-bottom:14px">
+        <div style="color:#ffd76a;font-size:13px;margin-bottom:5px">${SLOT_CN[slot]}</div>
+        ${cur ? rowFor(cur, true) : '<div style="font-size:12px;color:#8a7d8c;margin-bottom:4px">当前：未装备</div>'}
+        ${list.length ? list.map(k => rowFor(k, false)).join('')
+      : '<div style="font-size:12px;color:#8a7d8c">—— 背包里没有 ' + m.name + ' 能用的' + SLOT_CN[slot] + ' ——</div>'}
       </div>`;
   }).join('')}
     <button class="mini g" id="eq-back" style="padding:8px 22px">返回</button>
   </div>`;
+
   body.querySelectorAll('[data-wear]').forEach(b => b.onclick = e => {
     e.stopPropagation();
     const k = b.dataset.wear;
     const e2 = EQUIPS[k];
+    if (!PW.canEquip(m.id, e2)) { toast(`${m.name} 用不了${PW.equipType(e2) || '这件装备'}`); return; }
     const slotIdx = ['weapon', 'armor', 'acc'].indexOf(e2.slot);
     const old = m.equips[slotIdx];
     if (old) G.bag[old] = (G.bag[old] || 0) + 1;
@@ -1385,7 +1426,8 @@ function openEquipScreen(memberId, back) {
     m.equips[slotIdx] = k;
     recalc(m);
     sfx('heal');
-    toast(`${m.name} 装备了【${e2.name}】`);
+    const after = PW.combatPower(m);
+    toast(`${m.name} 装备了【${e2.name}】　战力 ${nowCP} → ${after}`);
     openEquipScreen(memberId, back);
   });
   $('eq-back').onclick = e => { e.stopPropagation(); back && back(); };
@@ -1441,7 +1483,8 @@ function togglePanel(kind, open) {
 function openPartyPanel() {
   enterPanel('party');
   const unspent = G.party.reduce((a, m) => a + (m.points || 0) + (m.sp || 0), 0);
-  $('panel-title').textContent = `◈ 队伍状态　持有 ${G.gold} 金${unspent ? `　· 有 ${unspent} 点未分配` : ''}`;
+  const teamCP = PW.partyPower(G.party);
+  $('panel-title').textContent = `◈ 队伍状态　战力 ${teamCP}　持有 ${G.gold} 金${unspent ? `　· 有 ${unspent} 点未分配` : ''}`;
   const body = $('panel-body');
   body.innerHTML = G.party.map(m => {
     const bp = BD.bondProgress(G, m.id);
@@ -1450,6 +1493,7 @@ function openPartyPanel() {
       <img src="${portraitURL(m.portrait)}" alt="">
       <div class="pi">
         <div class="pn">${m.name} <span style="font-size:11.5px;color:#bbb2dd">Lv.${m.level} · ${m.title}</span>
+          <span class="tag" style="color:#ffd76a;border-color:#ffd76a55">战力 ${PW.combatPower(m)}</span>
           ${pend ? `<span class="tag" style="background:#5a3a12;color:#ffd76a">可分配 ${pend}</span>` : ''}</div>
         <div class="bar hp"><i style="width:${(m.hp / m.maxHp * 100).toFixed(1)}%"></i></div>
         <div class="pv">HP ${Math.ceil(m.hp)} / ${m.maxHp}</div>
@@ -1460,7 +1504,8 @@ function openPartyPanel() {
         <div>${m.skills.map(sk => `<span class="tag">${SKILLS[sk]?.name || sk}</span>`).join('')}</div>
         <div>${m.equips.filter(Boolean).map(e => {
       const eq = EQUIPS[e];
-      return `<span class="tag eq" style="${eq && eq.col ? `color:${eq.col}` : ''}">${eq?.name || e}</span>`;
+      if (!eq) return `<span class="tag">${e}</span>`;
+      return `<span class="tag eq" style="${eq.col ? `color:${eq.col}` : ''}">${eq.name} <span style="opacity:.7">Lv.${PW.equipLevel(eq)}</span></span>`;
     }).join('') || '<span class="tag">未装备</span>'}</div>
         <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
           <button class="mini" data-grow="${m.id}">养成${pend ? ' ●' : ''}</button>
