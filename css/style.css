@@ -151,24 +151,6 @@ body{display:block;overflow:hidden}
 .sk .c{float:right;font-size:11px;color:var(--cyan)}
 .sk:disabled{opacity:.35;cursor:not-allowed;transform:none}
 
-/* ---------- 格挡条 ---------- */
-#guardbar{position:absolute;left:50%;top:74px;transform:translateX(-50%);z-index:28;
-  width:330px;text-align:center;padding:8px 12px;border-radius:8px;
-  background:rgba(8,6,20,.85);border:1px solid rgba(255,160,70,.5);
-  box-shadow:0 0 24px rgba(255,90,0,.4)}
-.guard-label{font-size:12px;letter-spacing:6px;color:var(--orange-lt);margin-bottom:5px}
-.guard-track{position:relative;height:18px;border-radius:9px;overflow:hidden;
-  background:linear-gradient(90deg,#2a1020,#3a1a10,#2a1020);
-  border:1px solid rgba(255,255,255,.16)}
-.guard-zone{position:absolute;top:0;bottom:0}
-.guard-zone.good{left:34%;width:32%;background:rgba(72,216,255,.35)}
-.guard-zone.perfect{left:44%;width:12%;background:linear-gradient(180deg,#fff6c0,#ffb300);
-  box-shadow:0 0 14px #ffcf4d}
-.guard-needle{position:absolute;top:-3px;bottom:-3px;width:4px;background:#fff;border-radius:2px;
-  box-shadow:0 0 10px #fff,0 0 20px #ff8a1a}
-.guard-tip{font-size:11px;color:#cbbfe8;margin-top:6px;letter-spacing:1px}
-kbd{background:#2a1c44;border:1px solid #6a5aa0;border-radius:3px;padding:0 4px;font-size:10px}
-
 /* ---------- 奥义 cut-in ---------- */
 #cutin{position:absolute;inset:0;z-index:40;overflow:hidden;pointer-events:none}
 .cutin-speed{position:absolute;inset:-30%;
@@ -266,20 +248,6 @@ kbd{background:#2a1c44;border:1px solid #6a5aa0;border-radius:3px;padding:0 4px;
   opacity:0;pointer-events:none;transition:.28s}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 
-/* ---------- 触屏 ---------- */
-/* 战斗中才显示（由 JS 切换 .combat），避免遮住对话框 */
-#touch{position:absolute;right:10px;top:46px;z-index:30;display:none;flex-direction:column;gap:10px}
-#touch.combat{display:flex}
-.tkey{font-family:var(--font);width:88px;height:88px;
-  font-size:15px;font-weight:700;letter-spacing:3px;color:#fff;padding:0;
-  border-radius:50%;background:radial-gradient(circle at 35% 28%,rgba(255,150,50,.92),rgba(110,18,0,.92));
-  border:2px solid rgba(255,205,130,.7);
-  box-shadow:0 0 18px rgba(255,110,20,.55),0 4px 14px rgba(0,0,0,.6);
-  touch-action:manipulation;transition:transform .08s}
-.tkey[data-key="guard"]{background:radial-gradient(circle at 35% 28%,rgba(110,190,255,.9),rgba(10,50,110,.92));
-  border-color:rgba(170,225,255,.75);box-shadow:0 0 18px rgba(72,180,255,.5),0 4px 14px rgba(0,0,0,.6)}
-.tkey:active{transform:scale(.9);filter:brightness(1.25)}
-
 /* ---------- 竖屏提示 ---------- */
 #rotate{position:absolute;inset:0;z-index:80;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;
@@ -308,8 +276,6 @@ kbd{background:#2a1c44;border:1px solid #6a5aa0;border-radius:3px;padding:0 4px;
 .touch-ui .sk-grid{grid-template-columns:repeat(2,1fr)}
 .touch-ui .sk .n{font-size:13.5px}
 .touch-ui .sk .d{font-size:10.5px}
-.touch-ui .guard-track{height:22px}
-.touch-ui #guardbar{top:64px;width:min(360px,86%)}
 .touch-ui .mini{padding:9px 14px;font-size:13px}
 .touch-ui .shop-row{font-size:12.5px;padding:9px}
 /* 窄屏（手机横屏）进一步压缩 */

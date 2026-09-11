@@ -15,6 +15,13 @@ const H_BAR_Y = 30;
 /* 战斗节奏倍率：越小越快（影响所有动作时长） */
 export const BATTLE_SPEED = 0.68;
 
+/* 行动条：单位的 gauge 按 spd 速率涨到 GOAL 就出手，出手后减去 GOAL 并保留溢出，
+   所以速度高的单位能在慢速单位出手一次的间隔里行动两次。 */
+const GOAL = 100;
+
+/* 愤怒资源的获取量（只有 resource==='rage' 的角色会收到） */
+const RAGE = { hit: 1.25, taken: 28, block: 10, parry: 20, kill: 8, guardCmd: 12 };
+
 /* 站位（960x540 画布） */
 const ENEMY_POS = [
   [{ x: 600, y: 372 }, { x: 742, y: 388 }, { x: 866, y: 368 }],
@@ -41,9 +48,9 @@ export function createBattle(game, def, stage) {
     fx: [], floats: [],
     shake: 0, flash: 0, zoom: 1, hitstop: 0,
     guard: null, cutin: null,
-    cmd: null, ui: { mode: 'wait', queue: [] },
+    cmd: null, ui: { mode: 'idle', queue: [] },
     time: 0, message: null, introT: stage.introLines ? 1 : 0,
-    t: 0, turn: 1, escapes: 0,
+    t: 0, turn: 0, escapes: 0, active: null,
   };
 
   // 敌人实例
@@ -56,17 +63,18 @@ export function createBattle(game, def, stage) {
     const pos = ENEMY_POS[row][i] || ENEMY_POS[row][ENEMY_POS[row].length - 1];
     const scale = enemyScale(d) * (1 + k * 0.028);
     // 最终决战的首领不随等级过度膨胀，避免变成消耗战
-    const hpK = (d.boss && lv >= 18) ? 0.035 : 0.075;
+    const hpK = (d.boss && lv >= 18) ? 0.032 : 0.075;
     const maxHp = Math.floor(d.hp * (1 + k * hpK));
     return {
       i, ref: d.id, def: d, name: d.name, shape: d.shape, palette: d.palette,
       level: lv, maxHp, hp: maxHp,
       atk: Math.floor(d.atk * (1 + k * 0.11)), defv: Math.floor(d.def * (1 + k * 0.10)),
       spd: d.spd + k, exp: Math.floor(d.exp * (1 + k * 0.22)), gold: Math.floor(d.gold * (1 + k * 0.2)),
-      hot: d.hot || 10, boss: !!d.boss, skills: d.skills, quote: d.quote,
+      boss: !!d.boss, skills: d.skills, quote: d.quote, weak: d.weak || null,
       scale, x: pos.x, y: pos.y, baseX: pos.x, baseY: pos.y,
       pose: 'idle', hurtP: null, atkP: null, dead: false, dying: 0,
-      status: [], buffs: { atk: 1, def: 1 },
+      status: [], buffs: { atk: 1, def: 1, spd: 1 },
+      gauge: rnd(0, 15), isEnemy: true,
       phase: 1, said: false, offY: 0,
     };
   });
@@ -77,16 +85,57 @@ export function createBattle(game, def, stage) {
     return {
       ...m, i, x: p.x, y: p.y, baseX: p.x, baseY: p.y,
       pose: 'idle', hurtP: null, atkP: null, dying: 0,
-      status: [], buffs: { atk: 1, def: 1 },
-      defending: false, cmd: null, acted: false,
+      status: [], buffs: { atk: 1, def: 1, spd: 1 },
+      gauge: rnd(0, 15),
+      resource: (ACTORS[m.id] && ACTORS[m.id].resource) || 'mp',
+      guardStance: false, cmd: null, acted: false,
     };
   });
   B.byId = {};
-  for (const m of B.party) B.byId[m.id] = m;
+  for (const m of B.party) {
+    B.byId[m.id] = m;
+    if (m.resource === 'rage') m.mp = 0;   // 愤怒从零攒起
+  }
 
   addLog(B, `⚔ ${def.enemies.map(e => ENEMIES[e.ref].name).join('、')} 出现了！`);
   for (const e of B.enemies) if (e.quote && chance(0.7)) B.floats.push({ kind: 'quote', txt: e.quote, x: e.x, y: e.y - 110 * e.scale, life: 0, dur: 2.2, col: '#ff9a9a' });
+  beginNextTurn(B);
   return B;
+}
+
+/* ============================================================
+   行动条调度（速度决定出手顺序，快的单位可以连续出手）
+   ============================================================ */
+export function effSpd(u) { return Math.max(1, Math.floor((u.spd || 1) * (u.buffs?.spd || 1))); }
+
+function livingUnits(B) { return [...B.party, ...B.enemies].filter(u => !u.dead); }
+
+/* 推进行动条，返回下一个出手的单位 */
+function scheduleNext(B) {
+  const units = livingUnits(B);
+  if (!units.length) return null;
+  let best = null, bestT = Infinity;
+  for (const u of units) {
+    const t = (GOAL - u.gauge) / effSpd(u);
+    if (t < bestT) { bestT = t; best = u; }
+  }
+  for (const u of units) u.gauge += effSpd(u) * bestT;
+  best.gauge -= GOAL;
+  return best;
+}
+
+/* 未来出手顺序预览（不改动真实 gauge） */
+export function forecastOrder(B, n = 8) {
+  const sim = livingUnits(B).map(u => ({ u, g: u.gauge, spd: effSpd(u) }));
+  const out = [];
+  for (let i = 0; i < n && sim.length; i++) {
+    let bi = 0, bt = Infinity;
+    sim.forEach((x, j) => { const t = (GOAL - x.g) / x.spd; if (t < bt) { bt = t; bi = j; } });
+    sim.forEach(x => { x.g += x.spd * bt; });
+    sim[bi].g -= GOAL;
+    out.push(sim[bi].u);
+  }
+  return out;
 }
 
 /* ============================================================
@@ -123,24 +172,37 @@ function damage(B, target, amount, opt = {}) {
   if (target.hp <= 0) {
     target.dead = true; target.pose = 'dead'; target.dying = 0;
     addLog(B, `<span class="dmg">${target.name} 被击倒了！</span>`);
-    if (opt.by) addHeat(B, opt.by, 6);
+    if (opt.by) gainRage(B, opt.by, RAGE.kill);
   }
   const out = amount;
   return out;
 }
 
-export function addHeat(B, unit, v) {
-  if (!unit || unit.dead) return;
-  if (unit.isEnemy) return;
-  unit.hot = clamp(unit.hot + v, 0, 100);
-  if (unit.hot >= 100) {
-    unit.hot = 100;
-    if (!unit.hotNotified) {
-      unit.hotNotified = true;
-      addLog(B, `<span class="hl">※ ${unit.name} 的热血已满！可以发动【奥义】！</span>`);
-      addFloat(B, '热血全满！', unit.x, unit.y - 150, '#ffd76a', 26);
-    }
-  } else if (unit.hot < 100) { unit.hotNotified = false; }
+/* 愤怒资源：只有 resource==='rage' 的角色会积攒，术力角色无视 */
+export function gainRage(B, unit, v) {
+  if (!unit || unit.dead || unit.isEnemy) return;
+  if (unit.resource !== 'rage' || v <= 0) return;
+  const before = unit.mp;
+  unit.mp = clamp(unit.mp + v * (unit.rageMul || 1), 0, unit.maxMp);
+  const gained = Math.round(unit.mp - before);
+  if (gained > 0) addFloat(B, `怒+${gained}`, unit.x + rnd(-10, 10), unit.y - 132, '#ff9a3c', 20);
+  if (canUlt(unit) && !unit.ultNotified) {
+    unit.ultNotified = true;
+    addLog(B, `<span class="hl">※ ${unit.name} 的怒气足够发动【奥义】了！</span>`);
+    addFloat(B, '奥义就绪！', unit.x, unit.y - 152, '#ffd76a', 26);
+  } else if (!canUlt(unit)) unit.ultNotified = false;
+}
+
+/* 该角色当前资源是否够放奥义 */
+export function canUlt(m) {
+  if (!m || m.dead) return false;
+  const ult = (m.skills || []).map(id => SKILLS[id]).find(sk => sk && sk.ult);
+  return !!ult && m.mp >= (ult.mp || 0);
+}
+
+/* 资源占比（0~1），给 HUD 和隐藏结局判定用 */
+export function resourceRatio(m) {
+  return m && m.maxMp ? clamp(m.mp / m.maxMp, 0, 1) : 0;
 }
 
 /* ============================================================
@@ -257,12 +319,26 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
       let elemBonus = false;
       if (weak && weak.includes(elem)) { r.dmg = Math.floor(r.dmg * 1.5); elemBonus = true; }
       const isEnemy = atkUnit.isEnemy;
-      // 玩家格挡减伤
-      let guardMul = 1;
-      if (isEnemy && tg.defending) guardMul = tg.guardPerfect ? 0 : 0.38;
-      const finalDmg = Math.floor(r.dmg * (tg.defending ? guardMul : 1));
+      /* 防御判定：敌人打我方时先滚弹反、再滚格挡。
+         概率来自角色属性 + 装备，选了「格挡」指令则本轮大幅提升。 */
+      let guardMul = 1, guardKind = null;
+      if (isEnemy && !tg.isEnemy) {
+        const par = clamp((tg.par || 0) + (tg.guardStance ? 0.12 : 0), 0, 0.85);
+        const blk = clamp((tg.blk || 0) + (tg.guardStance ? 0.45 : 0), 0, 0.92);
+        if (chance(par)) { guardMul = 0; guardKind = 'parry'; }
+        else if (chance(blk)) { guardMul = 0.38; guardKind = 'block'; }
+      }
+      const finalDmg = Math.floor(r.dmg * guardMul);
 
-      damage(B, tg, finalDmg, { crit: r.crit, col: r.crit ? '#ffe14d' : (elemBonus ? elemColor(elem) : undefined), by: isEnemy ? null : atkUnit, from: spec.drain ? atkUnit : null, drain: spec.drain });
+      if (guardKind === 'parry') {
+        // 完全抵消，不走 damage()（它有最低 1 点伤害的下限）
+        tg.hurtP = 0;
+        addFloat(B, '弹反！', tg.x, tg.y - 118, '#fff6c0', 30);
+        flash(B, 0.35); shake(B, 10);
+      } else {
+        damage(B, tg, finalDmg, { crit: r.crit, col: r.crit ? '#ffe14d' : (elemBonus ? elemColor(elem) : undefined), by: isEnemy ? null : atkUnit, from: spec.drain ? atkUnit : null, drain: spec.drain });
+        if (isEnemy && !tg.isEnemy) gainRage(B, tg, clamp(RAGE.taken * finalDmg / Math.max(1, tg.maxHp), 2, 25));
+      }
 
       // 命中特效
       const fxCol = elemColor(elem) === '#ffffff' ? (r.crit ? '#ffe14d' : '#ffffff') : elemColor(elem);
@@ -295,19 +371,18 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
       if (inf && !tg.dead && chance(inf.chance ?? 0.4)) {
         applyStatus(B, tg, inf.id, inf.turns || STATUS[inf.id].turns);
       }
-      // 玩家被击时的格挡视觉
-      if (isEnemy && tg.defending) {
-        addFx(B, 'guard', tg.x, tg.y - 70, tg.guardPerfect ? '#fff6c0' : '#8fd8ff', { dur: 0.4, perfect: tg.guardPerfect });
-        if (tg.guardPerfect) {
-          addLog(B, `<span class="hl">※ 完美弹反！${tg.name} 抵消了伤害！</span>`);
-          addHeat(B, tg, 24);
-          tg.hot = clamp(tg.hot + 0, 0, 100);
+      // 格挡/弹反的视觉与怒气回馈
+      if (guardKind) {
+        addFx(B, 'guard', tg.x, tg.y - 70, guardKind === 'parry' ? '#fff6c0' : '#8fd8ff', { dur: 0.4, perfect: guardKind === 'parry' });
+        if (guardKind === 'parry') {
+          addLog(B, `<span class="hl">※ 弹反！${tg.name} 完全抵消了这一击！</span>`);
+          gainRage(B, tg, RAGE.parry);
         } else {
           addLog(B, `※ ${tg.name} 挡下了这一击（伤害减免）。`);
-          addHeat(B, tg, 12);
+          gainRage(B, tg, RAGE.block);
         }
       }
-      if (!isEnemy && !tg.dead) addHeat(B, atkUnit, (SKILLS[skillId]?.hot || 10) / Math.max(1, hits) * 0.55);
+      if (!isEnemy && !tg.dead) gainRage(B, atkUnit, (SKILLS[skillId]?.rage || 10) / Math.max(1, hits) * RAGE.hit);
     }
     // 敌人被攻击后按血量说话
     if (!atkUnit.isEnemy) {
@@ -392,31 +467,69 @@ export function tickStatus(B, unit) {
    行动构造
    ============================================================ */
 /* 玩家指令批量执行 */
-export function makePlayerTurn(B, cmds) {
-  const acts = [];
-  const sorted = [...B.party].filter(m => !m.dead).sort((a, b) => b.spd - a.spd);
-  const queue = sorted.map(m => ({ m, cmd: cmds[m.id] || { type: 'attack' } }));
-  let totalDur = 0;
-
-  for (const { m, cmd } of queue) {
-    if (m.dead) continue;
-    acts.push({
-      dur: 0.4,
-      start() { m.pose = 'ready'; },
-      tick(k) { if (k > 0.9) m.pose = 'idle'; },
-      resolve() { resolvePlayerCmd(B, m, cmd); },
-    });
-  }
-  // 我方行动结束后敌人行动
-  acts.push({
-    dur: 0.2, start() { }, tick() { }, resolve() { enemyPhase(B); },
+/* 轮到下一个单位出手。我方 -> 等玩家下指令；敌方 -> 直接行动。 */
+export function beginNextTurn(B) {
+  if (B.over) return;
+  const u = scheduleNext(B);
+  if (!u) return;
+  B.active = u;
+  B.turn++;
+  B.ui.queue.push({
+    dur: 0.22,
+    start() { startOfTurn(B, u); },
+    tick() { },
+    resolve() { afterTurnStart(B, u); },
   });
-  return acts;
+}
+
+/* 单位自己的回合开始：状态结算、资源回复、清掉上一次的格挡姿态 */
+function startOfTurn(B, u) {
+  u.guardStance = false;
+  tickStatus(B, u);
+  if (u.dead) return;
+  if (u.status.some(st => st.id === 'stun')) {
+    addLog(B, `<span class="hl">${u.name} 处于眩晕，无法行动！</span>`); u.skip = true; return;
+  }
+  if (u.status.some(st => st.id === 'frozen')) {
+    addLog(B, `<span class="hl">${u.name} 被冰封，无法行动！</span>`); u.skip = true; return;
+  }
+  u.skip = false;
+  // 术力角色在自己回合开始回蓝；愤怒角色没有被动回复
+  if (!u.isEnemy && u.resource !== 'rage') u.mp = Math.min(u.maxMp, u.mp + (u.mpRegen || 3));
+}
+
+function afterTurnStart(B, u) {
+  if (B.over) return;
+  if (u.dead || u.skip) { u.skip = false; endTurn(B); return; }
+  if (u.isEnemy) {
+    chooseEnemyAction(B, u);
+    B.ui.queue.push({ dur: 0.12, start() { }, tick() { }, resolve() { endTurn(B); } });
+  } else {
+    B.ui.mode = 'wait';   // 队列清空后 updateBattle 会向 UI 请求指令
+  }
+}
+
+/* 玩家为当前单位下达了一条指令 */
+export function takePlayerAction(B, m, cmd) {
+  if (B.over || !m || m.dead) return;
+  B.ui.mode = 'running';
+  B.ui.queue.push({
+    dur: 0.32,
+    start() { m.pose = 'ready'; },
+    tick(k) { if (k > 0.9) m.pose = 'idle'; },
+    resolve() { resolvePlayerCmd(B, m, cmd); },
+  });
+  B.ui.queue.push({ dur: 0.12, start() { }, tick() { }, resolve() { endTurn(B); } });
+}
+
+function endTurn(B) {
+  checkBattleEnd(B);
+  if (B.over) return;
+  beginNextTurn(B);
 }
 
 function resolvePlayerCmd(B, m, cmd) {
   if (m.dead) return;
-  m.defending = false;
   switch (cmd.type) {
     case 'attack': {
       const ws = (ACTORS[m.id] && ACTORS[m.id].weaponSkill) || ['xinzhan'];
@@ -444,9 +557,9 @@ function resolvePlayerCmd(B, m, cmd) {
     }
     case 'item': execItem(B, m, cmd.item, cmd.target); break;
     case 'guard':
-      m.defending = true;
-      addLog(B, `<span class="hl">${m.name}</span> 摆出了防御姿态。`);
-      addHeat(B, m, 14);
+      m.guardStance = true;
+      addLog(B, `<span class="hl">${m.name}</span> 摆出了防御姿态（格挡·弹反率大幅提升）。`);
+      gainRage(B, m, RAGE.guardCmd);
       break;
     case 'escape':
       attemptEscape(B); break;
@@ -468,8 +581,7 @@ function execSkill(B, atkUnit, skillId, targets) {
 function execUlt(B, m, sk, targetIdx) {
   // 奥义演出
   const targets = sk.target === 'all' ? B.enemies.filter(e => !e.dead) : [pickEnemy(B, targetIdx)];
-  m.hot = 0;
-  m.hotNotified = false;
+  m.ultNotified = false;
   B.cutin = { name: sk.name, portrait: m.portrait, life: 0, dur: 1.5, after: () => {
     flash(B, 1);
     shake(B, 20);
@@ -499,10 +611,10 @@ function execHeal(B, m, sk, targetIdx) {
       if (sk.buff) applyBuff(B, sk.buff, list.filter(u => u && !u.dead));
     },
     tick(k) { if (k > .8) m.pose = 'idle'; },
-    resolve() { addHeat(B, m, 12); },
+    resolve() { gainRage(B, m, 12); },
   });
   if (sk.ult) {
-    m.hot = 0; m.hotNotified = false;
+    m.ultNotified = false;
     B.cutin = { name: sk.name, portrait: m.portrait, life: 0, dur: 1.5, after: () => { flash(B, .8); doHeal(); } };
     B.game.sfx('ult');
   } else doHeal();
@@ -520,7 +632,7 @@ function execRevive(B, m, sk, targetIdx) {
       t.hp = Math.floor(t.maxHp * (sk.power || 0.5));
       addFloat(B, '复活！', t.x, t.y - 140, '#fff3c4', 30);
       addLog(B, `<span class="heal">${t.name} 重新站了起来！</span>`);
-      addHeat(B, m, 18);
+      gainRage(B, m, 18);
     },
     tick(k) { if (k > .9) m.pose = 'idle'; },
     resolve() { },
@@ -535,8 +647,7 @@ function execBuff(B, m, sk) {
       applyBuff(B, sk.buff, [m]);
       flash(B, 0.35);
       shake(B, 8);
-      addHeat(B, m, sk.hot || 12);
-      m.mp = Math.max(0, m.mp - (sk.mp || 0));
+      gainRage(B, m, sk.rage || 12);
     },
     tick(k) { if (k > .6) m.pose = 'idle'; },
     resolve() { },
@@ -578,7 +689,7 @@ export function execItem(B, m, itemId, targetIdx) {
       }
       if (it.seal && t) applyStatus(B, t, 'stun', 1);
       if (it.escape) { B.escaped = true; addLog(B, `※ 烟雾散开——成功脱身！`); }
-      addHeat(B, m, 8);
+      gainRage(B, m, 8);
     },
     tick(k) { if (k > .7) m.pose = 'idle'; },
     resolve() { },
@@ -599,40 +710,6 @@ function attemptEscape(B) {
 /* ============================================================
    敌方回合
    ============================================================ */
-function enemyPhase(B) {
-  if (B.over) return;
-  const alive = B.enemies.filter(e => !e.dead);
-  const order = alive.sort((a, b) => b.spd - a.spd);
-  for (const e of order) {
-    B.ui.queue.push({
-      dur: 0.32,
-      start() {
-        // 回合开始时处理状态
-        tickStatus(B, e);
-        if (e.dead) return;
-        if (e.status.some(s => s.id === 'stun')) {
-          addLog(B, `<span class="hl">${e.name} 处于眩晕，无法行动！</span>`);
-          e.skip = true;
-          return;
-        }
-        if (e.status.some(s => s.id === 'frozen')) {
-          addLog(B, `<span class="hl">${e.name} 被冰封，无法行动！</span>`);
-          e.skip = true;
-          return;
-        }
-        e.skip = false;
-        chooseEnemyAction(B, e);
-      },
-      tick() { }, resolve() { },
-    });
-  }
-  // 回合结束：回合数 +1
-  B.ui.queue.push({
-    dur: 0.15, start() { }, tick() { },
-    resolve() { endRound(B); if (!B.over) { B.ui.mode = 'wait'; B.game.requestPlayerTurn(B); } },
-  });
-}
-
 function chooseEnemyAction(B, e) {
   // 阶段转换（Boss 半血狂暴）
   if (e.boss && e.phase === 1 && e.hp / e.maxHp <= 0.5) {
@@ -667,73 +744,21 @@ function chooseEnemyAction(B, e) {
   if (spec.buff) { applyBuff(B, spec.buff, [e]); B.enemyActs.push(0); return; }
   if (!spec.power) { addLog(B, `${e.name} 使用了 ${spec.name}。`); B.enemyActs.push(0); return; }
 
-  // 有格挡窗口的敌人攻击
+  // 敌人攻击（格挡/弹反在 doHit 里按概率判定，不再需要玩家按键）
   const saveTargets = targets.slice();
   B.ui.queue.push({
-    dur: 1.30,
+    dur: 0.85,
     start() {
       addLog(B, `<span class="dmg">${e.name}</span> 使用了 <span class="hl">${spec.name}</span>！`);
       e.pose = 'ready'; e.atkP = 0;
-      // 建立格挡窗口（玩家在命中前按下 空格/点击 即为弹反）
-      if (!B.def.noGuard) {
-        B.guard = {
-          t: 0, dur: 0.72, impact: 0.55, done: false, result: null, resolved: false, pressed: false,
-          onPress() {
-            const g = B.guard;
-            if (!g || g.done) return;
-            const dp = Math.abs(g.t / g.dur - g.impact);
-            if (dp < 0.085) g.result = 'perfect';
-            else if (dp < 0.205) g.result = 'good';
-            else g.result = 'miss';
-            g.done = true;
-            B.game.sfx(g.result === 'perfect' ? 'perfect' : g.result === 'good' ? 'guard' : 'miss');
-            addFx(B, 'guard', saveTargets[0].x, saveTargets[0].y - 70, g.result === 'perfect' ? '#fff6c0' : '#8fd8ff', { dur: 0.45, perfect: g.result === 'perfect' });
-            if (g.result === 'perfect') {
-              flash(B, 0.45); shake(B, 12);
-              B.floats.push({ kind: 'quote', txt: '完美弹反！', x: W_GUARD_X, y: W_GUARD_Y, life: 0, dur: 1.1, col: '#fff6c0' });
-            } else if (g.result === 'good') {
-              shake(B, 6);
-            }
-          },
-        };
-      }
     },
-    tick(k) {
-      if (B.guard && !B.guard.done) {
-        const g = B.guard;
-        g.t = k * g.dur;
-        if (k >= g.impact + 0.005 && !g.resolved) { g.resolved = true; g.done = true; g.result = 'none'; }
-      }
-      e.atkP = clamp(k / 0.62, 0, 1);
-    },
+    tick(k) { e.atkP = clamp(k / 0.62, 0, 1); },
     resolve() {
-      const g = B.guard;
-      for (const t of saveTargets) {
-        if (!t || t.dead) continue;
-        t.guardPerfect = !!(g && g.result === 'perfect');
-        t.defending = !!(g && (g.result === 'perfect' || g.result === 'good'));
-      }
-      const act = runSkill(B, e, spec.id, saveTargets, {});
+      const act = runSkill(B, e, spec.id, saveTargets.filter(t => t && !t.dead), {});
       if (act) B.ui.queue.push(act);
-      B.guard = null;
     },
   });
   B.enemyActs.push(1);
-}
-
-const W_GUARD_X = 480, W_GUARD_Y = 210;
-
-function endRound(B) {
-  for (const m of B.party) {
-    if (!m.dead) {
-      tickStatus(B, m);
-      m.mp = Math.min(m.maxMp, m.mp + (m.mpRegen || 3));
-      m.defending = false; m.guardPerfect = false;
-    }
-  }
-  for (const e of B.enemies) if (!e.dead) tickStatus(B, e);
-  B.turn++;
-  checkBattleEnd(B);
 }
 
 /* ============================================================
@@ -792,17 +817,10 @@ export function updateBattle(B, dt, input) {
     }
   } else if (!B.over && !B.cutin) {
     // 需要玩家输入
-    if (B.guard) { /* 等待格挡窗口 */ }
-    else if (B.ui.mode === 'wait') {
+    if (B.ui.mode === 'wait') {
       B.game.requestPlayerTurn(B);
       B.ui.mode = 'input';
     }
-  }
-
-  // 格挡窗口推进（g.t 由队列 tick 驱动，这里只处理按键）
-  if (B.guard && !B.guard.done) {
-    const g = B.guard;
-    if (input.actionPressed && !g.pressed) { g.pressed = true; g.onPress(); }
   }
 
   // 特效
@@ -871,13 +889,13 @@ export function drawBattle(B, ctx, W, H) {
     if (m.dead) ctx.globalAlpha = Math.max(0.25, 1 - m.dying * 0.6);
     const glow = ultGlow(m);
     const pose = m.dead ? 'dead' : (m.pose || 'idle');
-    if (m.defending && !m.dead) {
+    if (m.guardStance && !m.dead) {
       // 防御盾
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       const sg = ctx.createRadialGradient(m.x, m.y - 70, 20, m.x, m.y - 70, 78);
       sg.addColorStop(0, 'rgba(120,200,255,0)');
-      sg.addColorStop(.75, m.guardPerfect ? 'rgba(255,246,192,.4)' : 'rgba(120,200,255,.28)');
+      sg.addColorStop(.75, 'rgba(120,200,255,.32)');
       sg.addColorStop(1, 'rgba(120,200,255,0)');
       ctx.fillStyle = sg;
       ctx.beginPath(); ctx.arc(m.x, m.y - 70, 78, 0, TAU); ctx.fill();
@@ -972,29 +990,15 @@ export function drawBattle(B, ctx, W, H) {
   /* 玩家 HUD 血条 */
   drawPartyHUD(ctx, B, t);
 
-  /* 回合数 */
+  /* 行动数 */
   ctx.save();
   ctx.font = '700 13px "Noto Sans SC",system-ui,sans-serif';
   ctx.fillStyle = 'rgba(255,220,170,.75)';
   ctx.textAlign = 'right';
-  ctx.fillText(`TURN ${B.turn}`, W - 14, 132);
+  ctx.fillText(`行动 ${B.turn}`, W - 14, 132);
   ctx.restore();
 
-  /* 我方格挡窗（弹反条由 DOM 显示，这里画目标圈） */
-  if (B.guard && !B.guard.done) {
-    const g = B.guard;
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    const tt = clamp(g.t / g.dur, 0, 1);
-    const near = 1 - Math.abs(tt - g.impact) / 0.3;
-    if (near > 0) {
-      ctx.globalAlpha = near * .5;
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(W / 2, H / 2, 240 - near * 40, 0, TAU); ctx.stroke();
-    }
-    ctx.restore();
-  }
+  drawTurnOrder(ctx, B, W);
 
   /* 白闪 */
   if (B.flash > 0.01) {
@@ -1018,9 +1022,39 @@ export function drawBattle(B, ctx, W, H) {
   ctx.restore();
 }
 
+/* 出手顺序预览：左边是下一个行动的单位 */
+function drawTurnOrder(ctx, B, W) {
+  if (B.over) return;
+  const order = forecastOrder(B, 8);
+  if (!order.length) return;
+  const S = 30, GAP = 5, X0 = 14, Y0 = 96;
+  ctx.save();
+  ctx.font = '700 11px "Noto Sans SC",system-ui,sans-serif';
+  ctx.fillStyle = 'rgba(255,220,170,.7)';
+  ctx.textAlign = 'left';
+  ctx.fillText('出手顺序 →', X0, Y0 - 6);
+  order.forEach((u, i) => {
+    const x = X0 + 74 + i * (S + GAP), y = Y0 - S + 4;
+    const sz = i === 0 ? S + 4 : S;
+    const yy = i === 0 ? y - 2 : y;
+    ctx.globalAlpha = i === 0 ? 1 : Math.max(0.35, 1 - i * 0.1);
+    ctx.fillStyle = u.isEnemy ? 'rgba(90,16,30,.9)' : 'rgba(22,30,70,.9)';
+    SP.util.rrect(ctx, x, yy, sz, sz, 5); ctx.fill();
+    ctx.strokeStyle = i === 0 ? 'rgba(255,215,106,.95)' : (u.isEnemy ? 'rgba(255,90,110,.55)' : 'rgba(120,200,255,.55)');
+    ctx.lineWidth = i === 0 ? 2 : 1;
+    SP.util.rrect(ctx, x, yy, sz, sz, 5); ctx.stroke();
+    ctx.fillStyle = u.isEnemy ? '#ffb0b0' : '#cfe4ff';
+    ctx.font = `800 ${i === 0 ? 15 : 13}px "Noto Sans SC",system-ui,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText((u.name || '?').slice(0, 1), x + sz / 2, yy + sz / 2 + 5);
+    ctx.textAlign = 'left';
+  });
+  ctx.restore();
+}
+
 function ultGlow(m) {
-  if (m.hot >= 100) return '#ffd76a';
-  if (m.hot >= 60) return '#ff8a1a';
+  if (canUlt(m)) return '#ffd76a';
+  if (resourceRatio(m) >= 0.6) return '#ff8a1a';
   return null;
 }
 
@@ -1095,20 +1129,22 @@ function drawPartyHUD(ctx, B, t) {
     bg.addColorStop(1, 'rgba(12,10,26,.35)');
     ctx.fillStyle = bg;
     SP.util.rrect(ctx, x, y, CW, CH, 6); ctx.fill();
-    ctx.strokeStyle = m.hot >= 100 ? 'rgba(255,215,106,.95)' : 'rgba(255,160,70,.38)';
-    ctx.lineWidth = m.hot >= 100 ? 2 : 1.2;
+    const ready = canUlt(m) && !m.dead;
+    const isRage = m.resource === 'rage';
+    ctx.strokeStyle = ready ? 'rgba(255,215,106,.95)' : (B.active === m ? 'rgba(255,240,200,.8)' : 'rgba(255,160,70,.38)');
+    ctx.lineWidth = ready || B.active === m ? 2 : 1.2;
     SP.util.rrect(ctx, x, y, CW, CH, 6); ctx.stroke();
 
     // 名字
     ctx.font = '800 15px "Noto Sans SC",system-ui,sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillStyle = m.dead ? '#8a8098' : (m.hot >= 100 ? '#ffd76a' : '#ffe9cf');
+    ctx.fillStyle = m.dead ? '#8a8098' : (ready ? '#ffd76a' : '#ffe9cf');
     ctx.fillText(m.name, x + 9, y + 19);
     ctx.font = '600 10.5px "Noto Sans SC",system-ui,sans-serif';
     ctx.fillStyle = 'rgba(200,190,230,.85)';
     ctx.fillText(`Lv.${m.level}`, x + 42, y + 19);
     if (m.dead) { ctx.fillStyle = '#ff8098'; ctx.fillText('倒下', x + 74, y + 19); }
-    if (m.hot >= 100) {
+    if (ready) {
       ctx.fillStyle = '#ffd76a';
       ctx.font = '800 11px "Noto Sans SC",system-ui,sans-serif';
       ctx.fillText('★奥义可用', x + 100, y + 19);
@@ -1127,32 +1163,29 @@ function drawPartyHUD(ctx, B, t) {
     ctx.fillStyle = '#fff';
     ctx.fillText(`${Math.ceil(m.hp)}/${m.maxHp}`, x + 11, y + 32.5);
 
-    // MP
+    // 资源条（术力=蓝 / 愤怒=橙红）
+    const res = resourceRatio(m);
     ctx.fillStyle = 'rgba(0,0,0,.5)';
-    SP.util.rrect(ctx, x + 9, y + 36, bw, 6, 3); ctx.fill();
-    const mp = clamp(m.mp / m.maxMp, 0, 1);
-    ctx.fillStyle = '#48b8ff';
-    SP.util.rrect(ctx, x + 9, y + 36, bw * mp, 6, 3); ctx.fill();
-
-    // 热血
-    const hot = clamp(m.hot / 100, 0, 1);
-    ctx.fillStyle = 'rgba(0,0,0,.5)';
-    SP.util.rrect(ctx, x + 9, y + 45, bw, 7, 3.5); ctx.fill();
-    const hhg = ctx.createLinearGradient(x + 9, 0, x + 9 + bw, 0);
-    hhg.addColorStop(0, '#ff6a1a'); hhg.addColorStop(1, '#ffd76a');
-    ctx.fillStyle = hhg;
-    SP.util.rrect(ctx, x + 9, y + 45, bw * hot, 7, 3.5); ctx.fill();
-    if (hot >= 1) {
+    SP.util.rrect(ctx, x + 9, y + 38, bw, 9, 4.5); ctx.fill();
+    const rg = ctx.createLinearGradient(x + 9, 0, x + 9 + bw, 0);
+    if (isRage) { rg.addColorStop(0, '#ff4a1a'); rg.addColorStop(1, '#ffd76a'); }
+    else { rg.addColorStop(0, '#2a7ad8'); rg.addColorStop(1, '#6fd8ff'); }
+    ctx.fillStyle = rg;
+    SP.util.rrect(ctx, x + 9, y + 38, bw * res, 9, 4.5); ctx.fill();
+    if (ready) {
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = .35 + .3 * Math.sin(t * 8);
+      ctx.globalAlpha = .3 + .28 * Math.sin(t * 8);
       ctx.fillStyle = '#ffd76a';
-      SP.util.rrect(ctx, x + 9, y + 45, bw, 7, 3.5); ctx.fill();
+      SP.util.rrect(ctx, x + 9, y + 38, bw, 9, 4.5); ctx.fill();
       ctx.restore();
     }
-    ctx.font = '700 8.5px "Noto Sans SC",system-ui,sans-serif';
-    ctx.fillStyle = 'rgba(255,220,170,.9)';
-    ctx.fillText('热血', x + 11, y + 51.5);
+    ctx.font = '700 9px "Noto Sans SC",system-ui,sans-serif';
+    ctx.fillStyle = isRage ? 'rgba(255,220,170,.95)' : 'rgba(200,235,255,.95)';
+    ctx.fillText(isRage ? '怒' : '术', x + 11, y + 45.5);
+    ctx.textAlign = 'right';
+    ctx.fillText(`${Math.ceil(m.mp)}/${m.maxMp}`, x + 9 + bw - 3, y + 45.5);
+    ctx.textAlign = 'left';
 
     // 状态
     if (m.status.length) {
@@ -1210,4 +1243,4 @@ export function battleLogHTML(B) {
   return B.log.map(l => `<div class="${l.cls}">${l.txt}</div>`).join('');
 }
 
-export default { createBattle, updateBattle, drawBattle, makePlayerTurn, battleLogHTML, addHeat, computeDamage, checkBattleEnd };
+export default { createBattle, updateBattle, drawBattle, beginNextTurn, takePlayerAction, forecastOrder, battleLogHTML, gainRage, canUlt, resourceRatio, computeDamage, checkBattleEnd };

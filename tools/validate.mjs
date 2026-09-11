@@ -1,6 +1,6 @@
 /* 剧情图校验：确保每个场景都有出路、引用存在、战斗场景有敌人 */
 import { SCENES, ENDINGS } from '../js/story.js';
-import { ACTORS, SKILLS, ENEMIES, ITEMS, EQUIPS, SHOPS } from '../js/characters.js';
+import { ACTORS, SKILLS, ENEMIES, ITEMS, EQUIPS, SHOPS, ELEM, statsAt } from '../js/characters.js';
 import { PORTRAITS } from '../js/portraits.js';
 
 const errs = [], warns = [];
@@ -98,6 +98,40 @@ for (const s of Object.values(SKILLS)) {
 const ults = Object.values(ACTORS).map(a => a.skills.map(s => SKILLS[s.id]).filter(s => s && s.ult).length);
 ults.forEach((n, i) => { if (n === 0) warns.push(`角色 ${Object.keys(ACTORS)[i]} 没有奥义`); });
 
+/* ---- 资源系统校验 ---- */
+for (const a of Object.values(ACTORS)) {
+  const res = a.resource;
+  if (res !== 'mp' && res !== 'rage') errs.push(`角色 ${a.id}: resource 必须是 'mp' 或 'rage'（当前 ${res}）`);
+  const pool = statsAt(a, 15).mp;
+  const ultEntry = a.skills.find(x => SKILLS[x.id] && SKILLS[x.id].ult);
+  const ult = ultEntry && SKILLS[ultEntry.id];
+  // 主线终盘约 Lv15，习得等级高于它的奥义在正常通关里永远见不到
+  if (ultEntry && ultEntry.lv > 15) errs.push(`奥义 ${ultEntry.id}: 习得等级 Lv${ultEntry.lv} 高于主线终盘等级 Lv15，正常通关学不到`);
+  if (!ult) { warns.push(`角色 ${a.id}: 没有奥义`); }
+  else if (!ult.mp) {
+    // 奥义原本靠「热血满100」开锁，改成资源门槛后 0 消耗 = 可以无限放
+    errs.push(`奥义 ${ult.id}: 消耗为 0，改用资源门槛后会变成无限放`);
+  } else if (ult.mp > pool) {
+    errs.push(`奥义 ${ult.id}: 消耗 ${ult.mp} 超过 ${a.name} Lv15 的资源上限 ${pool}`);
+  } else if (ult.mp < pool * 0.3) {
+    warns.push(`奥义 ${ult.id}: 消耗 ${ult.mp} 仅占 ${a.name} 资源池 ${pool} 的 ${Math.round(ult.mp / pool * 100)}%，偏廉价`);
+  }
+  const st = statsAt(a, 15, []);
+  if (st.blk + st.par >= 0.9) errs.push(`角色 ${a.id}: 格挡率+弹反率 = ${(st.blk + st.par).toFixed(2)}，几乎完全免疫`);
+}
+
+/* ---- 属性克制校验：weak 引用的属性要存在，且队伍里得真的有人打得出来 ---- */
+{
+  const atkElems = new Set(Object.values(SKILLS).filter(s => s.type === 'atk').map(s => s.elem));
+  for (const e of Object.values(ENEMIES)) {
+    if (!e.weak || !e.weak.length) { warns.push(`敌人 ${e.id}: 没有弱点属性，克制机制对它无效`); continue; }
+    for (const w of e.weak) {
+      if (!ELEM[w]) errs.push(`敌人 ${e.id}: 未知弱点属性 ${w}`);
+      else if (!atkElems.has(w)) errs.push(`敌人 ${e.id}: 弱点 ${w} 没有任何我方攻击技能能打出`);
+    }
+  }
+}
+
 const unreachable = [...ids].filter(i => !reachable.has(i));
 if (unreachable.length) warns.push('不可达场景: ' + unreachable.join(', '));
 const unusedEndings = Object.keys(ENDINGS).filter(e => !endingsUsed.has(e));
@@ -147,9 +181,22 @@ console.log('立绘结构: 全部通过（' + Object.keys(PORTRAITS).length + ' 
   if (lv > 24) warns.push(`主线经验偏高：终盘凯达到 Lv.${lv}`);
 }
 
-/* ---- Boss 强度对照表 ---- */
+/* ---- Boss 强度对照表：按剧本里真实的遭遇等级换算，基准值之间没有可比性 ---- */
 {
-  const rows = Object.values(ENEMIES).filter(e => e.boss).map(e => `${e.name}(Lv基准) HP${e.hp} ATK${e.atk} DEF${e.def}`);
+  const at = {};
+  for (const sc of Object.values(SCENES)) for (const e of sc.enemies || []) if (ENEMIES[e.ref]?.boss) at[e.ref] = e.level;
+  const rows = [];
+  let prev = null;
+  for (const e of Object.values(ENEMIES)) {
+    if (!e.boss) continue;
+    const lv = at[e.id];
+    if (lv == null) { rows.push(`${e.name}(未登场)`); continue; }
+    const k = lv - 1, hpK = lv >= 18 ? 0.032 : 0.075;
+    const hp = Math.floor(e.hp * (1 + k * hpK)), atk = Math.floor(e.atk * (1 + k * 0.11));
+    rows.push(`${e.name}@Lv${lv} HP${hp} ATK${atk}`);
+    if (prev && atk < prev.atk) warns.push(`首领强度倒挂：${e.name}(有效ATK${atk}) 弱于更早登场的 ${prev.name}(${prev.atk})`);
+    prev = { name: e.name, atk };
+  }
   console.log('首领:', rows.join(' | '));
 }
 if (warns.length) { console.log('\n--- 警告 (' + warns.length + ') ---'); warns.forEach(w => console.log('  ! ' + w)); }

@@ -402,7 +402,7 @@ c3_ambush: {
 },
 
 c3_battle1: B('c3_battle1', 'snow', [
-  ['ice_hound', 6], ['ice_hound', 6], ['demon_soldier', 6],
+  ['ice_hound', 9], ['ice_hound', 9], ['demon_soldier', 9],
 ], {
   win: [
     ['丝薇雅', '……有点意思。那这个呢？'],

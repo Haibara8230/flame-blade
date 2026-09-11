@@ -207,7 +207,7 @@ window.addEventListener('keyup', e => {
   const k = KEYMAP[e.key];
   if (k) keysDown[k] = false;
 });
-/* 触摸：同一次触碰可能在 canvas / #touch 上各触发一次 pointerdown，
+/* 触摸：一次触碰可能在 canvas 和其上的 UI 元素各触发一次 pointerdown，
    用 handled 标记防止一次点击被算作两次「确认」 */
 let pdHandled = false;
 stage.addEventListener('pointerdown', e => {
@@ -223,12 +223,6 @@ stage.addEventListener('pointerdown', e => {
   if (e.target !== cv) pdHandled = true;      // 点在 UI 元素上，由该元素自己处理
   input.actionPressed = true;
   input.confirmPressed = true;
-});
-$('touch').addEventListener('pointerdown', e => {
-  const b = e.target.closest('.tkey'); if (!b) return;
-  e.stopPropagation();
-  if (b.dataset.key === 'guard') { input.actionPressed = true; }   // 格挡 = 弹反输入
-  else { input.actionPressed = true; input.confirmPressed = true; }
 });
 function syncInput() {
   input.action = !!keysDown.action;
@@ -272,16 +266,27 @@ const G = {
 };
 
 /* 队伍构造 */
+/* 全队资源占比（0~100）。隐藏结局用它替代原来的「热血」判定：
+   打到最后还留着怒气/术力 = 仍有余力，才配触发限界突破。 */
+function partyResourcePct(list) {
+  const ms = (list || []).filter(m => m && m.maxMp);
+  if (!ms.length) return 0;
+  return ms.reduce((s, m) => s + (m.mp / m.maxMp) * 100, 0) / ms.length;
+}
+
 function makeMember(id, level = null) {
   const def = ACTORS[id];
   const lv = level ?? def.joinLevel;
   const equips = ['weapon', 'armor', 'acc'].map(slot => defaultEquip(id, slot)).filter(Boolean);
   const st = statsAt(def, lv, equips);
+  const res = def.resource || 'mp';
   return {
     id, name: def.name, title: def.title, portrait: def.portrait, role: def.role,
-    level: lv, exp: 0, hp: st.hp, maxHp: st.hp, mp: st.mp, maxMp: st.mp,
+    level: lv, exp: 0, hp: st.hp, maxHp: st.hp, mp: res === 'rage' ? 0 : st.mp, maxMp: st.mp,
     atk: st.atk, def: st.def, spd: st.spd, cri: st.cri, mpRegen: st.mpRegen,
-    hot: 0, equips, skills: def.skills.filter(s => s.lv <= lv).map(s => s.id),
+    blk: st.blk, par: st.par, rageMul: st.rageMul,
+    resource: def.resource || 'mp',
+    equips, skills: def.skills.filter(s => s.lv <= lv).map(s => s.id),
     isEnemy: false,
   };
 }
@@ -428,8 +433,8 @@ function nextLine() {
   // 【隐藏】秘密路线触发：终焉之战中热血越界
   if (G.sceneId === 'c5_promise' && !G.flags.secretUsed && !G.flags.secretWin) {
     const alive = G.party.filter(m => m.level);
-    const avgHot = alive.length ? alive.reduce((s, m) => s + (m.hot || 0), 0) / alive.length : 0;
-    if ((G.flags.breakLimit || avgHot >= 55) && G.lineIdx >= 8) {
+    const avgRes = partyResourcePct(alive);
+    if ((G.flags.breakLimit || avgRes >= 55) && G.lineIdx >= 8) {
       G.flags.secretUsed = true;
       G.flags.breakLimit = false;
       G.secretEnemyLv = Math.min(24, Math.max(20, Math.max(...alive.map(m => m.level), 1) + 1));
@@ -591,7 +596,6 @@ function battleEndToStory() {
   G.justWon = sc.id;
   G.battle = null;
   $('cmdmenu').classList.add('hidden');
-  $('guardbar').classList.add('hidden');
   $('cmd-buttons').innerHTML = '';
   gotoScene(nextScene.id);
   refreshHUD();
@@ -603,8 +607,8 @@ G.onBattleWin = function (b, exp, gold) {
     G.gold += gold;
     // 【隐藏】限界突破条件：终焉之战第一形态结束时全队热血仍高涨
     if (b && b.def && b.def.id === 'c5_king') {
-      const avgHot = G.party.reduce((s, m) => s + (m.hot || 0), 0) / Math.max(1, G.party.length);
-      if (avgHot >= 55 && G.flags.trustRyze) {
+      const avgRes = partyResourcePct(G.party);
+      if (avgRes >= 55 && G.flags.trustRyze) {
         G.flags.breakLimit = true;
         toast('★ 热血越界——限界突破的条件已满足！');
       }
@@ -615,7 +619,7 @@ G.onBattleWin = function (b, exp, gold) {
     for (const m of G.party) if (!m.dead) m.mp = Math.min(m.maxMp, m.mp + Math.floor(m.maxMp * 0.15));
     // 复活倒下的同伴（残血）
     for (const m of G.party) if (m.dead) { m.dead = false; m.hp = Math.max(1, Math.floor(m.maxHp * 0.15)); m.pose = 'idle'; }
-    for (const m of G.party) m.hot = 0;
+    for (const m of G.party) if (m.resource === 'rage') m.mp = 0;   // 怒气不跨战斗保留
     battleEndToStory();
   }, 900);
 };
@@ -624,12 +628,11 @@ G.onBattleLose = function (b) {
   setTimeout(() => {
     G.battle = null;
     $('cmdmenu').classList.add('hidden');
-    $('guardbar').classList.add('hidden');
     $('cmd-buttons').innerHTML = '';
     // 【隐藏】终焉之战倒下时，若全队热血全满 → 触发限界突破（SECRET END）
     const alive = G.party.filter(m => m.level);
-    const avgHot = alive.length ? alive.reduce((s, m) => s + (m.hot || 0), 0) / alive.length : 0;
-    if ((G.sceneId === 'c5_final' || (b && b.def && b.def.id === 'c5_final')) && avgHot >= 72) {
+    const avgRes = partyResourcePct(alive);
+    if ((G.sceneId === 'c5_final' || (b && b.def && b.def.id === 'c5_final')) && avgRes >= 72) {
       G.secretEnemyLv = Math.min(24, Math.max(20, Math.max(...alive.map(m => m.level), 1) + 1));
       gotoScene('secret_route');
     } else {
@@ -641,7 +644,6 @@ G.onBattleEscape = function (b) {
   const sc = G.stageDef;
   G.battle = null;
   $('cmdmenu').classList.add('hidden');
-  $('guardbar').classList.add('hidden');
   toast('※ 成功脱离战斗');
   // 回到触发战斗的场景，继续推进剧情
   G.mode = 'scene';
@@ -658,13 +660,12 @@ function buildCommandUI() {
   const row = $('cmd-buttons');
   row.innerHTML = '';
   const m = b.party[G.curActor];
-  if (!m || m.dead) { nextActor(); return; }
-  // 若所有行动已下达
-  if (b.party.every(p => p.dead || p.cmd)) { submitCommands(); return; }
+  if (!m || m.dead) return;
+  const resName = m.resource === 'rage' ? '怒气' : '术力';
   $('cmd-actor').innerHTML = `<div class="an">${m.name}</div>
     <div style="color:#bbb2dd">Lv.${m.level} · ${m.title}</div>
-    <div style="color:#ffb98a;margin-top:3px">HP ${Math.ceil(m.hp)}/${m.maxHp}　MP ${Math.ceil(m.mp)}/${m.maxMp}</div>
-    <div style="color:#ffd76a">热血 ${Math.ceil(m.hot)}%</div>`;
+    <div style="color:#ffb98a;margin-top:3px">HP ${Math.ceil(m.hp)}/${m.maxHp}</div>
+    <div style="color:${m.resource === 'rage' ? '#ff9a3c' : '#6fd8ff'}">${resName} ${Math.ceil(m.mp)}/${m.maxMp}</div>`;
   const mk = (label, sub, fn, dis, cls = '') => {
     const btn = document.createElement('button');
     btn.className = 'cbtn ' + cls;
@@ -676,7 +677,7 @@ function buildCommandUI() {
   mk('攻击', '斩击', () => doCmd(m, { type: 'attack', target: pickTargetIdx() }));
   mk('技能', '术式/奥义', () => openSkills(m));
   mk('道具', `剩余${Object.values(G.bag).reduce((a, b2) => a + b2, 0)}`, () => openBagInBattle(m));
-  mk('格挡', '减伤·攒热血', () => doCmd(m, { type: 'guard' }));
+  mk('格挡', '大幅提升格挡/弹反率', () => doCmd(m, { type: 'guard' }));
   $('cmdmenu').classList.remove('hidden');
 }
 function pickTargetIdx() {
@@ -685,39 +686,15 @@ function pickTargetIdx() {
   return alive.length ? b.enemies.indexOf(alive[0]) : -1;
 }
 function doCmd(m, cmd) {
-  m.cmd = cmd;
+  const b = G.battle;
+  if (!b || b.ui.mode !== 'input') return;
   G.submenu = null;
   hideSubmenu();
-  nextActor();
+  hideCommandUI();
+  BT.takePlayerAction(b, m, cmd);
 }
-function nextActor() {
-  const b = G.battle;
-  if (!b) return;
-  if (b.party.every(p => p.dead || p.cmd)) { submitCommands(); return; }
-  // 找下一个未下指令的活着的成员
-  let i = G.curActor;
-  for (let k = 0; k < b.party.length; k++) {
-    i = (i + 1) % b.party.length;
-    if (!b.party[i].dead && !b.party[i].cmd) { G.curActor = i; break; }
-  }
-  buildCommandUI();
-}
-function submitCommands() {
-  const b = G.battle;
-  const cmds = {};
-  for (const m of b.party) cmds[m.id] = m.cmd || { type: 'guard' };
-  const acts = BT.makePlayerTurn(b, cmds);
-  for (const a of acts) b.ui.queue.push(a);
-  for (const m of b.party) m.cmd = null;
-  b.ui.mode = 'running';
-  G.curActor = 0;
-  hideSubmenu();
+function hideCommandUI() {
   $('cmd-buttons').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#ffd76a;font-size:14px;letter-spacing:3px;padding:10px">— 行动中 —</div>';
-}
-
-function hideSubmenu() {
-  const el = $('skilllist');
-  if (el) el.classList.add('hidden');
 }
 function openSkills(m) {
   hideSubmenu();
@@ -727,13 +704,14 @@ function openSkills(m) {
     $('cmdmenu').appendChild(el);
   }
   const list = m.skills.filter(id => SKILLS[id]);
-  el.innerHTML = `<div class="sk-head"><span>${m.name} 的技能　MP ${Math.ceil(m.mp)}/${m.maxMp}</span><span style="color:#ffb98a">热血 ${Math.ceil(m.hot)}%（满100可放奥义）</span></div>
+  const resName = m.resource === 'rage' ? '怒气' : '术力';
+  el.innerHTML = `<div class="sk-head"><span>${m.name} 的技能　${resName} ${Math.ceil(m.mp)}/${m.maxMp}</span><span style="color:#ffb98a">${m.resource === 'rage' ? '怒气靠攻击与受击积攒' : '术力每回合自然回复'}</span></div>
     <div class="sk-grid">${list.map(id => {
     const s = SKILLS[id];
     const isUlt = !!s.ult;
-    const usable = isUlt ? (m.hot >= 100) : (s.mp <= m.mp);
+    const usable = s.mp <= m.mp;
     return `<button class="sk" data-sk="${id}" ${usable ? '' : 'disabled'}>
-        <span class="c">${isUlt ? '★奥义' : 'MP ' + s.mp}</span>
+        <span class="c">${isUlt ? '★奥义 ' : ''}${resName.slice(0, 1)} ${s.mp}</span>
         <div class="n">${s.name}</div>
         <div class="d">${s.desc}</div>
       </button>`;
@@ -779,12 +757,12 @@ function openBagInBattle(m) {
 
 G.requestPlayerTurn = function (b) {
   if (b.over || G.mode !== 'battle') return;
-  // 结束时清理状态
   for (const e of b.enemies) { e.pose = 'idle'; e.atkP = null; }
-  for (const m of b.party) { m.pose = 'idle'; m.atkP = null; m.defending = false; }
-  G.curActor = b.party.findIndex(m => !m.dead);
+  for (const m of b.party) { m.pose = 'idle'; m.atkP = null; }
+  // 行动条决定了当前该谁出手
+  const act = b.active;
+  G.curActor = act && !act.isEnemy ? b.party.indexOf(act) : b.party.findIndex(m => !m.dead);
   if (G.curActor < 0) G.curActor = 0;
-  for (const m of b.party) m.cmd = null;
   b.ui.mode = 'input';
   buildCommandUI();
 };
@@ -929,8 +907,8 @@ function openPartyPanel() {
         <div class="pv">HP ${Math.ceil(m.hp)} / ${m.maxHp}</div>
         <div class="bar mp"><i style="width:${(m.mp / m.maxMp * 100).toFixed(1)}%"></i></div>
         <div class="pv">MP ${Math.ceil(m.mp)} / ${m.maxMp}　攻击 ${m.atk}　防御 ${m.def}　速度 ${m.spd}</div>
-        <div class="bar ht"><i style="width:${(m.hot || 0)}%"></i></div>
-        <div class="pv">热血 ${Math.ceil(m.hot || 0)}%　EXP ${m.exp}/${expToNext(m.level)}</div>
+        <div class="bar ht"><i style="width:${Math.round((m.mp / Math.max(1, m.maxMp)) * 100)}%"></i></div>
+        <div class="pv">${m.resource === 'rage' ? '怒气' : '术力'} ${Math.ceil(m.mp)}/${m.maxMp}　格挡${Math.round((m.blk || 0) * 100)}% 弹反${Math.round((m.par || 0) * 100)}%　EXP ${m.exp}/${expToNext(m.level)}</div>
         <div>${m.skills.map(s => `<span class="tag">${SKILLS[s]?.name || s}</span>`).join('')}</div>
         <div>${m.equips.filter(Boolean).map(e => `<span class="tag eq">${EQUIPS[e]?.name}</span>`).join('') || '<span class="tag">未装备</span>'}</div>
       </div>
@@ -955,7 +933,6 @@ function gotoTitle() {
   $('panel').classList.add('hidden');
   $('ending').classList.add('hidden');
   $('loading').classList.add('hidden');
-  $('guardbar').classList.add('hidden');
   $('btn-continue').disabled = !localStorage.getItem(SAVE_KEY);
   $('btn-continue').style.opacity = localStorage.getItem(SAVE_KEY) ? 1 : .4;
 }
@@ -985,7 +962,7 @@ function newGame() {
   G.flags = {};
   G.chapter = '';
   addMember('kaito', 1);
-  for (const m of G.party) { m.hp = m.maxHp; m.mp = m.maxMp; m.hot = 0; }
+  for (const m of G.party) { m.hp = m.maxHp; m.mp = m.resource === 'rage' ? 0 : m.maxMp; }
   G.mode = 'scene';
   $('title').classList.add('hidden');
   $('hud').classList.remove('hidden');
@@ -998,7 +975,7 @@ function saveGame() {
     flags: G.flags, gold: G.gold, bag: G.bag,
     party: G.party.map(m => ({
       id: m.id, level: m.level, exp: m.exp, hp: m.hp, mp: m.mp,
-      equips: m.equips, skills: m.skills, hot: 0,
+      equips: m.equips, skills: m.skills,
     })),
   };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); toast('◇ 已保存进度'); }
@@ -1013,8 +990,8 @@ function loadGame() {
       const m = makeMember(p.id, p.level);
       m.exp = p.exp || 0; m.equips = p.equips || m.equips; m.skills = p.skills || m.skills;
       recalc(m);
-      m.hp = Math.min(m.maxHp, Math.max(1, p.hp)); m.mp = Math.min(m.maxMp, p.mp || 0);
-      m.hot = 0;
+      m.hp = Math.min(m.maxHp, Math.max(1, p.hp));
+      m.mp = m.resource === 'rage' ? 0 : Math.min(m.maxMp, p.mp ?? m.maxMp);
       return m;
     });
     G.bag = d.bag || {}; G.gold = d.gold || 0; G.flags = d.flags || {};
@@ -1141,20 +1118,13 @@ function drawScene(dt) {
    主循环
    ============================================================ */
 let last = performance.now();
-let dmgVig = 0, hotOv = 0, guardNeedleEl = null, lastMode = null;
+let dmgVig = 0, hotOv = 0;
 
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   G.frames = (G.frames || 0) + 1;
   syncInput();
-
-  /* 移动端：只在战斗中显示触屏按键（避免遮住对话框） */
-  if (G.mode !== lastMode) {
-    lastMode = G.mode;
-    const t = $('touch');
-    if (t) t.classList.toggle('combat', G.mode === 'battle' && IS_TOUCH);
-  }
 
   /* --- 更新 --- */
   if (G.mode === 'scene') {
@@ -1175,7 +1145,6 @@ function loop(now) {
     // 日志更新
     $('battle-log').innerHTML = BT.battleLogHTML(b);
     // 格挡条
-    updateGuardBar(b);
   } else {
     updateToast(dt);
   }
@@ -1183,8 +1152,8 @@ function loop(now) {
   /* 特效层透明度 */
   dmgVig = Math.max(0, dmgVig - dt * 1.6);
   $('dmgvignette').style.opacity = (dmgVig * 0.75).toFixed(2);
-  const maxHot = G.mode === 'battle' && G.battle ? Math.max(...G.battle.party.map(m => m.hot || 0)) : 0;
-  hotOv = maxHot >= 100 ? Math.min(1, hotOv + dt * 3) : Math.max(0, hotOv - dt * 3);
+  const anyUlt = G.mode === 'battle' && G.battle && G.battle.party.some(m => BT.canUlt(m));
+  hotOv = anyUlt ? Math.min(1, hotOv + dt * 3) : Math.max(0, hotOv - dt * 3);
   $('hotoverlay').style.opacity = (hotOv * 0.55).toFixed(2);
   $('hotoverlay').style.background = `radial-gradient(ellipse at center, rgba(255,150,0,0) 40%, rgba(255,90,0,.45) 100%)`;
 
@@ -1294,7 +1263,7 @@ window.__newGame = function (level = 1, members = ['kaito']) {
   newGame();
   G.party = [];
   for (const id of members) addMember(id, level);
-  for (const m of G.party) { m.hp = m.maxHp; m.mp = m.maxMp; m.hot = 0; }
+  for (const m of G.party) { m.hp = m.maxHp; m.mp = m.resource === 'rage' ? 0 : m.maxMp; }
   return G.party.map(m => m.name + 'Lv' + m.level + '[' + m.skills.join(',') + ']').join(' ');
 };
 window.__setScene = function (id) { gotoScene(id); return id; };
@@ -1325,11 +1294,10 @@ window.__autoRun = function (maxSteps = 400, maxMs = 120000) {
       const b = G.battle;
       if (b.ui.mode === 'input' && !b.over) {
         const m = b.party[G.curActor];
-        if (!m) { nextActor(); }
-        else if (m.dead) nextActor();
+        if (!m || m.dead) { /* 行动条会自行推进 */ }
         else {
           // 简易 AI：能用奥义就用，其次用能负担的最强攻击技，最后普攻
-          const ult = m.skills.map(s => SKILLS[s]).find(s => s && s.ult && m.hot >= 100);
+          const ult = m.skills.map(s => SKILLS[s]).find(s => s && s.ult && (s.mp || 0) <= m.mp);
           if (ult) { doCmd(m, { type: 'skill', skill: ult.id, target: 0 }); }
           else {
             const atkSkills = m.skills.map(s => SKILLS[s])
@@ -1362,14 +1330,14 @@ window.__autoBattle = function (rounds) {
       const m = b.party[G.curActor];
       if (m && !m.dead) {
         const alive = b.party.filter(p => !p.dead);
-        const ultReady = m.skills.map(s => SKILLS[s]).find(s => s.ult && m.hot >= 100);
+        const ultReady = m.skills.map(s => SKILLS[s]).find(s => s.ult && (s.mp || 0) <= m.mp);
         if (ultReady) doCmd(m, { type: 'skill', skill: ultReady.id, target: 0 });
         else if (m.mp > 25 && m.id !== 'kaito' && Math.random() < .5) {
           const sk = m.skills.map(s => SKILLS[s]).filter(s => s && !s.ult && s.mp > 0 && s.mp <= m.mp);
           if (sk.length) doCmd(m, { type: 'skill', skill: sk[Math.floor(Math.random() * sk.length)].id, target: 0 });
           else doCmd(m, { type: 'attack', target: 0 });
         } else doCmd(m, { type: 'attack', target: 0 });
-      } else nextActor();
+      }
     }
     guardN++;
     if (guardN > 4000) return 'timeout';
@@ -1396,7 +1364,7 @@ window.__state = function () {
   return {
     mode: G.mode, scene: G.sceneId, chapter: G.chapter,
     line: G.lineIdx, lines: G.scene && G.scene.lines ? G.scene.lines.length : null,
-    party: G.party.map(m => `${m.name}Lv${m.level} ${Math.ceil(m.hp)}/${m.maxHp} hot${Math.ceil(m.hot)}`),
+    party: G.party.map(m => `${m.name}Lv${m.level} ${Math.ceil(m.hp)}/${m.maxHp} ${m.resource}${Math.ceil(m.mp)}`),
     gold: G.gold, bag: G.bag,
     battle: G.battle ? { turn: G.battle.turn, over: G.battle.over, ehp: G.battle.enemies.map(e => e.hp + '/' + e.maxHp), hp: G.battle.party.map(m => Math.ceil(m.hp) + '/' + m.maxHp), log: G.battle.log.map(l => l.txt.replace(/<[^>]+>/g, '')) } : null,
   };
@@ -1407,7 +1375,7 @@ window.__playerHurt = function () {
   return 'hurt';
 };
 window.__giveUlt = function () {
-  if (G.battle) for (const m of G.battle.party) m.hot = 100;
+  if (G.battle) for (const m of G.battle.party) m.mp = m.maxMp;
   return 'ult-ready';
 };
 window.__envProbe = function () {
@@ -1433,18 +1401,6 @@ window.__canvasStats = function () {  const c = document.getElementById('cv');
   return { mean: [Math.round(r / n), Math.round(gg / n), Math.round(b / n)], colors: uniq.size };
 };
 } /* end DEBUG */
-
-function updateGuardBar(b) {
-  const el = $('guardbar');
-  if (b.guard && !b.guard.done) {
-    el.classList.remove('hidden');
-    const g = b.guard;
-    const p = Math.max(0, Math.min(1, g.t / g.dur));
-    $('guard-needle').style.left = `calc(${(p * 100).toFixed(1)}% - 2px)`;
-  } else {
-    el.classList.add('hidden');
-  }
-}
 
 /* 启动 */
 gotoTitle();

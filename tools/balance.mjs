@@ -1,8 +1,8 @@
-/* 平衡模拟：用真实公式推算各场战斗的回合数、生存能力与胜负倾向 */
+/* 平衡模拟：用真实公式推算各场战斗的长度、生存能力与胜负倾向。
+   行动条改版后「回合」不再是所有人各打一次，而是按 spd 分配出手机会——
+   模型改为：算出全场每「轮」（= 全体 gauge 各涨满一次的时间）里各单位的出手次数期望。 */
 import { ACTORS, ENEMIES, ENEMY_SKILLS, SKILLS, EQUIPS, statsAt } from '../js/characters.js';
-
-const BATTLE_SPEED = 0.68;
-const rnd = (a, b) => (a + b) / 2;   // 用期望值代替随机
+import { SCENES } from '../js/story.js';
 
 /* 复刻 battle.js 的公式（保持一致） */
 function eAtk(u) { return u.atk; }
@@ -16,40 +16,23 @@ function dmgOf(atk, def, power, lvl, dlv, critRate = 0) {
 }
 function mkEnemy(ref, lv) {
   const d = ENEMIES[ref], k = lv - 1;
-  const hpK = (d.boss && lv >= 18) ? 0.035 : 0.075;
-  return { name: d.name, level: lv, hp: Math.floor(d.hp * (1 + k * hpK)), atk: Math.floor(d.atk * (1 + k * 0.11)), def: Math.floor(d.def * (1 + k * 0.10)), skills: d.skills, boss: !!d.boss };
+  const hpK = (d.boss && lv >= 18) ? 0.032 : 0.075;
+  return {
+    name: d.name, level: lv, hp: Math.floor(d.hp * (1 + k * hpK)),
+    atk: Math.floor(d.atk * (1 + k * 0.11)), def: Math.floor(d.def * (1 + k * 0.10)),
+    spd: d.spd + k, skills: d.skills, boss: !!d.boss, weak: d.weak || [],
+  };
 }
 function mkHero(id, lv, equips) {
   const s = statsAt(ACTORS[id], lv, equips);
-  return { id, name: ACTORS[id].name, level: lv, hp: s.hp, atk: s.atk, def: s.def, cri: s.cri, skills: ACTORS[id].skills.filter(x => x.lv <= lv).map(x => x.id) };
+  return {
+    id, name: ACTORS[id].name, role: ACTORS[id].role, level: lv,
+    resource: ACTORS[id].resource || 'mp',
+    hp: s.hp, mp: s.mp, mpRegen: s.mpRegen, atk: s.atk, def: s.def, spd: s.spd, cri: s.cri,
+    blk: s.blk, par: s.par, rageMul: s.rageMul,
+    skills: ACTORS[id].skills.filter(x => x.lv <= lv).map(x => x.id),
+  };
 }
-/* 每回合我方输出：凯用最强可用攻击技，其余同理 */
-function heroDamage(h, foe) {
-  const usable = h.skills.map(id => SKILLS[id]).filter(s => s && s.type === 'atk' && (s.mp || 0) <= 60 && !s.ult);
-  if (!usable.length) return dmgOf(eAtk(h), eDef(foe), 1, h.level, foe.level, h.cri);
-  // 选每 MP 伤害最高、且不至于太耗蓝的技能；一轮按平均取用
-  let best = null, bestV = -1;
-  for (const s of usable) {
-    const per = dmgOf(eAtk(h), eDef(foe), s.power, h.level, foe.level, h.cri) * (s.hits || 1) * (s.target === 'all' ? 1 : 1);
-    const v = per / Math.max(6, (s.mp || 8));   // 折算续航
-    if (v > bestV) { bestV = v; best = s; }
-  }
-  const useSkill = (best.mp || 0) > 0 && h.level >= 8;
-  const s = useSkill ? best : { power: 1, hits: 1 };
-  const per = dmgOf(eAtk(h), eDef(foe), s.power, h.level, foe.level, h.cri) * (s.hits || 1);
-  return Math.round(per);
-}
-function enemyDamage(e, hero) {
-  const pool = e.skills || [{ id: 'atk', w: 1 }];
-  const tot = pool.reduce((a, b) => a + b.w, 0);
-  let avg = 0;
-  for (const p of pool) {
-    const s = ENEMY_SKILLS[p.id] || ENEMY_SKILLS.atk;
-    avg += (p.w / tot) * dmgOf(eAtk(e), eDef(hero), s.power || 1, e.level, hero.level, 0.03);
-  }
-  return Math.round(avg);
-}
-
 const PARTY = {
   early: [['kaito', 3, ['mu_sword', 'cloth']], ['cang', 5, ['wood_staff', 'cloth']]],
   forest: [['kaito', 6, ['iron_sword', 'leather']], ['cang', 6, ['wood_staff', 'leather']], ['lei', 6, ['hunter_spear', 'leather']]],
@@ -58,59 +41,111 @@ const PARTY = {
   final: [['kaito', 18, ['holy_sword', 'demon_mail']], ['cang', 18, ['blue_staff', 'holy_cloak']], ['lei', 18, ['storm_spear', 'chain']], ['ryze', 18, ['snow_staff', 'holy_cloak']]],
 };
 
-const STAGES = [
-  ['第一章 魔兵×2', 'early', [['demon_soldier', 1], ['demon_soldier', 1]]],
-  ['第一章 魔兵+弓手', 'early', [['demon_soldier2', 2], ['demon_soldier', 2]]],
-  ['第二章 冥狼×2+弓手', 'forest', [['hell_hound', 3], ['hell_hound', 3], ['demon_soldier2', 3]]],
-  ['第二章 森之守卫(BOSS)', 'forest', [['forest_guard', 4]]],
-  ['第三章 霜牙兽×2+魔兵', 'mid', [['ice_hound', 6], ['ice_hound', 6], ['demon_soldier', 6]]],
-  ['第三章 冰之魔女(BOSS)', 'mid', [['ice_witch', 8]]],
-  ['第四章 泽恩(BOSS)', 'late', [['zain', 11]]],
-  ['第四章 古兰+杂兵(BOSS)', 'late', [['demon_general', 13], ['demon_soldier', 13], ['demon_soldier2', 13]]],
-  ['第五章 魔王(BOSS)', 'final', [['demon_king', 18]]],
-  ['第五章 终焉魔王(BOSS)', 'final', [['demon_king_final', 20]]],
-  ['隐藏 终焉魔王·强', 'final', [['demon_king_final', 22]]],
-];
+const ASSUMED_ROUNDS = 6;    // 续航折算用的典型战斗长度（单位：轮）
+const HEALER_OUTPUT = 0.5;   // 治愈角色实际用于输出的出手占比
+const RAGE_PER_ACT = 16;     // 愤怒角色每次出手+挨打大致能攒到的怒气
+
+/* 遭遇表直接从 story.js 读取——此前这里是手抄的副本，改了剧本这边不会跟着变。
+   只有「打到这场时队伍大概什么水平」是模拟器的假设，必须留在这里。 */
+const STAGE_PARTY = {
+  c1_battle1: ['第一章 魔兵×2', 'early'],
+  c1_battle2: ['第一章 魔兵+弓手', 'early'],
+  c2_battle1: ['第二章 冥狼×2+弓手', 'forest'],
+  c2_guardian: ['第二章 森之守卫(BOSS)', 'forest'],
+  c3_battle1: ['第三章 霜牙兽×2+魔兵', 'mid'],
+  c3_witch: ['第三章 冰之魔女(BOSS)', 'mid'],
+  c4_zain: ['第四章 泽恩(BOSS)', 'late'],
+  c4_grang: ['第四章 古兰+杂兵(BOSS)', 'late'],
+  c5_king: ['第五章 魔王(BOSS)', 'final'],
+  c5_final: ['第五章 终焉魔王(BOSS)', 'final'],
+  secret_final: ['隐藏 终焉魔王·强', 'final'],
+};
+
+const STAGES = [];
+for (const [sid, sc] of Object.entries(SCENES)) {
+  if (!sc.enemies) continue;
+  const meta = STAGE_PARTY[sid];
+  if (!meta) { console.log(`! 战斗场景 ${sid} 没有配队伍档位，已跳过`); continue; }
+  STAGES.push([meta[0], meta[1], sc.enemies.map(e => [e.ref, e.level])]);
+}
+for (const sid of Object.keys(STAGE_PARTY)) {
+  if (!SCENES[sid] || !SCENES[sid].enemies) console.log(`! STAGE_PARTY 里的 ${sid} 在剧本里已不是战斗场景`);
+}
+
+/* 从未出现在任何战斗里的敌人（做了数据和立绘却没人用） */
+{
+  const used = new Set(STAGES.flatMap(([, , foes]) => foes.map(f => f[0])));
+  const idle = Object.keys(ENEMIES).filter(k => !used.has(k));
+  if (idle.length) console.log('! 未被任何战斗使用的敌人:', idle.map(k => ENEMIES[k].name).join('、'));
+}
 
 console.log('=== 战斗平衡模拟（期望值） ===');
-console.log('场次'.padEnd(26), '我方HP', '敌方HP', '我方/回合', '敌/回合', '预计回合', '评价');
+console.log('场次'.padEnd(26), '我方HP', '敌方HP', '我方/轮', '敌/轮', '预计轮数', '评价');
 let problems = [];
 for (const [name, pkey, foes] of STAGES) {
   const heroes = PARTY[pkey].map(([id, lv, eq]) => mkHero(id, lv, eq));
   const es = foes.map(([ref, lv]) => mkEnemy(ref, lv));
   const totalHp = heroes.reduce((a, h) => a + h.hp, 0);
   const eHp = es.reduce((a, e) => a + e.hp, 0);
-  const heroesTotal = heroes.reduce((a, h) => a + h.hp, 0);
   const eDef0 = es.reduce((a, e) => a + e.def, 0) / es.length;
-  const foeForCalc = { level: Math.round(es.reduce((a, e) => a + e.level, 0) / es.length), def: eDef0 };
-  // 我方每回合总输出（单体技能对单体，群体技能×敌数）
+  const eLv = Math.round(es.reduce((a, e) => a + e.level, 0) / es.length);
+  const pLv = Math.round(heroes.reduce((a, h) => a + h.level, 0) / heroes.length);
+  const pDef0 = heroes.reduce((a, h) => a + h.def, 0) / heroes.length;
+
+  /* 行动条：一「轮」定义为全场平均速度的单位涨满一次 gauge 的时间。
+     某个单位在一轮里的出手次数 = 它的速度 / 全场平均速度。 */
+  const all = [...heroes, ...es];
+  const spdAvg = all.reduce((a, u) => a + u.spd, 0) / all.length;
+  const actsOf = u => u.spd / spdAvg;
+
+  /* 弱点覆盖：只要队里有人能打出该敌人的弱点属性，就按期望摊一部分克制收益 */
+  const partyElems = new Set(heroes.flatMap(h => h.skills.map(id => SKILLS[id]).filter(s => s && s.type === 'atk').map(s => s.elem)));
+  const weakHit = es.some(e => (e.weak || []).some(w => partyElems.has(w))) ? 1.12 : 1;
+
+  // 我方每轮总输出
   let pOut = 0;
   for (const h of heroes) {
     const usable = h.skills.map(id => SKILLS[id]).filter(s => s && s.type === 'atk' && !s.ult);
     let best = null, bestV = -1;
     for (const s of usable) {
-      const single = dmgOf(h.atk, eDef0, s.power, h.level, foeForCalc.level, h.cri) * (s.hits || 1);
+      const single = dmgOf(h.atk, eDef0, s.power, h.level, eLv, h.cri) * (s.hits || 1);
       const total = s.target === 'all' ? single * es.length : single;
       const v = total / Math.max(8, (s.mp || 10));
       if (v > bestV) { bestV = v; best = { s, total }; }
     }
-    const basic = dmgOf(h.atk, eDef0, 1, h.level, foeForCalc.level, h.cri);
-    const use = best && (best.s.mp || 0) > 0 && h.level >= 9 ? best.total : basic;
-    pOut += Math.round(Math.max(use, basic));
+    const basic = dmgOf(h.atk, eDef0, 1, h.level, eLv, h.cri);
+    const acts = actsOf(h);
+    const budgetActs = ASSUMED_ROUNDS * acts;          // 这场里该角色总出手数
+    let perAct = basic;
+    if (best && (best.s.mp || 0) > 0 && h.level >= 9) {
+      /* 资源续航：术力角色按自然回复算，愤怒角色按战斗中的积攒速率算 */
+      const pool = h.resource === 'rage'
+        ? RAGE_PER_ACT * (h.rageMul || 1) * budgetActs
+        : h.mp + h.mpRegen * budgetActs;
+      const casts = Math.min(budgetActs, Math.floor(pool / best.s.mp));
+      perAct = (casts * Math.max(best.total, basic) + (budgetActs - casts) * basic) / Math.max(1, budgetActs);
+    }
+    if (h.role === '治愈') perAct *= HEALER_OUTPUT;
+    pOut += Math.round(perAct * acts * weakHit);
   }
-  // 敌方每回合总输出（对我方随机单体；全屏技能×人数）
+
+  // 敌方每轮总输出（已扣掉我方的格挡/弹反期望减伤）
+  const parAvg = heroes.reduce((a, h) => a + (h.par || 0), 0) / heroes.length;
+  const blkAvg = heroes.reduce((a, h) => a + (h.blk || 0), 0) / heroes.length;
+  const mitigate = 1 - parAvg - blkAvg * 0.62;
   let eOut = 0;
   for (const e of es) {
     const pool = e.skills || [{ id: 'atk', w: 1 }];
     const tot = pool.reduce((a, b) => a + b.w, 0);
     let avgSingle = 0;
     for (const p of pool) {
-      const s = ENEMY_SKILLS[p.id] || ENEMY_SKILLS.atk;
-      const d = dmgOf(e.atk, heroes.reduce((a, h) => a + h.def, 0) / heroes.length, s.power || 1, e.level, Math.round(heroes.reduce((a, h) => a + h.level, 0) / heroes.length), 0.03);
-      avgSingle += (p.w / tot) * d * (s.target === 'all' ? heroes.length : 1);
+      const sk = ENEMY_SKILLS[p.id] || ENEMY_SKILLS.atk;
+      const d = dmgOf(e.atk, pDef0, sk.power || 1, e.level, pLv, 0.03);
+      avgSingle += (p.w / tot) * d * (sk.hits || 1) * (sk.target === 'all' ? heroes.length : 1);
     }
-    eOut += Math.round(avgSingle);
+    eOut += Math.round(avgSingle * actsOf(e) * mitigate);
   }
+
   const rounds = (eHp / pOut).toFixed(1);
   const survive = (totalHp / eOut).toFixed(1);
   let verdict = [];
@@ -119,7 +154,9 @@ for (const [name, pkey, foes] of STAGES) {
   if (+survive < 2.2) verdict.push('⚠会被秒');
   if (+survive > 12) verdict.push('太简单');
   if (!verdict.length) verdict.push('✔ 手感良好');
-  if (verdict.some(v => v.includes('⚠'))) problems.push(name + ' → 生存 ' + survive + ' 回合');
-  console.log(name.padEnd(26), String(totalHp).padStart(6), String(eHp).padStart(7), String(pOut).padStart(9), String(eOut).padStart(8), String(rounds).padStart(9), ' 存活' + survive + '回合', verdict.join(' '));
+  if (!verdict.includes('✔ 手感良好')) {
+    problems.push(name + ' → ' + verdict.join('/') + '（轮数 ' + rounds + '、生存 ' + survive + '）');
+  }
+  console.log(name.padEnd(26), String(totalHp).padStart(6), String(eHp).padStart(7), String(pOut).padStart(9), String(eOut).padStart(8), String(rounds).padStart(8), ' 存活' + survive + '轮', verdict.join(' '));
 }
 console.log('\n结论:', problems.length ? '需要调整：' + problems.join('；') : '全部战斗手感在合理区间 ✔');
