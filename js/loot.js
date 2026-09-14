@@ -15,6 +15,7 @@
    ============================================================ */
 import { EQUIPS } from './characters.js';
 import { CATALOG, CATALOG_RARITIES } from './equipment-data.js';
+import { TIERS, MAX_TIER } from './realm.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -28,39 +29,34 @@ const roundTo = (v, step) => Math.round(v / step) * step;
 export const RARITY_RANK = {};
 for (const r of CATALOG_RARITIES) RARITY_RANK[r.rank] = r;
 
-/* affixes 词缀条数 / mul 数值倍率 / lv 出现的等级下限 / weight 权重
-   gate  解锁条件——没满足就完全不会掉。
+/* 十一阶位阶的数值档位来自 realm.js —— 那里是唯一事实来源，
+   这里只是把它转成 loot 内部用的形状，避免两处各写一份数字。
 
-   设计意图：**史诗（4）足以通关全流程**。
-   仙灵与天绝（5~6）是第二部的正常成长线，强但不是必需；
-   神器（7）要打完神域七柱并集齐三地支援才开始掉；
-   超神器（8）只在二周目及以后出现，是「已经通关的人拿来打更狠的自己」的东西。 */
-const RARITY_TUNE = {
-  1: { affixes: 0, mul: 1.00, lv: 1, weight: 40 },
-  2: { affixes: 1, mul: 1.16, lv: 3, weight: 28 },
-  3: { affixes: 2, mul: 1.34, lv: 7, weight: 17 },
-  4: { affixes: 3, mul: 1.56, lv: 12, weight: 9 },
-  5: { affixes: 4, mul: 1.86, lv: 20, weight: 4 },
-  6: { affixes: 5, mul: 2.25, lv: 27, weight: 1.6, gate: 'edge' },
-  7: { affixes: 6, mul: 2.85, lv: 34, weight: 0.7, gate: 'divine' },
-  8: { affixes: 7, mul: 3.60, lv: 42, weight: 0.25, gate: 'ngplus' },
-};
+   设计意图：**白银之器（4）足以走完目前已实现的流程**。
+   黄金与仙灵（5~6）是龙魂觉醒后的正常成长线；
+   天绝 / 神玄（7~8）要二转；亚圣灭 / 圣灭（9~10）要三转；
+   禁断之器（11）weight 为 0，永远不进掉落池，只能由剧情授予。 */
+const RARITY_TUNE = {};
+for (const t of TIERS) {
+  RARITY_TUNE[t.rank] = { affixes: t.aff, mul: t.mul, lv: t.lv, weight: t.weight, gate: t.gate };
+}
 
-/* 当前存档能开到第几档。main.js 每次生成掉落前把上下文喂进来。 */
-let unlockCtx = { ngPlus: 0, flags: {} };
-export function setLootContext(ctx) { unlockCtx = ctx || { ngPlus: 0, flags: {} }; }
+/* 当前存档能开到第几阶。main.js 每次生成掉落前把上下文喂进来。
+   闸门主要看转职进度——没觉醒龙魂的人，仙灵之器对他根本不显形。 */
+let unlockCtx = { ngPlus: 0, flags: {}, classStage: 0 };
+export function setLootContext(ctx) {
+  unlockCtx = ctx || { ngPlus: 0, flags: {}, classStage: 0 };
+}
 
 function gateOpen(gate) {
   if (!gate) return true;
-  const f = unlockCtx.flags || {};
   const ng = unlockCtx.ngPlus || 0;
+  const stage = unlockCtx.classStage || 0;
   switch (gate) {
-    // 天绝：走到断天之径才会掉
-    case 'edge': return !!f.sawTruth || ng > 0;
-    // 神器：七柱全破 + 三地支援齐全。两者都拿到的人，才算「把路走全了」
-    case 'divine': return (!!f.innerLock && !!f.allAid) || ng > 0;
-    // 超神器：只有二周目及以后
-    case 'ngplus': return ng > 0;
+    case 'awaken': return stage >= 1 || ng > 0;   // 仙灵：一转·逆骨邪龙
+    case 'reborn2': return stage >= 2 || ng > 0;  // 天绝 / 神玄：二转·逆天邪龙
+    case 'reborn3': return stage >= 3;            // 亚圣灭 / 圣灭：三转·黄金龙神
+    case 'never': return false;                   // 禁断之器：剧情授予，不掉落
     default: return true;
   }
 }
@@ -248,7 +244,7 @@ function rankFloor(level) {
 function allowedRanks(level) {
   const floor = rankFloor(level);
   const out = [];
-  for (let r = 1; r <= 8; r++) {
+  for (let r = 1; r <= MAX_TIER; r++) {
     if (level < RARITY_TUNE[r].lv) continue;
     if (r < floor) continue;
     if (!gateOpen(RARITY_TUNE[r].gate)) continue;
@@ -256,13 +252,13 @@ function allowedRanks(level) {
   }
   if (out.length) return out;
   // 条件全不满足时回落到当前等级能开的最高一档
-  for (let r = 8; r >= 1; r--) if (level >= RARITY_TUNE[r].lv && gateOpen(RARITY_TUNE[r].gate)) return [r];
+  for (let r = MAX_TIER; r >= 1; r--) if (level >= RARITY_TUNE[r].lv && gateOpen(RARITY_TUNE[r].gate)) return [r];
   return [1];
 }
 
 function rollRank(level, minRank = 1, luck = 0) {
   const pool = allowedRanks(level).filter(r => r >= minRank);
-  if (!pool.length) return Math.min(8, minRank);
+  if (!pool.length) return Math.min(MAX_TIER, minRank);
   let total = 0;
   const w = pool.map(r => {
     const weight = RARITY_TUNE[r].weight * (1 + luck * (r - 1) * 0.45);

@@ -83,8 +83,7 @@ function walk(id, from) {
 
 walk('prologue', '(root)');
 // 失败路线与隐藏路线由运行时代码触发
-walk('c5_defeat', '(battle-lose)');
-walk('secret_route', '(secret-trigger)');
+walk('arc_defeat', '(battle-lose)');
 
 // 角色/技能一致性
 for (const a of Object.values(ACTORS)) {

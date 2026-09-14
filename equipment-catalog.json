@@ -1,62 +1,80 @@
 {
-  "title": "炎之刃：512件装备命名图鉴",
+  "title": "《邪龙逆天》装备图鉴 · 十一阶",
   "version": 2,
   "status": "design_only",
   "rarities": [
     {
-      "name": "普通",
+      "name": "苍白之器",
       "rank": 1,
       "color": "#9CA3AF",
-      "description": "凡铁、木材、布皮制成的基础装备；村庄商店与旅途常见。"
+      "description": "新手村的凡铁与粗布。人人都有，人人都嫌弃。"
     },
     {
-      "name": "优秀",
+      "name": "钢铁之器",
       "rank": 2,
-      "color": "#22C55E",
-      "description": "优质工艺或初步附魔；具有明确的属性倾向。"
+      "color": "#D6D3D1",
+      "description": "正经铁匠铺的出品，第一件让你觉得自己不是平民的东西。"
     },
     {
-      "name": "精良",
+      "name": "青铜之器",
       "rank": 3,
-      "color": "#3B82F6",
-      "description": "城邦、骑士团和术院的制式精品；适合作为稳定的流派基础。"
+      "color": "#22C55E",
+      "description": "带上了第一层附魔纹路，小队副本的主要产出。"
     },
     {
-      "name": "史诗",
+      "name": "白银之器",
       "rank": 4,
-      "color": "#A855F7",
-      "description": "与重要人物、首领和历史事件有关；建议拥有一项专属效果。"
+      "color": "#3B82F6",
+      "description": "公会里能拿出来说一句的装备，通常有明确的流派倾向。"
     },
     {
-      "name": "仙灵",
+      "name": "黄金之器",
       "rank": 5,
-      "color": "#2DD4BF",
-      "description": "上古灵兽、仙境与自然灵脉的造物；建议突出共鸣、净化与庇护。"
-    },
-    {
-      "name": "天绝",
-      "rank": 6,
-      "color": "#EF4444",
-      "description": "触及天界禁制的极端兵装；建议突出破防、封禁与改变战局，并设置使用条件。"
-    },
-    {
-      "name": "神器",
-      "rank": 7,
       "color": "#F59E0B",
-      "description": "承载神祇权能的遗物；建议拥有独立神权技能与专属获取剧情。"
+      "description": "一区之内叫得出名字的货色，掉一件够公会吵三天。"
     },
     {
-      "name": "超神器",
+      "name": "仙灵之器",
+      "rank": 6,
+      "color": "#2DD4BF",
+      "description": "灵脉与仙境的造物，讲究共鸣、净化与庇护。龙魂觉醒后才会对你显形。"
+    },
+    {
+      "name": "天绝之器",
+      "rank": 7,
+      "color": "#EF4444",
+      "description": "触碰天界禁制的极端兵装。带着它上线，天上是会注意到的。"
+    },
+    {
+      "name": "神玄之器",
       "rank": 8,
+      "color": "#A855F7",
+      "description": "神格残留凝成的器物，已经不完全服从使用者。"
+    },
+    {
+      "name": "亚·圣灭之器",
+      "rank": 9,
+      "color": "#F0ABFC",
+      "description": "圣灭的仿品与半成品。仿品尚且如此，真品可想而知。"
+    },
+    {
+      "name": "圣灭之器",
+      "rank": 10,
       "color": "#FDE68A",
-      "description": "触及创世、时序、因果等世界规则；建议限终局或特殊剧情获取。"
+      "description": "全服公告级别的产物。掉落的那一刻，所有大公会都会知道它在谁手上。"
+    },
+    {
+      "name": "禁断之器",
+      "rank": 11,
+      "color": "#FF3B6B",
+      "description": "全服仅两件，不掉落、不交易、不能被夺走——只能被继承。"
     }
   ],
   "items": [
     {
       "id": "eq_01_001",
       "name": "青铁剑",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "村镇锻造",
       "type": "刀剑",
@@ -65,7 +83,7 @@
     {
       "id": "eq_01_002",
       "name": "白木枪",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "村镇锻造",
       "type": "长枪",
@@ -74,7 +92,7 @@
     {
       "id": "eq_01_003",
       "name": "枯藤杖",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "村镇锻造",
       "type": "法杖",
@@ -83,7 +101,7 @@
     {
       "id": "eq_01_004",
       "name": "桑木弓",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "村镇锻造",
       "type": "弓弩",
@@ -92,7 +110,7 @@
     {
       "id": "eq_01_005",
       "name": "熟皮甲",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "村镇锻造",
       "type": "护甲",
@@ -101,7 +119,7 @@
     {
       "id": "eq_01_006",
       "name": "粗布披风",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "村镇锻造",
       "type": "披风",
@@ -110,7 +128,7 @@
     {
       "id": "eq_01_007",
       "name": "黄铜戒",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "村镇锻造",
       "type": "戒指",
@@ -119,7 +137,7 @@
     {
       "id": "eq_01_008",
       "name": "青石坠",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "村镇锻造",
       "type": "护符",
@@ -128,7 +146,7 @@
     {
       "id": "eq_01_009",
       "name": "短柄砍刀",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "行脚旅人",
       "type": "刀剑",
@@ -137,7 +155,7 @@
     {
       "id": "eq_01_010",
       "name": "包铁长矛",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "行脚旅人",
       "type": "长枪",
@@ -146,7 +164,7 @@
     {
       "id": "eq_01_011",
       "name": "行者木杖",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "行脚旅人",
       "type": "法杖",
@@ -155,7 +173,7 @@
     {
       "id": "eq_01_012",
       "name": "山行短弓",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "行脚旅人",
       "type": "弓弩",
@@ -164,7 +182,7 @@
     {
       "id": "eq_01_013",
       "name": "缝皮胸甲",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "行脚旅人",
       "type": "护甲",
@@ -173,7 +191,7 @@
     {
       "id": "eq_01_014",
       "name": "旧呢斗篷",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "行脚旅人",
       "type": "披风",
@@ -182,7 +200,7 @@
     {
       "id": "eq_01_015",
       "name": "锡纹指环",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "行脚旅人",
       "type": "戒指",
@@ -191,7 +209,7 @@
     {
       "id": "eq_01_016",
       "name": "行路骨牌",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "行脚旅人",
       "type": "护符",
@@ -200,7 +218,7 @@
     {
       "id": "eq_01_017",
       "name": "猎牙刀",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "山林猎户",
       "type": "刀剑",
@@ -209,7 +227,7 @@
     {
       "id": "eq_01_018",
       "name": "叉骨猎枪",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "山林猎户",
       "type": "长枪",
@@ -218,7 +236,7 @@
     {
       "id": "eq_01_019",
       "name": "灰骨杖",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "山林猎户",
       "type": "法杖",
@@ -227,7 +245,7 @@
     {
       "id": "eq_01_020",
       "name": "鹿筋弓",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "山林猎户",
       "type": "弓弩",
@@ -236,7 +254,7 @@
     {
       "id": "eq_01_021",
       "name": "野猪皮甲",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "山林猎户",
       "type": "护甲",
@@ -245,7 +263,7 @@
     {
       "id": "eq_01_022",
       "name": "狼皮披肩",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "山林猎户",
       "type": "披风",
@@ -254,7 +272,7 @@
     {
       "id": "eq_01_023",
       "name": "兽牙戒",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "山林猎户",
       "type": "戒指",
@@ -263,7 +281,7 @@
     {
       "id": "eq_01_024",
       "name": "角骨护符",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "山林猎户",
       "type": "护符",
@@ -272,7 +290,7 @@
     {
       "id": "eq_01_025",
       "name": "厚刃铁剑",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "边城兵卒",
       "type": "刀剑",
@@ -281,7 +299,7 @@
     {
       "id": "eq_01_026",
       "name": "三棱军枪",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "边城兵卒",
       "type": "长枪",
@@ -290,7 +308,7 @@
     {
       "id": "eq_01_027",
       "name": "嵌石短杖",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "边城兵卒",
       "type": "法杖",
@@ -299,7 +317,7 @@
     {
       "id": "eq_01_028",
       "name": "铁臂弩",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "边城兵卒",
       "type": "弓弩",
@@ -308,7 +326,7 @@
     {
       "id": "eq_01_029",
       "name": "铁片札甲",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "边城兵卒",
       "type": "护甲",
@@ -317,7 +335,7 @@
     {
       "id": "eq_01_030",
       "name": "灰纹军披",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "边城兵卒",
       "type": "披风",
@@ -326,7 +344,7 @@
     {
       "id": "eq_01_031",
       "name": "黑铁扳指",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "边城兵卒",
       "type": "戒指",
@@ -335,7 +353,7 @@
     {
       "id": "eq_01_032",
       "name": "守城铜牌",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "边城兵卒",
       "type": "护符",
@@ -344,7 +362,7 @@
     {
       "id": "eq_01_033",
       "name": "刻纹短剑",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "初习术法",
       "type": "刀剑",
@@ -353,7 +371,7 @@
     {
       "id": "eq_01_034",
       "name": "符木枪",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "初习术法",
       "type": "长枪",
@@ -362,7 +380,7 @@
     {
       "id": "eq_01_035",
       "name": "萤石法杖",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "初习术法",
       "type": "法杖",
@@ -371,7 +389,7 @@
     {
       "id": "eq_01_036",
       "name": "刻符短弓",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "初习术法",
       "type": "弓弩",
@@ -380,7 +398,7 @@
     {
       "id": "eq_01_037",
       "name": "素纹法衣",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "初习术法",
       "type": "护甲",
@@ -389,7 +407,7 @@
     {
       "id": "eq_01_038",
       "name": "薄纱披肩",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "初习术法",
       "type": "披风",
@@ -398,7 +416,7 @@
     {
       "id": "eq_01_039",
       "name": "萤光石戒",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "初习术法",
       "type": "戒指",
@@ -407,7 +425,7 @@
     {
       "id": "eq_01_040",
       "name": "凝神木符",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "初习术法",
       "type": "护符",
@@ -416,7 +434,7 @@
     {
       "id": "eq_01_041",
       "name": "鱼齿刃",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "海岸工坊",
       "type": "刀剑",
@@ -425,7 +443,7 @@
     {
       "id": "eq_01_042",
       "name": "分浪鱼叉",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "海岸工坊",
       "type": "长枪",
@@ -434,7 +452,7 @@
     {
       "id": "eq_01_043",
       "name": "海木杖",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "海岸工坊",
       "type": "法杖",
@@ -443,7 +461,7 @@
     {
       "id": "eq_01_044",
       "name": "鲸筋短弓",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "海岸工坊",
       "type": "弓弩",
@@ -452,7 +470,7 @@
     {
       "id": "eq_01_045",
       "name": "鱼皮护甲",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "海岸工坊",
       "type": "护甲",
@@ -461,7 +479,7 @@
     {
       "id": "eq_01_046",
       "name": "海麻斗篷",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "海岸工坊",
       "type": "披风",
@@ -470,7 +488,7 @@
     {
       "id": "eq_01_047",
       "name": "螺纹铜戒",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "海岸工坊",
       "type": "戒指",
@@ -479,7 +497,7 @@
     {
       "id": "eq_01_048",
       "name": "潮石吊坠",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "海岸工坊",
       "type": "护符",
@@ -488,7 +506,7 @@
     {
       "id": "eq_01_049",
       "name": "护商刀",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "古道商队",
       "type": "刀剑",
@@ -497,7 +515,7 @@
     {
       "id": "eq_01_050",
       "name": "车卫长枪",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "古道商队",
       "type": "长枪",
@@ -506,7 +524,7 @@
     {
       "id": "eq_01_051",
       "name": "黄杨手杖",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "古道商队",
       "type": "法杖",
@@ -515,7 +533,7 @@
     {
       "id": "eq_01_052",
       "name": "驮队轻弩",
-      "rarity": "普通",
+      "rarity": "苍白之器",
       "rarityRank": 1,
       "theme": "古道商队",
       "type": "弓弩",
@@ -524,8 +542,8 @@
     {
       "id": "eq_01_053",
       "name": "夹棉皮甲",
-      "rarity": "普通",
-      "rarityRank": 1,
+      "rarity": "钢铁之器",
+      "rarityRank": 2,
       "theme": "古道商队",
       "type": "护甲",
       "slot": "armor"
@@ -533,8 +551,8 @@
     {
       "id": "eq_01_054",
       "name": "沙色长披",
-      "rarity": "普通",
-      "rarityRank": 1,
+      "rarity": "钢铁之器",
+      "rarityRank": 2,
       "theme": "古道商队",
       "type": "披风",
       "slot": "armor"
@@ -542,8 +560,8 @@
     {
       "id": "eq_01_055",
       "name": "方孔银戒",
-      "rarity": "普通",
-      "rarityRank": 1,
+      "rarity": "钢铁之器",
+      "rarityRank": 2,
       "theme": "古道商队",
       "type": "戒指",
       "slot": "acc"
@@ -551,8 +569,8 @@
     {
       "id": "eq_01_056",
       "name": "辟尘石符",
-      "rarity": "普通",
-      "rarityRank": 1,
+      "rarity": "钢铁之器",
+      "rarityRank": 2,
       "theme": "古道商队",
       "type": "护符",
       "slot": "acc"
@@ -560,8 +578,8 @@
     {
       "id": "eq_01_057",
       "name": "缺月铁刃",
-      "rarity": "普通",
-      "rarityRank": 1,
+      "rarity": "钢铁之器",
+      "rarityRank": 2,
       "theme": "废堡遗物",
       "type": "刀剑",
       "slot": "weapon"
@@ -569,8 +587,8 @@
     {
       "id": "eq_01_058",
       "name": "断旗战矛",
-      "rarity": "普通",
-      "rarityRank": 1,
+      "rarity": "钢铁之器",
+      "rarityRank": 2,
       "theme": "废堡遗物",
       "type": "长枪",
       "slot": "weapon"
@@ -578,8 +596,8 @@
     {
       "id": "eq_01_059",
       "name": "裂晶旧杖",
-      "rarity": "普通",
-      "rarityRank": 1,
+      "rarity": "钢铁之器",
+      "rarityRank": 2,
       "theme": "废堡遗物",
       "type": "法杖",
       "slot": "weapon"
@@ -587,8 +605,8 @@
     {
       "id": "eq_01_060",
       "name": "灰羽长弓",
-      "rarity": "普通",
-      "rarityRank": 1,
+      "rarity": "钢铁之器",
+      "rarityRank": 2,
       "theme": "废堡遗物",
       "type": "弓弩",
       "slot": "weapon"
@@ -596,8 +614,8 @@
     {
       "id": "eq_01_061",
       "name": "旧堡锁甲",
-      "rarity": "普通",
-      "rarityRank": 1,
+      "rarity": "钢铁之器",
+      "rarityRank": 2,
       "theme": "废堡遗物",
       "type": "护甲",
       "slot": "armor"
@@ -605,8 +623,8 @@
     {
       "id": "eq_01_062",
       "name": "褪色战披",
-      "rarity": "普通",
-      "rarityRank": 1,
+      "rarity": "钢铁之器",
+      "rarityRank": 2,
       "theme": "废堡遗物",
       "type": "披风",
       "slot": "armor"
@@ -614,8 +632,8 @@
     {
       "id": "eq_01_063",
       "name": "裂纹银戒",
-      "rarity": "普通",
-      "rarityRank": 1,
+      "rarity": "钢铁之器",
+      "rarityRank": 2,
       "theme": "废堡遗物",
       "type": "戒指",
       "slot": "acc"
@@ -623,8 +641,8 @@
     {
       "id": "eq_01_064",
       "name": "无字铁符",
-      "rarity": "普通",
-      "rarityRank": 1,
+      "rarity": "钢铁之器",
+      "rarityRank": 2,
       "theme": "废堡遗物",
       "type": "护符",
       "slot": "acc"
@@ -632,7 +650,7 @@
     {
       "id": "eq_02_001",
       "name": "赤砂剑",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "赤矿火纹",
       "type": "刀剑",
@@ -641,7 +659,7 @@
     {
       "id": "eq_02_002",
       "name": "火鳞枪",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "赤矿火纹",
       "type": "长枪",
@@ -650,7 +668,7 @@
     {
       "id": "eq_02_003",
       "name": "赤晶杖",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "赤矿火纹",
       "type": "法杖",
@@ -659,7 +677,7 @@
     {
       "id": "eq_02_004",
       "name": "燎羽弓",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "赤矿火纹",
       "type": "弓弩",
@@ -668,7 +686,7 @@
     {
       "id": "eq_02_005",
       "name": "铜焰战甲",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "赤矿火纹",
       "type": "护甲",
@@ -677,7 +695,7 @@
     {
       "id": "eq_02_006",
       "name": "红枫披风",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "赤矿火纹",
       "type": "披风",
@@ -686,7 +704,7 @@
     {
       "id": "eq_02_007",
       "name": "火萤之戒",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "赤矿火纹",
       "type": "戒指",
@@ -695,7 +713,7 @@
     {
       "id": "eq_02_008",
       "name": "余温石",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "赤矿火纹",
       "type": "护符",
@@ -704,7 +722,7 @@
     {
       "id": "eq_02_009",
       "name": "寒铁刃",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "北地寒铁",
       "type": "刀剑",
@@ -713,7 +731,7 @@
     {
       "id": "eq_02_010",
       "name": "冰牙枪",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "北地寒铁",
       "type": "长枪",
@@ -722,7 +740,7 @@
     {
       "id": "eq_02_011",
       "name": "霜枝杖",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "北地寒铁",
       "type": "法杖",
@@ -731,7 +749,7 @@
     {
       "id": "eq_02_012",
       "name": "雪纹弩",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "北地寒铁",
       "type": "弓弩",
@@ -740,7 +758,7 @@
     {
       "id": "eq_02_013",
       "name": "寒鳞甲",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "北地寒铁",
       "type": "护甲",
@@ -749,7 +767,7 @@
     {
       "id": "eq_02_014",
       "name": "白貂披肩",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "北地寒铁",
       "type": "披风",
@@ -758,7 +776,7 @@
     {
       "id": "eq_02_015",
       "name": "冷玉戒",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "北地寒铁",
       "type": "戒指",
@@ -767,7 +785,7 @@
     {
       "id": "eq_02_016",
       "name": "凝霜坠",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "北地寒铁",
       "type": "护符",
@@ -776,7 +794,7 @@
     {
       "id": "eq_02_017",
       "name": "青隼剑",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "游猎疾风",
       "type": "刀剑",
@@ -785,7 +803,7 @@
     {
       "id": "eq_02_018",
       "name": "逐风矛",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "游猎疾风",
       "type": "长枪",
@@ -794,7 +812,7 @@
     {
       "id": "eq_02_019",
       "name": "响铃杖",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "游猎疾风",
       "type": "法杖",
@@ -803,7 +821,7 @@
     {
       "id": "eq_02_020",
       "name": "穿叶弓",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "游猎疾风",
       "type": "弓弩",
@@ -812,7 +830,7 @@
     {
       "id": "eq_02_021",
       "name": "燕羽轻甲",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "游猎疾风",
       "type": "护甲",
@@ -821,7 +839,7 @@
     {
       "id": "eq_02_022",
       "name": "轻岚斗篷",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "游猎疾风",
       "type": "披风",
@@ -830,7 +848,7 @@
     {
       "id": "eq_02_023",
       "name": "灵巧银环",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "游猎疾风",
       "type": "戒指",
@@ -839,7 +857,7 @@
     {
       "id": "eq_02_024",
       "name": "疾步符",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "游猎疾风",
       "type": "护符",
@@ -848,7 +866,7 @@
     {
       "id": "eq_02_025",
       "name": "鸣银刀",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "雷纹银器",
       "type": "刀剑",
@@ -857,7 +875,7 @@
     {
       "id": "eq_02_026",
       "name": "惊电枪",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "雷纹银器",
       "type": "长枪",
@@ -866,7 +884,7 @@
     {
       "id": "eq_02_027",
       "name": "雷纹杖",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "雷纹银器",
       "type": "法杖",
@@ -875,7 +893,7 @@
     {
       "id": "eq_02_028",
       "name": "紫弦弓",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "雷纹银器",
       "type": "弓弩",
@@ -884,7 +902,7 @@
     {
       "id": "eq_02_029",
       "name": "雷铆锁甲",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "雷纹银器",
       "type": "护甲",
@@ -893,7 +911,7 @@
     {
       "id": "eq_02_030",
       "name": "响雷披风",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "雷纹银器",
       "type": "披风",
@@ -902,7 +920,7 @@
     {
       "id": "eq_02_031",
       "name": "电光戒",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "雷纹银器",
       "type": "戒指",
@@ -911,7 +929,7 @@
     {
       "id": "eq_02_032",
       "name": "鸣雷石",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "雷纹银器",
       "type": "护符",
@@ -920,7 +938,7 @@
     {
       "id": "eq_02_033",
       "name": "碧牙剑",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "幽林毒牙",
       "type": "刀剑",
@@ -929,7 +947,7 @@
     {
       "id": "eq_02_034",
       "name": "毒棘枪",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "幽林毒牙",
       "type": "长枪",
@@ -938,7 +956,7 @@
     {
       "id": "eq_02_035",
       "name": "蛇纹木杖",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "幽林毒牙",
       "type": "法杖",
@@ -947,7 +965,7 @@
     {
       "id": "eq_02_036",
       "name": "蛛丝弓",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "幽林毒牙",
       "type": "弓弩",
@@ -956,7 +974,7 @@
     {
       "id": "eq_02_037",
       "name": "蛇鳞皮甲",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "幽林毒牙",
       "type": "护甲",
@@ -965,7 +983,7 @@
     {
       "id": "eq_02_038",
       "name": "绿雾披肩",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "幽林毒牙",
       "type": "披风",
@@ -974,7 +992,7 @@
     {
       "id": "eq_02_039",
       "name": "蛇目之戒",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "幽林毒牙",
       "type": "戒指",
@@ -983,7 +1001,7 @@
     {
       "id": "eq_02_040",
       "name": "避毒香囊",
-      "rarity": "优秀",
+      "rarity": "钢铁之器",
       "rarityRank": 2,
       "theme": "幽林毒牙",
       "type": "护符",
@@ -992,8 +1010,8 @@
     {
       "id": "eq_02_041",
       "name": "乌锋短剑",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "暗巷夜猎",
       "type": "刀剑",
       "slot": "weapon"
@@ -1001,8 +1019,8 @@
     {
       "id": "eq_02_042",
       "name": "黑羽枪",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "暗巷夜猎",
       "type": "长枪",
       "slot": "weapon"
@@ -1010,8 +1028,8 @@
     {
       "id": "eq_02_043",
       "name": "夜灯杖",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "暗巷夜猎",
       "type": "法杖",
       "slot": "weapon"
@@ -1019,8 +1037,8 @@
     {
       "id": "eq_02_044",
       "name": "匿声弩",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "暗巷夜猎",
       "type": "弓弩",
       "slot": "weapon"
@@ -1028,8 +1046,8 @@
     {
       "id": "eq_02_045",
       "name": "黯皮猎甲",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "暗巷夜猎",
       "type": "护甲",
       "slot": "armor"
@@ -1037,8 +1055,8 @@
     {
       "id": "eq_02_046",
       "name": "夜鸦斗篷",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "暗巷夜猎",
       "type": "披风",
       "slot": "armor"
@@ -1046,8 +1064,8 @@
     {
       "id": "eq_02_047",
       "name": "猫眼戒",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "暗巷夜猎",
       "type": "戒指",
       "slot": "acc"
@@ -1055,8 +1073,8 @@
     {
       "id": "eq_02_048",
       "name": "敛息符",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "暗巷夜猎",
       "type": "护符",
       "slot": "acc"
@@ -1064,8 +1082,8 @@
     {
       "id": "eq_02_049",
       "name": "流纹剑",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "清泉水晶",
       "type": "刀剑",
       "slot": "weapon"
@@ -1073,8 +1091,8 @@
     {
       "id": "eq_02_050",
       "name": "银浪枪",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "清泉水晶",
       "type": "长枪",
       "slot": "weapon"
@@ -1082,8 +1100,8 @@
     {
       "id": "eq_02_051",
       "name": "水镜杖",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "清泉水晶",
       "type": "法杖",
       "slot": "weapon"
@@ -1091,8 +1109,8 @@
     {
       "id": "eq_02_052",
       "name": "月湾弓",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "清泉水晶",
       "type": "弓弩",
       "slot": "weapon"
@@ -1100,8 +1118,8 @@
     {
       "id": "eq_02_053",
       "name": "蓝鳞甲",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "清泉水晶",
       "type": "护甲",
       "slot": "armor"
@@ -1109,8 +1127,8 @@
     {
       "id": "eq_02_054",
       "name": "水纹长披",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "清泉水晶",
       "type": "披风",
       "slot": "armor"
@@ -1118,8 +1136,8 @@
     {
       "id": "eq_02_055",
       "name": "清泉之戒",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "清泉水晶",
       "type": "戒指",
       "slot": "acc"
@@ -1127,8 +1145,8 @@
     {
       "id": "eq_02_056",
       "name": "润玉佩",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "清泉水晶",
       "type": "护符",
       "slot": "acc"
@@ -1136,8 +1154,8 @@
     {
       "id": "eq_02_057",
       "name": "白钢剑",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "白昼祈祷",
       "type": "刀剑",
       "slot": "weapon"
@@ -1145,8 +1163,8 @@
     {
       "id": "eq_02_058",
       "name": "晨曦枪",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "白昼祈祷",
       "type": "长枪",
       "slot": "weapon"
@@ -1154,8 +1172,8 @@
     {
       "id": "eq_02_059",
       "name": "微光杖",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "白昼祈祷",
       "type": "法杖",
       "slot": "weapon"
@@ -1163,8 +1181,8 @@
     {
       "id": "eq_02_060",
       "name": "金羽弓",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "白昼祈祷",
       "type": "弓弩",
       "slot": "weapon"
@@ -1172,8 +1190,8 @@
     {
       "id": "eq_02_061",
       "name": "银边胸甲",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "白昼祈祷",
       "type": "护甲",
       "slot": "armor"
@@ -1181,8 +1199,8 @@
     {
       "id": "eq_02_062",
       "name": "晨露披肩",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "白昼祈祷",
       "type": "披风",
       "slot": "armor"
@@ -1190,8 +1208,8 @@
     {
       "id": "eq_02_063",
       "name": "祷文银戒",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "白昼祈祷",
       "type": "戒指",
       "slot": "acc"
@@ -1199,8 +1217,8 @@
     {
       "id": "eq_02_064",
       "name": "暖光石",
-      "rarity": "优秀",
-      "rarityRank": 2,
+      "rarity": "青铜之器",
+      "rarityRank": 3,
       "theme": "白昼祈祷",
       "type": "护符",
       "slot": "acc"
@@ -1208,7 +1226,7 @@
     {
       "id": "eq_03_001",
       "name": "炽牙",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "赤焰军团",
       "type": "刀剑",
@@ -1217,7 +1235,7 @@
     {
       "id": "eq_03_002",
       "name": "赤蟒战枪",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "赤焰军团",
       "type": "长枪",
@@ -1226,7 +1244,7 @@
     {
       "id": "eq_03_003",
       "name": "焰髓法杖",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "赤焰军团",
       "type": "法杖",
@@ -1235,7 +1253,7 @@
     {
       "id": "eq_03_004",
       "name": "火雨长弓",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "赤焰军团",
       "type": "弓弩",
@@ -1244,7 +1262,7 @@
     {
       "id": "eq_03_005",
       "name": "熔鳞战甲",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "赤焰军团",
       "type": "护甲",
@@ -1253,7 +1271,7 @@
     {
       "id": "eq_03_006",
       "name": "赤焰征披",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "赤焰军团",
       "type": "披风",
@@ -1262,7 +1280,7 @@
     {
       "id": "eq_03_007",
       "name": "焰息之环",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "赤焰军团",
       "type": "戒指",
@@ -1271,7 +1289,7 @@
     {
       "id": "eq_03_008",
       "name": "赤心石",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "赤焰军团",
       "type": "护符",
@@ -1280,7 +1298,7 @@
     {
       "id": "eq_03_009",
       "name": "霜脊剑",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍霜城堡",
       "type": "刀剑",
@@ -1289,7 +1307,7 @@
     {
       "id": "eq_03_010",
       "name": "苍狼寒枪",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍霜城堡",
       "type": "长枪",
@@ -1298,7 +1316,7 @@
     {
       "id": "eq_03_011",
       "name": "冰棱之杖",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍霜城堡",
       "type": "法杖",
@@ -1307,7 +1325,7 @@
     {
       "id": "eq_03_012",
       "name": "凛冬猎弩",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍霜城堡",
       "type": "弓弩",
@@ -1316,7 +1334,7 @@
     {
       "id": "eq_03_013",
       "name": "银霜重甲",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍霜城堡",
       "type": "护甲",
@@ -1325,7 +1343,7 @@
     {
       "id": "eq_03_014",
       "name": "雪原守望",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍霜城堡",
       "type": "披风",
@@ -1334,7 +1352,7 @@
     {
       "id": "eq_03_015",
       "name": "冷月指环",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍霜城堡",
       "type": "戒指",
@@ -1343,7 +1361,7 @@
     {
       "id": "eq_03_016",
       "name": "雪魄护符",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍霜城堡",
       "type": "护符",
@@ -1352,7 +1370,7 @@
     {
       "id": "eq_03_017",
       "name": "裂风刃",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍穹游骑",
       "type": "刀剑",
@@ -1361,7 +1379,7 @@
     {
       "id": "eq_03_018",
       "name": "隼落",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍穹游骑",
       "type": "长枪",
@@ -1370,7 +1388,7 @@
     {
       "id": "eq_03_019",
       "name": "苍翼法杖",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍穹游骑",
       "type": "法杖",
@@ -1379,7 +1397,7 @@
     {
       "id": "eq_03_020",
       "name": "流云之弦",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍穹游骑",
       "type": "弓弩",
@@ -1388,7 +1406,7 @@
     {
       "id": "eq_03_021",
       "name": "风鳞轻甲",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍穹游骑",
       "type": "护甲",
@@ -1397,7 +1415,7 @@
     {
       "id": "eq_03_022",
       "name": "猎空者披风",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍穹游骑",
       "type": "披风",
@@ -1406,7 +1424,7 @@
     {
       "id": "eq_03_023",
       "name": "逐羽之戒",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍穹游骑",
       "type": "戒指",
@@ -1415,7 +1433,7 @@
     {
       "id": "eq_03_024",
       "name": "风瞳石",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "苍穹游骑",
       "type": "护符",
@@ -1424,7 +1442,7 @@
     {
       "id": "eq_03_025",
       "name": "紫电长刀",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "雷谷遗迹",
       "type": "刀剑",
@@ -1433,7 +1451,7 @@
     {
       "id": "eq_03_026",
       "name": "惊蛰枪",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "雷谷遗迹",
       "type": "长枪",
@@ -1442,7 +1460,7 @@
     {
       "id": "eq_03_027",
       "name": "雷魄法杖",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "雷谷遗迹",
       "type": "法杖",
@@ -1451,7 +1469,7 @@
     {
       "id": "eq_03_028",
       "name": "霆光重弩",
-      "rarity": "精良",
+      "rarity": "青铜之器",
       "rarityRank": 3,
       "theme": "雷谷遗迹",
       "type": "弓弩",
@@ -1460,8 +1478,8 @@
     {
       "id": "eq_03_029",
       "name": "奔雷锁甲",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "雷谷遗迹",
       "type": "护甲",
       "slot": "armor"
@@ -1469,8 +1487,8 @@
     {
       "id": "eq_03_030",
       "name": "雷谷余响",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "雷谷遗迹",
       "type": "披风",
       "slot": "armor"
@@ -1478,8 +1496,8 @@
     {
       "id": "eq_03_031",
       "name": "紫纹雷戒",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "雷谷遗迹",
       "type": "戒指",
       "slot": "acc"
@@ -1487,8 +1505,8 @@
     {
       "id": "eq_03_032",
       "name": "雷息晶核",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "雷谷遗迹",
       "type": "护符",
       "slot": "acc"
@@ -1496,8 +1514,8 @@
     {
       "id": "eq_03_033",
       "name": "饮露剑",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "苍木秘境",
       "type": "刀剑",
       "slot": "weapon"
@@ -1505,8 +1523,8 @@
     {
       "id": "eq_03_034",
       "name": "缠灵藤枪",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "苍木秘境",
       "type": "长枪",
       "slot": "weapon"
@@ -1514,8 +1532,8 @@
     {
       "id": "eq_03_035",
       "name": "苍木之心",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "苍木秘境",
       "type": "法杖",
       "slot": "weapon"
@@ -1523,8 +1541,8 @@
     {
       "id": "eq_03_036",
       "name": "千叶长弓",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "苍木秘境",
       "type": "弓弩",
       "slot": "weapon"
@@ -1532,8 +1550,8 @@
     {
       "id": "eq_03_037",
       "name": "古藤护甲",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "苍木秘境",
       "type": "护甲",
       "slot": "armor"
@@ -1541,8 +1559,8 @@
     {
       "id": "eq_03_038",
       "name": "青森之息",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "苍木秘境",
       "type": "披风",
       "slot": "armor"
@@ -1550,8 +1568,8 @@
     {
       "id": "eq_03_039",
       "name": "翠灵指环",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "苍木秘境",
       "type": "戒指",
       "slot": "acc"
@@ -1559,8 +1577,8 @@
     {
       "id": "eq_03_040",
       "name": "苏生叶",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "苍木秘境",
       "type": "护符",
       "slot": "acc"
@@ -1568,8 +1586,8 @@
     {
       "id": "eq_03_041",
       "name": "鸦吻",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "古墓夜歌",
       "type": "刀剑",
       "slot": "weapon",
@@ -1578,8 +1596,8 @@
     {
       "id": "eq_03_042",
       "name": "夜骨战矛",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "古墓夜歌",
       "type": "长枪",
       "slot": "weapon"
@@ -1587,8 +1605,8 @@
     {
       "id": "eq_03_043",
       "name": "黑棺法杖",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "古墓夜歌",
       "type": "法杖",
       "slot": "weapon"
@@ -1596,8 +1614,8 @@
     {
       "id": "eq_03_044",
       "name": "幽瞳之弩",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "古墓夜歌",
       "type": "弓弩",
       "slot": "weapon"
@@ -1605,8 +1623,8 @@
     {
       "id": "eq_03_045",
       "name": "黑骨战甲",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "古墓夜歌",
       "type": "护甲",
       "slot": "armor"
@@ -1614,8 +1632,8 @@
     {
       "id": "eq_03_046",
       "name": "墓园夜行",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "古墓夜歌",
       "type": "披风",
       "slot": "armor"
@@ -1623,8 +1641,8 @@
     {
       "id": "eq_03_047",
       "name": "死寂银环",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "古墓夜歌",
       "type": "戒指",
       "slot": "acc"
@@ -1632,8 +1650,8 @@
     {
       "id": "eq_03_048",
       "name": "夜语骨坠",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "古墓夜歌",
       "type": "护符",
       "slot": "acc"
@@ -1641,8 +1659,8 @@
     {
       "id": "eq_03_049",
       "name": "银辉长剑",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "圣堂旧藏",
       "type": "刀剑",
       "slot": "weapon"
@@ -1650,8 +1668,8 @@
     {
       "id": "eq_03_050",
       "name": "圣堂裁枪",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "圣堂旧藏",
       "type": "长枪",
       "slot": "weapon"
@@ -1659,8 +1677,8 @@
     {
       "id": "eq_03_051",
       "name": "净灵权杖",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "圣堂旧藏",
       "type": "法杖",
       "slot": "weapon"
@@ -1668,8 +1686,8 @@
     {
       "id": "eq_03_052",
       "name": "白誓之弓",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "圣堂旧藏",
       "type": "弓弩",
       "slot": "weapon"
@@ -1677,8 +1695,8 @@
     {
       "id": "eq_03_053",
       "name": "祈光重甲",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "圣堂旧藏",
       "type": "护甲",
       "slot": "armor"
@@ -1686,8 +1704,8 @@
     {
       "id": "eq_03_054",
       "name": "巡礼者长披",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "圣堂旧藏",
       "type": "披风",
       "slot": "armor"
@@ -1695,8 +1713,8 @@
     {
       "id": "eq_03_055",
       "name": "明誓之戒",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "圣堂旧藏",
       "type": "戒指",
       "slot": "acc"
@@ -1704,8 +1722,8 @@
     {
       "id": "eq_03_056",
       "name": "安魂银铃",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "圣堂旧藏",
       "type": "护符",
       "slot": "acc"
@@ -1713,8 +1731,8 @@
     {
       "id": "eq_03_057",
       "name": "沙齿弯刃",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "荒沙王庭",
       "type": "刀剑",
       "slot": "weapon"
@@ -1722,8 +1740,8 @@
     {
       "id": "eq_03_058",
       "name": "蝎尾长枪",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "荒沙王庭",
       "type": "长枪",
       "slot": "weapon"
@@ -1731,8 +1749,8 @@
     {
       "id": "eq_03_059",
       "name": "流沙之杖",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "荒沙王庭",
       "type": "法杖",
       "slot": "weapon"
@@ -1740,8 +1758,8 @@
     {
       "id": "eq_03_060",
       "name": "黄昏角弓",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "荒沙王庭",
       "type": "弓弩",
       "slot": "weapon"
@@ -1749,8 +1767,8 @@
     {
       "id": "eq_03_061",
       "name": "砂金鳞甲",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "荒沙王庭",
       "type": "护甲",
       "slot": "armor"
@@ -1758,8 +1776,8 @@
     {
       "id": "eq_03_062",
       "name": "落日沙衣",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "荒沙王庭",
       "type": "披风",
       "slot": "armor"
@@ -1767,8 +1785,8 @@
     {
       "id": "eq_03_063",
       "name": "琥珀王戒",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "荒沙王庭",
       "type": "戒指",
       "slot": "acc"
@@ -1776,8 +1794,8 @@
     {
       "id": "eq_03_064",
       "name": "荒星坠",
-      "rarity": "精良",
-      "rarityRank": 3,
+      "rarity": "白银之器",
+      "rarityRank": 4,
       "theme": "荒沙王庭",
       "type": "护符",
       "slot": "acc"
@@ -1785,7 +1803,7 @@
     {
       "id": "eq_04_001",
       "name": "血焰裁刀",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "赤狱战场",
       "type": "刀剑",
@@ -1794,7 +1812,7 @@
     {
       "id": "eq_04_002",
       "name": "焚骨长枪",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "赤狱战场",
       "type": "长枪",
@@ -1803,7 +1821,7 @@
     {
       "id": "eq_04_003",
       "name": "灾火权杖",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "赤狱战场",
       "type": "法杖",
@@ -1812,7 +1830,7 @@
     {
       "id": "eq_04_004",
       "name": "赤狱之弦",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "赤狱战场",
       "type": "弓弩",
@@ -1821,7 +1839,7 @@
     {
       "id": "eq_04_005",
       "name": "浴血者战铠",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "赤狱战场",
       "type": "护甲",
@@ -1830,7 +1848,7 @@
     {
       "id": "eq_04_006",
       "name": "余烬王袍",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "赤狱战场",
       "type": "披风",
@@ -1839,7 +1857,7 @@
     {
       "id": "eq_04_007",
       "name": "狂战之誓",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "赤狱战场",
       "type": "戒指",
@@ -1848,7 +1866,7 @@
     {
       "id": "eq_04_008",
       "name": "不屈之骨",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "赤狱战场",
       "type": "护符",
@@ -1857,7 +1875,7 @@
     {
       "id": "eq_04_009",
       "name": "霜葬",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "失落冰庭",
       "type": "刀剑",
@@ -1867,7 +1885,7 @@
     {
       "id": "eq_04_010",
       "name": "冰庭断魂枪",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "失落冰庭",
       "type": "长枪",
@@ -1876,7 +1894,7 @@
     {
       "id": "eq_04_011",
       "name": "冬夜挽歌",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "失落冰庭",
       "type": "法杖",
@@ -1886,7 +1904,7 @@
     {
       "id": "eq_04_012",
       "name": "苍雪龙弓",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "失落冰庭",
       "type": "弓弩",
@@ -1895,7 +1913,7 @@
     {
       "id": "eq_04_013",
       "name": "绝冬战衣",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "失落冰庭",
       "type": "护甲",
@@ -1904,7 +1922,7 @@
     {
       "id": "eq_04_014",
       "name": "凋零雪幕",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "失落冰庭",
       "type": "披风",
@@ -1913,7 +1931,7 @@
     {
       "id": "eq_04_015",
       "name": "寒王遗戒",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "失落冰庭",
       "type": "戒指",
@@ -1922,7 +1940,7 @@
     {
       "id": "eq_04_016",
       "name": "永冻之泪",
-      "rarity": "史诗",
+      "rarity": "白银之器",
       "rarityRank": 4,
       "theme": "失落冰庭",
       "type": "护符",
@@ -1931,8 +1949,8 @@
     {
       "id": "eq_04_017",
       "name": "无声裁决",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "影廊禁卫",
       "type": "刀剑",
       "slot": "weapon"
@@ -1940,8 +1958,8 @@
     {
       "id": "eq_04_018",
       "name": "影噬之枪",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "影廊禁卫",
       "type": "长枪",
       "slot": "weapon"
@@ -1949,8 +1967,8 @@
     {
       "id": "eq_04_019",
       "name": "黑夜低语",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "影廊禁卫",
       "type": "法杖",
       "slot": "weapon"
@@ -1958,8 +1976,8 @@
     {
       "id": "eq_04_020",
       "name": "断心弩",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "影廊禁卫",
       "type": "弓弩",
       "slot": "weapon"
@@ -1967,8 +1985,8 @@
     {
       "id": "eq_04_021",
       "name": "鬼影魔铠",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "影廊禁卫",
       "type": "护甲",
       "slot": "armor"
@@ -1976,8 +1994,8 @@
     {
       "id": "eq_04_022",
       "name": "无面者斗篷",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "影廊禁卫",
       "type": "披风",
       "slot": "armor"
@@ -1985,8 +2003,8 @@
     {
       "id": "eq_04_023",
       "name": "虚影之戒",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "影廊禁卫",
       "type": "戒指",
       "slot": "acc"
@@ -1994,8 +2012,8 @@
     {
       "id": "eq_04_024",
       "name": "残魂契印",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "影廊禁卫",
       "type": "护符",
       "slot": "acc"
@@ -2003,8 +2021,8 @@
     {
       "id": "eq_04_025",
       "name": "断棘之刃",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "古森遗誓",
       "type": "刀剑",
       "slot": "weapon"
@@ -2012,8 +2030,8 @@
     {
       "id": "eq_04_026",
       "name": "巨木龙枪",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "古森遗誓",
       "type": "长枪",
       "slot": "weapon"
@@ -2021,8 +2039,8 @@
     {
       "id": "eq_04_027",
       "name": "万叶回响",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "古森遗誓",
       "type": "法杖",
       "slot": "weapon"
@@ -2030,8 +2048,8 @@
     {
       "id": "eq_04_028",
       "name": "森灵之叹",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "古森遗誓",
       "type": "弓弩",
       "slot": "weapon"
@@ -2039,8 +2057,8 @@
     {
       "id": "eq_04_029",
       "name": "苍木王甲",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "古森遗誓",
       "type": "护甲",
       "slot": "armor"
@@ -2048,8 +2066,8 @@
     {
       "id": "eq_04_030",
       "name": "古林庇佑",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "古森遗誓",
       "type": "披风",
       "slot": "armor"
@@ -2057,8 +2075,8 @@
     {
       "id": "eq_04_031",
       "name": "守望之环",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "古森遗誓",
       "type": "戒指",
       "slot": "acc"
@@ -2066,8 +2084,8 @@
     {
       "id": "eq_04_032",
       "name": "第一枚新芽",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "古森遗誓",
       "type": "护符",
       "slot": "acc"
@@ -2075,8 +2093,8 @@
     {
       "id": "eq_04_033",
       "name": "斩雷",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "雷霆王墓",
       "type": "刀剑",
       "slot": "weapon"
@@ -2084,8 +2102,8 @@
     {
       "id": "eq_04_034",
       "name": "雷骸战枪",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "雷霆王墓",
       "type": "长枪",
       "slot": "weapon"
@@ -2093,8 +2111,8 @@
     {
       "id": "eq_04_035",
       "name": "末雷权杖",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "雷霆王墓",
       "type": "法杖",
       "slot": "weapon"
@@ -2102,8 +2120,8 @@
     {
       "id": "eq_04_036",
       "name": "雷王之怒",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "雷霆王墓",
       "type": "弓弩",
       "slot": "weapon"
@@ -2111,8 +2129,8 @@
     {
       "id": "eq_04_037",
       "name": "震霆王铠",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "雷霆王墓",
       "type": "护甲",
       "slot": "armor"
@@ -2120,8 +2138,8 @@
     {
       "id": "eq_04_038",
       "name": "暴风遗袍",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "雷霆王墓",
       "type": "披风",
       "slot": "armor"
@@ -2129,8 +2147,8 @@
     {
       "id": "eq_04_039",
       "name": "碎霆之戒",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "雷霆王墓",
       "type": "戒指",
       "slot": "acc"
@@ -2138,8 +2156,8 @@
     {
       "id": "eq_04_040",
       "name": "雷王心骨",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "雷霆王墓",
       "type": "护符",
       "slot": "acc"
@@ -2147,8 +2165,8 @@
     {
       "id": "eq_04_041",
       "name": "沧海裂刃",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "深海亡国",
       "type": "刀剑",
       "slot": "weapon"
@@ -2156,8 +2174,8 @@
     {
       "id": "eq_04_042",
       "name": "葬舟之枪",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "深海亡国",
       "type": "长枪",
       "slot": "weapon"
@@ -2165,8 +2183,8 @@
     {
       "id": "eq_04_043",
       "name": "深蓝哀歌",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "深海亡国",
       "type": "法杖",
       "slot": "weapon"
@@ -2174,8 +2192,8 @@
     {
       "id": "eq_04_044",
       "name": "海妖之吻",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "深海亡国",
       "type": "弓弩",
       "slot": "weapon"
@@ -2183,8 +2201,8 @@
     {
       "id": "eq_04_045",
       "name": "沉王战甲",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "深海亡国",
       "type": "护甲",
       "slot": "armor"
@@ -2192,8 +2210,8 @@
     {
       "id": "eq_04_046",
       "name": "失落海幕",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "深海亡国",
       "type": "披风",
       "slot": "armor"
@@ -2201,8 +2219,8 @@
     {
       "id": "eq_04_047",
       "name": "溺星之戒",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "深海亡国",
       "type": "戒指",
       "slot": "acc"
@@ -2210,8 +2228,8 @@
     {
       "id": "eq_04_048",
       "name": "无归船铃",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "深海亡国",
       "type": "护符",
       "slot": "acc"
@@ -2219,8 +2237,8 @@
     {
       "id": "eq_04_049",
       "name": "破夜圣刃",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "黎明圣战",
       "type": "刀剑",
       "slot": "weapon"
@@ -2228,8 +2246,8 @@
     {
       "id": "eq_04_050",
       "name": "长昼战枪",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "黎明圣战",
       "type": "长枪",
       "slot": "weapon"
@@ -2237,8 +2255,8 @@
     {
       "id": "eq_04_051",
       "name": "黎火权杖",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "黎明圣战",
       "type": "法杖",
       "slot": "weapon"
@@ -2246,8 +2264,8 @@
     {
       "id": "eq_04_052",
       "name": "黎明审判",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "黎明圣战",
       "type": "弓弩",
       "slot": "weapon"
@@ -2255,8 +2273,8 @@
     {
       "id": "eq_04_053",
       "name": "圣誓银铠",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "黎明圣战",
       "type": "护甲",
       "slot": "armor"
@@ -2264,8 +2282,8 @@
     {
       "id": "eq_04_054",
       "name": "殉光者披风",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "黎明圣战",
       "type": "披风",
       "slot": "armor"
@@ -2273,8 +2291,8 @@
     {
       "id": "eq_04_055",
       "name": "黎明余誓",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "黎明圣战",
       "type": "戒指",
       "slot": "acc"
@@ -2282,8 +2300,8 @@
     {
       "id": "eq_04_056",
       "name": "无名圣徒像",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "黎明圣战",
       "type": "护符",
       "slot": "acc"
@@ -2291,8 +2309,8 @@
     {
       "id": "eq_04_057",
       "name": "烬归",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "旧日英雄",
       "type": "刀剑",
       "slot": "weapon"
@@ -2300,8 +2318,8 @@
     {
       "id": "eq_04_058",
       "name": "孤城长枪",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "旧日英雄",
       "type": "长枪",
       "slot": "weapon"
@@ -2309,8 +2327,8 @@
     {
       "id": "eq_04_059",
       "name": "苍火遗杖",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "旧日英雄",
       "type": "法杖",
       "slot": "weapon"
@@ -2318,8 +2336,8 @@
     {
       "id": "eq_04_060",
       "name": "离人之弓",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "旧日英雄",
       "type": "弓弩",
       "slot": "weapon"
@@ -2327,8 +2345,8 @@
     {
       "id": "eq_04_061",
       "name": "守乡者之甲",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "旧日英雄",
       "type": "护甲",
       "slot": "armor"
@@ -2336,8 +2354,8 @@
     {
       "id": "eq_04_062",
       "name": "最后的旌旗",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "旧日英雄",
       "type": "披风",
       "slot": "armor"
@@ -2345,8 +2363,8 @@
     {
       "id": "eq_04_063",
       "name": "归人之戒",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "旧日英雄",
       "type": "戒指",
       "slot": "acc"
@@ -2354,8 +2372,8 @@
     {
       "id": "eq_04_064",
       "name": "迟来的钟声",
-      "rarity": "史诗",
-      "rarityRank": 4,
+      "rarity": "黄金之器",
+      "rarityRank": 5,
       "theme": "旧日英雄",
       "type": "护符",
       "slot": "acc",
@@ -2364,7 +2382,7 @@
     {
       "id": "eq_05_001",
       "name": "听岚",
-      "rarity": "仙灵",
+      "rarity": "黄金之器",
       "rarityRank": 5,
       "theme": "青岚灵境",
       "type": "刀剑",
@@ -2374,7 +2392,7 @@
     {
       "id": "eq_05_002",
       "name": "青螭灵枪",
-      "rarity": "仙灵",
+      "rarity": "黄金之器",
       "rarityRank": 5,
       "theme": "青岚灵境",
       "type": "长枪",
@@ -2383,7 +2401,7 @@
     {
       "id": "eq_05_003",
       "name": "天风玉杖",
-      "rarity": "仙灵",
+      "rarity": "黄金之器",
       "rarityRank": 5,
       "theme": "青岚灵境",
       "type": "法杖",
@@ -2392,7 +2410,7 @@
     {
       "id": "eq_05_004",
       "name": "栖云",
-      "rarity": "仙灵",
+      "rarity": "黄金之器",
       "rarityRank": 5,
       "theme": "青岚灵境",
       "type": "弓弩",
@@ -2401,8 +2419,8 @@
     {
       "id": "eq_05_005",
       "name": "青鸾羽衣",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "青岚灵境",
       "type": "护甲",
       "slot": "armor"
@@ -2410,8 +2428,8 @@
     {
       "id": "eq_05_006",
       "name": "九霄流羽",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "青岚灵境",
       "type": "披风",
       "slot": "armor"
@@ -2419,8 +2437,8 @@
     {
       "id": "eq_05_007",
       "name": "风华灵戒",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "青岚灵境",
       "type": "戒指",
       "slot": "acc"
@@ -2428,8 +2446,8 @@
     {
       "id": "eq_05_008",
       "name": "天青之佩",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "青岚灵境",
       "type": "护符",
       "slot": "acc"
@@ -2437,8 +2455,8 @@
     {
       "id": "eq_05_009",
       "name": "月汀",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "寒月灵池",
       "type": "刀剑",
       "slot": "weapon"
@@ -2446,8 +2464,8 @@
     {
       "id": "eq_05_010",
       "name": "冰璃仙枪",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "寒月灵池",
       "type": "长枪",
       "slot": "weapon"
@@ -2455,8 +2473,8 @@
     {
       "id": "eq_05_011",
       "name": "寒汀月杖",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "寒月灵池",
       "type": "法杖",
       "slot": "weapon"
@@ -2464,8 +2482,8 @@
     {
       "id": "eq_05_012",
       "name": "月魄清弦",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "寒月灵池",
       "type": "弓弩",
       "slot": "weapon"
@@ -2473,8 +2491,8 @@
     {
       "id": "eq_05_013",
       "name": "冰莲仙衣",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "寒月灵池",
       "type": "护甲",
       "slot": "armor"
@@ -2482,8 +2500,8 @@
     {
       "id": "eq_05_014",
       "name": "霜华绫",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "寒月灵池",
       "type": "披风",
       "slot": "armor"
@@ -2491,8 +2509,8 @@
     {
       "id": "eq_05_015",
       "name": "凝月灵环",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "寒月灵池",
       "type": "戒指",
       "slot": "acc"
@@ -2500,8 +2518,8 @@
     {
       "id": "eq_05_016",
       "name": "雪心琉璃",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "寒月灵池",
       "type": "护符",
       "slot": "acc"
@@ -2509,8 +2527,8 @@
     {
       "id": "eq_05_017",
       "name": "绯璃",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "丹霞火山",
       "type": "刀剑",
       "slot": "weapon"
@@ -2518,8 +2536,8 @@
     {
       "id": "eq_05_018",
       "name": "丹凰长枪",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "丹霞火山",
       "type": "长枪",
       "slot": "weapon"
@@ -2527,8 +2545,8 @@
     {
       "id": "eq_05_019",
       "name": "离焰灵杖",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "丹霞火山",
       "type": "法杖",
       "slot": "weapon"
@@ -2536,8 +2554,8 @@
     {
       "id": "eq_05_020",
       "name": "凤鸣九野",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "丹霞火山",
       "type": "弓弩",
       "slot": "weapon"
@@ -2545,8 +2563,8 @@
     {
       "id": "eq_05_021",
       "name": "朱翎灵甲",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "丹霞火山",
       "type": "护甲",
       "slot": "armor"
@@ -2554,8 +2572,8 @@
     {
       "id": "eq_05_022",
       "name": "丹霞流火",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "丹霞火山",
       "type": "披风",
       "slot": "armor"
@@ -2563,8 +2581,8 @@
     {
       "id": "eq_05_023",
       "name": "离火玉戒",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "丹霞火山",
       "type": "戒指",
       "slot": "acc"
@@ -2572,8 +2590,8 @@
     {
       "id": "eq_05_024",
       "name": "焰灵之卵",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "丹霞火山",
       "type": "护符",
       "slot": "acc"
@@ -2581,8 +2599,8 @@
     {
       "id": "eq_05_025",
       "name": "春不尽",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "万木仙庭",
       "type": "刀剑",
       "slot": "weapon"
@@ -2590,8 +2608,8 @@
     {
       "id": "eq_05_026",
       "name": "灵虬木枪",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "万木仙庭",
       "type": "长枪",
       "slot": "weapon"
@@ -2599,8 +2617,8 @@
     {
       "id": "eq_05_027",
       "name": "千岁长青",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "万木仙庭",
       "type": "法杖",
       "slot": "weapon"
@@ -2608,8 +2626,8 @@
     {
       "id": "eq_05_028",
       "name": "灵鹿之弦",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "万木仙庭",
       "type": "弓弩",
       "slot": "weapon"
@@ -2617,8 +2635,8 @@
     {
       "id": "eq_05_029",
       "name": "碧萝仙衣",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "万木仙庭",
       "type": "护甲",
       "slot": "armor"
@@ -2626,8 +2644,8 @@
     {
       "id": "eq_05_030",
       "name": "落英天绫",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "万木仙庭",
       "type": "披风",
       "slot": "armor"
@@ -2635,8 +2653,8 @@
     {
       "id": "eq_05_031",
       "name": "连理枝戒",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "万木仙庭",
       "type": "戒指",
       "slot": "acc"
@@ -2644,8 +2662,8 @@
     {
       "id": "eq_05_032",
       "name": "青帝遗种",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "万木仙庭",
       "type": "护符",
       "slot": "acc"
@@ -2653,8 +2671,8 @@
     {
       "id": "eq_05_033",
       "name": "星泊",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "星河旧渡",
       "type": "刀剑",
       "slot": "weapon"
@@ -2662,8 +2680,8 @@
     {
       "id": "eq_05_034",
       "name": "银汉灵枪",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "星河旧渡",
       "type": "长枪",
       "slot": "weapon"
@@ -2671,8 +2689,8 @@
     {
       "id": "eq_05_035",
       "name": "渡星之杖",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "星河旧渡",
       "type": "法杖",
       "slot": "weapon"
@@ -2680,8 +2698,8 @@
     {
       "id": "eq_05_036",
       "name": "夜渡银河",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "星河旧渡",
       "type": "弓弩",
       "slot": "weapon"
@@ -2689,8 +2707,8 @@
     {
       "id": "eq_05_037",
       "name": "流星软甲",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "星河旧渡",
       "type": "护甲",
       "slot": "armor"
@@ -2698,8 +2716,8 @@
     {
       "id": "eq_05_038",
       "name": "天河羽披",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "星河旧渡",
       "type": "披风",
       "slot": "armor"
@@ -2707,8 +2725,8 @@
     {
       "id": "eq_05_039",
       "name": "七曜灵环",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "星河旧渡",
       "type": "戒指",
       "slot": "acc"
@@ -2716,8 +2734,8 @@
     {
       "id": "eq_05_040",
       "name": "坠天星砂",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "星河旧渡",
       "type": "护符",
       "slot": "acc"
@@ -2725,8 +2743,8 @@
     {
       "id": "eq_05_041",
       "name": "白麟牙",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "神兽遗谷",
       "type": "刀剑",
       "slot": "weapon"
@@ -2734,8 +2752,8 @@
     {
       "id": "eq_05_042",
       "name": "苍兕角枪",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "神兽遗谷",
       "type": "长枪",
       "slot": "weapon"
@@ -2743,8 +2761,8 @@
     {
       "id": "eq_05_043",
       "name": "玉髓灵杖",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "神兽遗谷",
       "type": "法杖",
       "slot": "weapon"
@@ -2752,8 +2770,8 @@
     {
       "id": "eq_05_044",
       "name": "灵犀破雾",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "神兽遗谷",
       "type": "弓弩",
       "slot": "weapon"
@@ -2761,8 +2779,8 @@
     {
       "id": "eq_05_045",
       "name": "玄麟宝甲",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "神兽遗谷",
       "type": "护甲",
       "slot": "armor"
@@ -2770,8 +2788,8 @@
     {
       "id": "eq_05_046",
       "name": "瑞兽云披",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "神兽遗谷",
       "type": "披风",
       "slot": "armor"
@@ -2779,8 +2797,8 @@
     {
       "id": "eq_05_047",
       "name": "白泽灵瞳",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "神兽遗谷",
       "type": "戒指",
       "slot": "acc"
@@ -2788,8 +2806,8 @@
     {
       "id": "eq_05_048",
       "name": "麒麟古玉",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "神兽遗谷",
       "type": "护符",
       "slot": "acc"
@@ -2797,8 +2815,8 @@
     {
       "id": "eq_05_049",
       "name": "梦离",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "幽梦仙乡",
       "type": "刀剑",
       "slot": "weapon",
@@ -2807,8 +2825,8 @@
     {
       "id": "eq_05_050",
       "name": "幽蝶灵枪",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "幽梦仙乡",
       "type": "长枪",
       "slot": "weapon"
@@ -2816,8 +2834,8 @@
     {
       "id": "eq_05_051",
       "name": "蝶梦花杖",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "幽梦仙乡",
       "type": "法杖",
       "slot": "weapon"
@@ -2825,8 +2843,8 @@
     {
       "id": "eq_05_052",
       "name": "梦中弦",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "幽梦仙乡",
       "type": "弓弩",
       "slot": "weapon"
@@ -2834,8 +2852,8 @@
     {
       "id": "eq_05_053",
       "name": "幻蝶轻衣",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "幽梦仙乡",
       "type": "护甲",
       "slot": "armor"
@@ -2843,8 +2861,8 @@
     {
       "id": "eq_05_054",
       "name": "流梦之纱",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "幽梦仙乡",
       "type": "披风",
       "slot": "armor"
@@ -2852,8 +2870,8 @@
     {
       "id": "eq_05_055",
       "name": "紫梦灵戒",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "幽梦仙乡",
       "type": "戒指",
       "slot": "acc"
@@ -2861,8 +2879,8 @@
     {
       "id": "eq_05_056",
       "name": "忘忧花坠",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "仙灵之器",
+      "rarityRank": 6,
       "theme": "幽梦仙乡",
       "type": "护符",
       "slot": "acc"
@@ -2870,8 +2888,8 @@
     {
       "id": "eq_05_057",
       "name": "澜生",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "玉海仙岛",
       "type": "刀剑",
       "slot": "weapon"
@@ -2879,8 +2897,8 @@
     {
       "id": "eq_05_058",
       "name": "海琼灵枪",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "玉海仙岛",
       "type": "长枪",
       "slot": "weapon"
@@ -2888,8 +2906,8 @@
     {
       "id": "eq_05_059",
       "name": "潮灵玉杖",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "玉海仙岛",
       "type": "法杖",
       "slot": "weapon"
@@ -2897,8 +2915,8 @@
     {
       "id": "eq_05_060",
       "name": "听海无声",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "玉海仙岛",
       "type": "弓弩",
       "slot": "weapon"
@@ -2906,8 +2924,8 @@
     {
       "id": "eq_05_061",
       "name": "鲛绡仙衣",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "玉海仙岛",
       "type": "护甲",
       "slot": "armor"
@@ -2915,8 +2933,8 @@
     {
       "id": "eq_05_062",
       "name": "碧海天绫",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "玉海仙岛",
       "type": "披风",
       "slot": "armor"
@@ -2924,8 +2942,8 @@
     {
       "id": "eq_05_063",
       "name": "海月灵环",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "玉海仙岛",
       "type": "戒指",
       "slot": "acc"
@@ -2933,8 +2951,8 @@
     {
       "id": "eq_05_064",
       "name": "沧珠之泪",
-      "rarity": "仙灵",
-      "rarityRank": 5,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "玉海仙岛",
       "type": "护符",
       "slot": "acc"
@@ -2942,8 +2960,8 @@
     {
       "id": "eq_06_001",
       "name": "裂天孤锋",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "断界遗兵",
       "type": "刀剑",
       "slot": "weapon"
@@ -2951,8 +2969,8 @@
     {
       "id": "eq_06_002",
       "name": "断界龙枪",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "断界遗兵",
       "type": "长枪",
       "slot": "weapon"
@@ -2960,8 +2978,8 @@
     {
       "id": "eq_06_003",
       "name": "崩穹之杖",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "断界遗兵",
       "type": "法杖",
       "slot": "weapon"
@@ -2969,8 +2987,8 @@
     {
       "id": "eq_06_004",
       "name": "天坠",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "断界遗兵",
       "type": "弓弩",
       "slot": "weapon"
@@ -2978,8 +2996,8 @@
     {
       "id": "eq_06_005",
       "name": "绝壁天铠",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "断界遗兵",
       "type": "护甲",
       "slot": "armor"
@@ -2987,8 +3005,8 @@
     {
       "id": "eq_06_006",
       "name": "碎空之翼",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "断界遗兵",
       "type": "披风",
       "slot": "armor"
@@ -2996,8 +3014,8 @@
     {
       "id": "eq_06_007",
       "name": "天隙禁环",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "断界遗兵",
       "type": "戒指",
       "slot": "acc"
@@ -3005,8 +3023,8 @@
     {
       "id": "eq_06_008",
       "name": "裂界心印",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "断界遗兵",
       "type": "护符",
       "slot": "acc"
@@ -3014,8 +3032,8 @@
     {
       "id": "eq_06_009",
       "name": "葬阳",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "吞日禁域",
       "type": "刀剑",
       "slot": "weapon",
@@ -3024,8 +3042,8 @@
     {
       "id": "eq_06_010",
       "name": "吞日魔枪",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "吞日禁域",
       "type": "长枪",
       "slot": "weapon"
@@ -3033,8 +3051,8 @@
     {
       "id": "eq_06_011",
       "name": "黑日敕杖",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "吞日禁域",
       "type": "法杖",
       "slot": "weapon"
@@ -3042,8 +3060,8 @@
     {
       "id": "eq_06_012",
       "name": "落日终鸣",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "吞日禁域",
       "type": "弓弩",
       "slot": "weapon"
@@ -3051,8 +3069,8 @@
     {
       "id": "eq_06_013",
       "name": "黯阳魔铠",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "吞日禁域",
       "type": "护甲",
       "slot": "armor"
@@ -3060,8 +3078,8 @@
     {
       "id": "eq_06_014",
       "name": "无昼天幕",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "吞日禁域",
       "type": "披风",
       "slot": "armor"
@@ -3069,8 +3087,8 @@
     {
       "id": "eq_06_015",
       "name": "蚀光之戒",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "吞日禁域",
       "type": "戒指",
       "slot": "acc"
@@ -3078,8 +3096,8 @@
     {
       "id": "eq_06_016",
       "name": "黑曜日核",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "吞日禁域",
       "type": "护符",
       "slot": "acc"
@@ -3087,8 +3105,8 @@
     {
       "id": "eq_06_017",
       "name": "逆血裁刃",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "逆血魔城",
       "type": "刀剑",
       "slot": "weapon"
@@ -3096,8 +3114,8 @@
     {
       "id": "eq_06_018",
       "name": "弑王骨枪",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "逆血魔城",
       "type": "长枪",
       "slot": "weapon"
@@ -3105,8 +3123,8 @@
     {
       "id": "eq_06_019",
       "name": "血狱君杖",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "逆血魔城",
       "type": "法杖",
       "slot": "weapon"
@@ -3114,8 +3132,8 @@
     {
       "id": "eq_06_020",
       "name": "千魂泣血",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "逆血魔城",
       "type": "弓弩",
       "slot": "weapon"
@@ -3123,8 +3141,8 @@
     {
       "id": "eq_06_021",
       "name": "逆鳞血铠",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "逆血魔城",
       "type": "护甲",
       "slot": "armor"
@@ -3132,8 +3150,8 @@
     {
       "id": "eq_06_022",
       "name": "血皇遗翼",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "逆血魔城",
       "type": "披风",
       "slot": "armor"
@@ -3141,8 +3159,8 @@
     {
       "id": "eq_06_023",
       "name": "血契天环",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "逆血魔城",
       "type": "戒指",
       "slot": "acc"
@@ -3150,8 +3168,8 @@
     {
       "id": "eq_06_024",
       "name": "逆鳞魔心",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "逆血魔城",
       "type": "护符",
       "slot": "acc"
@@ -3159,8 +3177,8 @@
     {
       "id": "eq_06_025",
       "name": "夜尽",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "长夜死境",
       "type": "刀剑",
       "slot": "weapon"
@@ -3168,8 +3186,8 @@
     {
       "id": "eq_06_026",
       "name": "万骸长枪",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "长夜死境",
       "type": "长枪",
       "slot": "weapon"
@@ -3177,8 +3195,8 @@
     {
       "id": "eq_06_027",
       "name": "亡国之叹",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "长夜死境",
       "type": "法杖",
       "slot": "weapon"
@@ -3186,8 +3204,8 @@
     {
       "id": "eq_06_028",
       "name": "冥河断弦",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "长夜死境",
       "type": "弓弩",
       "slot": "weapon"
@@ -3195,8 +3213,8 @@
     {
       "id": "eq_06_029",
       "name": "幽皇战铠",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "长夜死境",
       "type": "护甲",
       "slot": "armor"
@@ -3204,8 +3222,8 @@
     {
       "id": "eq_06_030",
       "name": "死境之帷",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "长夜死境",
       "type": "披风",
       "slot": "armor"
@@ -3213,8 +3231,8 @@
     {
       "id": "eq_06_031",
       "name": "长眠禁戒",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "长夜死境",
       "type": "戒指",
       "slot": "acc"
@@ -3222,8 +3240,8 @@
     {
       "id": "eq_06_032",
       "name": "冥皇命匣",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "长夜死境",
       "type": "护符",
       "slot": "acc"
@@ -3231,8 +3249,8 @@
     {
       "id": "eq_06_033",
       "name": "斩宿",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "星陨荒原",
       "type": "刀剑",
       "slot": "weapon"
@@ -3240,8 +3258,8 @@
     {
       "id": "eq_06_034",
       "name": "陨天战枪",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "星陨荒原",
       "type": "长枪",
       "slot": "weapon"
@@ -3249,8 +3267,8 @@
     {
       "id": "eq_06_035",
       "name": "群星葬杖",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "星陨荒原",
       "type": "法杖",
       "slot": "weapon"
@@ -3258,8 +3276,8 @@
     {
       "id": "eq_06_036",
       "name": "诛星",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "星陨荒原",
       "type": "弓弩",
       "slot": "weapon"
@@ -3267,8 +3285,8 @@
     {
       "id": "eq_06_037",
       "name": "星骸天甲",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "星陨荒原",
       "type": "护甲",
       "slot": "armor"
@@ -3276,8 +3294,8 @@
     {
       "id": "eq_06_038",
       "name": "陨世星衣",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "星陨荒原",
       "type": "披风",
       "slot": "armor"
@@ -3285,8 +3303,8 @@
     {
       "id": "eq_06_039",
       "name": "失序星环",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "星陨荒原",
       "type": "戒指",
       "slot": "acc"
@@ -3294,8 +3312,8 @@
     {
       "id": "eq_06_040",
       "name": "最后的星核",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "星陨荒原",
       "type": "护符",
       "slot": "acc"
@@ -3303,8 +3321,8 @@
     {
       "id": "eq_06_041",
       "name": "罪烬",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "神罚废墟",
       "type": "刀剑",
       "slot": "weapon"
@@ -3312,8 +3330,8 @@
     {
       "id": "eq_06_042",
       "name": "裁神天枪",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "神罚废墟",
       "type": "长枪",
       "slot": "weapon"
@@ -3321,8 +3339,8 @@
     {
       "id": "eq_06_043",
       "name": "万罚敕令",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "神罚废墟",
       "type": "法杖",
       "slot": "weapon"
@@ -3330,8 +3348,8 @@
     {
       "id": "eq_06_044",
       "name": "灭罪之弓",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "天绝之器",
+      "rarityRank": 7,
       "theme": "神罚废墟",
       "type": "弓弩",
       "slot": "weapon"
@@ -3339,8 +3357,8 @@
     {
       "id": "eq_06_045",
       "name": "负天劫铠",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "神罚废墟",
       "type": "护甲",
       "slot": "armor"
@@ -3348,8 +3366,8 @@
     {
       "id": "eq_06_046",
       "name": "天怒残披",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "神罚废墟",
       "type": "披风",
       "slot": "armor"
@@ -3357,8 +3375,8 @@
     {
       "id": "eq_06_047",
       "name": "禁罪王戒",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "神罚废墟",
       "type": "戒指",
       "slot": "acc"
@@ -3366,8 +3384,8 @@
     {
       "id": "eq_06_048",
       "name": "万劫雷髓",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "神罚废墟",
       "type": "护符",
       "slot": "acc"
@@ -3375,8 +3393,8 @@
     {
       "id": "eq_06_049",
       "name": "止冬",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "永寂冰渊",
       "type": "刀剑",
       "slot": "weapon"
@@ -3384,8 +3402,8 @@
     {
       "id": "eq_06_050",
       "name": "玄冥断浪枪",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "永寂冰渊",
       "type": "长枪",
       "slot": "weapon"
@@ -3393,8 +3411,8 @@
     {
       "id": "eq_06_051",
       "name": "寒世遗言",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "永寂冰渊",
       "type": "法杖",
       "slot": "weapon"
@@ -3402,8 +3420,8 @@
     {
       "id": "eq_06_052",
       "name": "绝响冰弦",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "永寂冰渊",
       "type": "弓弩",
       "slot": "weapon"
@@ -3411,8 +3429,8 @@
     {
       "id": "eq_06_053",
       "name": "万载冰魄甲",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "永寂冰渊",
       "type": "护甲",
       "slot": "armor"
@@ -3420,8 +3438,8 @@
     {
       "id": "eq_06_054",
       "name": "苍寂之幕",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "永寂冰渊",
       "type": "披风",
       "slot": "armor"
@@ -3429,8 +3447,8 @@
     {
       "id": "eq_06_055",
       "name": "无温之戒",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "永寂冰渊",
       "type": "戒指",
       "slot": "acc",
@@ -3439,8 +3457,8 @@
     {
       "id": "eq_06_056",
       "name": "寒渊死玉",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "永寂冰渊",
       "type": "护符",
       "slot": "acc"
@@ -3448,8 +3466,8 @@
     {
       "id": "eq_06_057",
       "name": "逆数",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "命轮裂隙",
       "type": "刀剑",
       "slot": "weapon"
@@ -3457,8 +3475,8 @@
     {
       "id": "eq_06_058",
       "name": "断缘之枪",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "命轮裂隙",
       "type": "长枪",
       "slot": "weapon"
@@ -3466,8 +3484,8 @@
     {
       "id": "eq_06_059",
       "name": "宿命残卷杖",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "命轮裂隙",
       "type": "法杖",
       "slot": "weapon"
@@ -3475,8 +3493,8 @@
     {
       "id": "eq_06_060",
       "name": "断命天弩",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "命轮裂隙",
       "type": "弓弩",
       "slot": "weapon"
@@ -3484,8 +3502,8 @@
     {
       "id": "eq_06_061",
       "name": "无常天衣",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "命轮裂隙",
       "type": "护甲",
       "slot": "armor"
@@ -3493,8 +3511,8 @@
     {
       "id": "eq_06_062",
       "name": "天机隐幕",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "命轮裂隙",
       "type": "披风",
       "slot": "armor"
@@ -3502,8 +3520,8 @@
     {
       "id": "eq_06_063",
       "name": "绝命之环",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "命轮裂隙",
       "type": "戒指",
       "slot": "acc"
@@ -3511,8 +3529,8 @@
     {
       "id": "eq_06_064",
       "name": "逆世残珏",
-      "rarity": "天绝",
-      "rarityRank": 6,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "命轮裂隙",
       "type": "护符",
       "slot": "acc"
@@ -3520,8 +3538,8 @@
     {
       "id": "eq_07_001",
       "name": "烛荒",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "原初炎庭",
       "type": "刀剑",
       "slot": "weapon",
@@ -3530,8 +3548,8 @@
     {
       "id": "eq_07_002",
       "name": "焚天龙脊",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "原初炎庭",
       "type": "长枪",
       "slot": "weapon"
@@ -3539,8 +3557,8 @@
     {
       "id": "eq_07_003",
       "name": "万火之冕",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "原初炎庭",
       "type": "法杖",
       "slot": "weapon"
@@ -3548,8 +3566,8 @@
     {
       "id": "eq_07_004",
       "name": "天烬神弓",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "原初炎庭",
       "type": "弓弩",
       "slot": "weapon"
@@ -3557,8 +3575,8 @@
     {
       "id": "eq_07_005",
       "name": "赤帝神铠",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "原初炎庭",
       "type": "护甲",
       "slot": "armor"
@@ -3566,8 +3584,8 @@
     {
       "id": "eq_07_006",
       "name": "凰祖之翼",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "原初炎庭",
       "type": "披风",
       "slot": "armor"
@@ -3575,8 +3593,8 @@
     {
       "id": "eq_07_007",
       "name": "炎誓神环",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "原初炎庭",
       "type": "戒指",
       "slot": "acc"
@@ -3584,8 +3602,8 @@
     {
       "id": "eq_07_008",
       "name": "原火之心",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "原初炎庭",
       "type": "护符",
       "slot": "acc"
@@ -3593,8 +3611,8 @@
     {
       "id": "eq_07_009",
       "name": "凝劫",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "太古雪国",
       "type": "刀剑",
       "slot": "weapon"
@@ -3602,8 +3620,8 @@
     {
       "id": "eq_07_010",
       "name": "封海神枪",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "太古雪国",
       "type": "长枪",
       "slot": "weapon"
@@ -3611,8 +3629,8 @@
     {
       "id": "eq_07_011",
       "name": "冰神遗梦",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "太古雪国",
       "type": "法杖",
       "slot": "weapon"
@@ -3620,8 +3638,8 @@
     {
       "id": "eq_07_012",
       "name": "万古寒弦",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "太古雪国",
       "type": "弓弩",
       "slot": "weapon"
@@ -3629,8 +3647,8 @@
     {
       "id": "eq_07_013",
       "name": "雪皇神衣",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "太古雪国",
       "type": "护甲",
       "slot": "armor"
@@ -3638,8 +3656,8 @@
     {
       "id": "eq_07_014",
       "name": "寂雪天绫",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "太古雪国",
       "type": "披风",
       "slot": "armor"
@@ -3647,8 +3665,8 @@
     {
       "id": "eq_07_015",
       "name": "冰律神戒",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "太古雪国",
       "type": "戒指",
       "slot": "acc"
@@ -3656,8 +3674,8 @@
     {
       "id": "eq_07_016",
       "name": "神泪寒晶",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "太古雪国",
       "type": "护符",
       "slot": "acc"
@@ -3665,8 +3683,8 @@
     {
       "id": "eq_07_017",
       "name": "霆皇",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "天雷神庭",
       "type": "刀剑",
       "slot": "weapon"
@@ -3674,8 +3692,8 @@
     {
       "id": "eq_07_018",
       "name": "九霄镇魔枪",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "天雷神庭",
       "type": "长枪",
       "slot": "weapon"
@@ -3683,8 +3701,8 @@
     {
       "id": "eq_07_019",
       "name": "雷神敕杖",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "天雷神庭",
       "type": "法杖",
       "slot": "weapon"
@@ -3692,8 +3710,8 @@
     {
       "id": "eq_07_020",
       "name": "天怒之弦",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "天雷神庭",
       "type": "弓弩",
       "slot": "weapon"
@@ -3701,8 +3719,8 @@
     {
       "id": "eq_07_021",
       "name": "苍雷神甲",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "天雷神庭",
       "type": "护甲",
       "slot": "armor"
@@ -3710,8 +3728,8 @@
     {
       "id": "eq_07_022",
       "name": "雷祖战披",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "天雷神庭",
       "type": "披风",
       "slot": "armor"
@@ -3719,8 +3737,8 @@
     {
       "id": "eq_07_023",
       "name": "天律雷环",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "天雷神庭",
       "type": "戒指",
       "slot": "acc"
@@ -3728,8 +3746,8 @@
     {
       "id": "eq_07_024",
       "name": "太初雷骨",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "天雷神庭",
       "type": "护符",
       "slot": "acc"
@@ -3737,8 +3755,8 @@
     {
       "id": "eq_07_025",
       "name": "长生断",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "苍生神木",
       "type": "刀剑",
       "slot": "weapon"
@@ -3746,8 +3764,8 @@
     {
       "id": "eq_07_026",
       "name": "苍龙镇岳枪",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "苍生神木",
       "type": "长枪",
       "slot": "weapon"
@@ -3755,8 +3773,8 @@
     {
       "id": "eq_07_027",
       "name": "万灵母枝",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "苍生神木",
       "type": "法杖",
       "slot": "weapon"
@@ -3764,8 +3782,8 @@
     {
       "id": "eq_07_028",
       "name": "众生之弓",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "苍生神木",
       "type": "弓弩",
       "slot": "weapon"
@@ -3773,8 +3791,8 @@
     {
       "id": "eq_07_029",
       "name": "大荒神木甲",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "苍生神木",
       "type": "护甲",
       "slot": "armor"
@@ -3782,8 +3800,8 @@
     {
       "id": "eq_07_030",
       "name": "四时神衣",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "苍生神木",
       "type": "披风",
       "slot": "armor"
@@ -3791,8 +3809,8 @@
     {
       "id": "eq_07_031",
       "name": "生息神环",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "苍生神木",
       "type": "戒指",
       "slot": "acc"
@@ -3800,8 +3818,8 @@
     {
       "id": "eq_07_032",
       "name": "万灵之胚",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "神玄之器",
+      "rarityRank": 8,
       "theme": "苍生神木",
       "type": "护符",
       "slot": "acc"
@@ -3809,8 +3827,8 @@
     {
       "id": "eq_07_033",
       "name": "镇澜",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "星海神殿",
       "type": "刀剑",
       "slot": "weapon"
@@ -3818,8 +3836,8 @@
     {
       "id": "eq_07_034",
       "name": "天海逆龙枪",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "星海神殿",
       "type": "长枪",
       "slot": "weapon"
@@ -3827,8 +3845,8 @@
     {
       "id": "eq_07_035",
       "name": "沧溟神谕",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "星海神殿",
       "type": "法杖",
       "slot": "weapon"
@@ -3836,8 +3854,8 @@
     {
       "id": "eq_07_036",
       "name": "星潮神弓",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "星海神殿",
       "type": "弓弩",
       "slot": "weapon"
@@ -3845,8 +3863,8 @@
     {
       "id": "eq_07_037",
       "name": "海皇逆鳞甲",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "星海神殿",
       "type": "护甲",
       "slot": "armor"
@@ -3854,8 +3872,8 @@
     {
       "id": "eq_07_038",
       "name": "无涯海幕",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "星海神殿",
       "type": "披风",
       "slot": "armor"
@@ -3863,8 +3881,8 @@
     {
       "id": "eq_07_039",
       "name": "万川神戒",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "星海神殿",
       "type": "戒指",
       "slot": "acc"
@@ -3872,8 +3890,8 @@
     {
       "id": "eq_07_040",
       "name": "源海之珠",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "星海神殿",
       "type": "护符",
       "slot": "acc"
@@ -3881,8 +3899,8 @@
     {
       "id": "eq_07_041",
       "name": "昼冕",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "白昼王座",
       "type": "刀剑",
       "slot": "weapon"
@@ -3890,8 +3908,8 @@
     {
       "id": "eq_07_042",
       "name": "圣皇裁世枪",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "白昼王座",
       "type": "长枪",
       "slot": "weapon"
@@ -3899,8 +3917,8 @@
     {
       "id": "eq_07_043",
       "name": "白日神谕",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "白昼王座",
       "type": "法杖",
       "slot": "weapon"
@@ -3908,8 +3926,8 @@
     {
       "id": "eq_07_044",
       "name": "曙光尽头",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "白昼王座",
       "type": "弓弩",
       "slot": "weapon"
@@ -3917,8 +3935,8 @@
     {
       "id": "eq_07_045",
       "name": "光皇神铠",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "白昼王座",
       "type": "护甲",
       "slot": "armor"
@@ -3926,8 +3944,8 @@
     {
       "id": "eq_07_046",
       "name": "启世圣翼",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "白昼王座",
       "type": "披风",
       "slot": "armor"
@@ -3935,8 +3953,8 @@
     {
       "id": "eq_07_047",
       "name": "圣律之环",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "白昼王座",
       "type": "戒指",
       "slot": "acc"
@@ -3944,8 +3962,8 @@
     {
       "id": "eq_07_048",
       "name": "神曦之心",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "白昼王座",
       "type": "护符",
       "slot": "acc"
@@ -3953,8 +3971,8 @@
     {
       "id": "eq_07_049",
       "name": "月殁",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "幽月王座",
       "type": "刀剑",
       "slot": "weapon"
@@ -3962,8 +3980,8 @@
     {
       "id": "eq_07_050",
       "name": "幽天神枪",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "幽月王座",
       "type": "长枪",
       "slot": "weapon"
@@ -3971,8 +3989,8 @@
     {
       "id": "eq_07_051",
       "name": "夜神王杖",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "幽月王座",
       "type": "法杖",
       "slot": "weapon"
@@ -3980,8 +3998,8 @@
     {
       "id": "eq_07_052",
       "name": "永夜初弦",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "幽月王座",
       "type": "弓弩",
       "slot": "weapon"
@@ -3989,8 +4007,8 @@
     {
       "id": "eq_07_053",
       "name": "玄月神衣",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "幽月王座",
       "type": "护甲",
       "slot": "armor"
@@ -3998,8 +4016,8 @@
     {
       "id": "eq_07_054",
       "name": "无星之夜",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "幽月王座",
       "type": "披风",
       "slot": "armor"
@@ -4007,8 +4025,8 @@
     {
       "id": "eq_07_055",
       "name": "幽月神环",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "幽月王座",
       "type": "戒指",
       "slot": "acc"
@@ -4016,8 +4034,8 @@
     {
       "id": "eq_07_056",
       "name": "众梦之瞳",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "幽月王座",
       "type": "护符",
       "slot": "acc"
@@ -4025,8 +4043,8 @@
     {
       "id": "eq_07_057",
       "name": "承愿",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "古神遗誓",
       "type": "刀剑",
       "slot": "weapon"
@@ -4034,8 +4052,8 @@
     {
       "id": "eq_07_058",
       "name": "不坠神枪",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "古神遗誓",
       "type": "长枪",
       "slot": "weapon"
@@ -4043,8 +4061,8 @@
     {
       "id": "eq_07_059",
       "name": "古誓神杖",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "古神遗誓",
       "type": "法杖",
       "slot": "weapon"
@@ -4052,8 +4070,8 @@
     {
       "id": "eq_07_060",
       "name": "归世之弓",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "古神遗誓",
       "type": "弓弩",
       "slot": "weapon"
@@ -4061,8 +4079,8 @@
     {
       "id": "eq_07_061",
       "name": "天誓神铠",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "古神遗誓",
       "type": "护甲",
       "slot": "armor"
@@ -4070,8 +4088,8 @@
     {
       "id": "eq_07_062",
       "name": "守世神披",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "古神遗誓",
       "type": "披风",
       "slot": "armor"
@@ -4079,8 +4097,8 @@
     {
       "id": "eq_07_063",
       "name": "万誓之环",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "古神遗誓",
       "type": "戒指",
       "slot": "acc",
@@ -4089,8 +4107,8 @@
     {
       "id": "eq_07_064",
       "name": "众愿神石",
-      "rarity": "神器",
-      "rarityRank": 7,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "古神遗誓",
       "type": "护符",
       "slot": "acc"
@@ -4098,8 +4116,8 @@
     {
       "id": "eq_08_001",
       "name": "开世之锋",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "创生遗器",
       "type": "刀剑",
       "slot": "weapon"
@@ -4107,8 +4125,8 @@
     {
       "id": "eq_08_002",
       "name": "太初天脊",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "创生遗器",
       "type": "长枪",
       "slot": "weapon"
@@ -4116,8 +4134,8 @@
     {
       "id": "eq_08_003",
       "name": "万象源杖",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "创生遗器",
       "type": "法杖",
       "slot": "weapon"
@@ -4125,8 +4143,8 @@
     {
       "id": "eq_08_004",
       "name": "鸿蒙初弦",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "创生遗器",
       "type": "弓弩",
       "slot": "weapon"
@@ -4134,8 +4152,8 @@
     {
       "id": "eq_08_005",
       "name": "原界神衣",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "创生遗器",
       "type": "护甲",
       "slot": "armor"
@@ -4143,8 +4161,8 @@
     {
       "id": "eq_08_006",
       "name": "创世余辉",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "创生遗器",
       "type": "披风",
       "slot": "armor"
@@ -4152,8 +4170,8 @@
     {
       "id": "eq_08_007",
       "name": "始源之环",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "创生遗器",
       "type": "戒指",
       "slot": "acc"
@@ -4161,8 +4179,8 @@
     {
       "id": "eq_08_008",
       "name": "未生之心",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "创生遗器",
       "type": "护符",
       "slot": "acc"
@@ -4170,8 +4188,8 @@
     {
       "id": "eq_08_009",
       "name": "诸神终寂",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "终末遗器",
       "type": "刀剑",
       "slot": "weapon"
@@ -4179,8 +4197,8 @@
     {
       "id": "eq_08_010",
       "name": "万界终枪",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "终末遗器",
       "type": "长枪",
       "slot": "weapon"
@@ -4188,8 +4206,8 @@
     {
       "id": "eq_08_011",
       "name": "归无敕杖",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "终末遗器",
       "type": "法杖",
       "slot": "weapon"
@@ -4197,8 +4215,8 @@
     {
       "id": "eq_08_012",
       "name": "万世绝弦",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "终末遗器",
       "type": "弓弩",
       "slot": "weapon"
@@ -4206,8 +4224,8 @@
     {
       "id": "eq_08_013",
       "name": "终劫天铠",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "终末遗器",
       "type": "护甲",
       "slot": "armor"
@@ -4215,8 +4233,8 @@
     {
       "id": "eq_08_014",
       "name": "永劫之幕",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "终末遗器",
       "type": "披风",
       "slot": "armor"
@@ -4224,8 +4242,8 @@
     {
       "id": "eq_08_015",
       "name": "终律之环",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "终末遗器",
       "type": "戒指",
       "slot": "acc"
@@ -4233,8 +4251,8 @@
     {
       "id": "eq_08_016",
       "name": "归尽之瞳",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "终末遗器",
       "type": "护符",
       "slot": "acc"
@@ -4242,8 +4260,8 @@
     {
       "id": "eq_08_017",
       "name": "岁月无赦",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "时序禁器",
       "type": "刀剑",
       "slot": "weapon"
@@ -4251,8 +4269,8 @@
     {
       "id": "eq_08_018",
       "name": "万古一瞬",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "时序禁器",
       "type": "长枪",
       "slot": "weapon"
@@ -4260,8 +4278,8 @@
     {
       "id": "eq_08_019",
       "name": "永昼时杖",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "时序禁器",
       "type": "法杖",
       "slot": "weapon"
@@ -4269,8 +4287,8 @@
     {
       "id": "eq_08_020",
       "name": "昨日之弦",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "亚·圣灭之器",
+      "rarityRank": 9,
       "theme": "时序禁器",
       "type": "弓弩",
       "slot": "weapon"
@@ -4278,8 +4296,8 @@
     {
       "id": "eq_08_021",
       "name": "不逝之衣",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "时序禁器",
       "type": "护甲",
       "slot": "armor"
@@ -4287,8 +4305,8 @@
     {
       "id": "eq_08_022",
       "name": "岁月之外",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "时序禁器",
       "type": "披风",
       "slot": "armor"
@@ -4296,8 +4314,8 @@
     {
       "id": "eq_08_023",
       "name": "无始无终",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "时序禁器",
       "type": "戒指",
       "slot": "acc"
@@ -4305,8 +4323,8 @@
     {
       "id": "eq_08_024",
       "name": "第零时辰",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "时序禁器",
       "type": "护符",
       "slot": "acc"
@@ -4314,8 +4332,8 @@
     {
       "id": "eq_08_025",
       "name": "命外之刃",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "命途禁器",
       "type": "刀剑",
       "slot": "weapon"
@@ -4323,8 +4341,8 @@
     {
       "id": "eq_08_026",
       "name": "既定之终",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "命途禁器",
       "type": "长枪",
       "slot": "weapon"
@@ -4332,8 +4350,8 @@
     {
       "id": "eq_08_027",
       "name": "逆世裁衡",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "命途禁器",
       "type": "法杖",
       "slot": "weapon",
@@ -4342,8 +4360,8 @@
     {
       "id": "eq_08_028",
       "name": "未至之弦",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "命途禁器",
       "type": "弓弩",
       "slot": "weapon"
@@ -4351,8 +4369,8 @@
     {
       "id": "eq_08_029",
       "name": "不败之因",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "命途禁器",
       "type": "护甲",
       "slot": "armor"
@@ -4360,8 +4378,8 @@
     {
       "id": "eq_08_030",
       "name": "命外天衣",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "命途禁器",
       "type": "披风",
       "slot": "armor"
@@ -4369,8 +4387,8 @@
     {
       "id": "eq_08_031",
       "name": "命轮之外",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "命途禁器",
       "type": "戒指",
       "slot": "acc",
@@ -4379,8 +4397,8 @@
     {
       "id": "eq_08_032",
       "name": "未定之数",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "命途禁器",
       "type": "护符",
       "slot": "acc"
@@ -4388,8 +4406,8 @@
     {
       "id": "eq_08_033",
       "name": "虚界断章",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "虚实禁器",
       "type": "刀剑",
       "slot": "weapon"
@@ -4397,8 +4415,8 @@
     {
       "id": "eq_08_034",
       "name": "贯梦天钉",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "虚实禁器",
       "type": "长枪",
       "slot": "weapon"
@@ -4406,8 +4424,8 @@
     {
       "id": "eq_08_035",
       "name": "真实之诏",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "虚实禁器",
       "type": "法杖",
       "slot": "weapon"
@@ -4415,8 +4433,8 @@
     {
       "id": "eq_08_036",
       "name": "空想终弦",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "虚实禁器",
       "type": "弓弩",
       "slot": "weapon"
@@ -4424,8 +4442,8 @@
     {
       "id": "eq_08_037",
       "name": "不可知之甲",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "虚实禁器",
       "type": "护甲",
       "slot": "armor"
@@ -4433,8 +4451,8 @@
     {
       "id": "eq_08_038",
       "name": "镜世之帷",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "虚实禁器",
       "type": "披风",
       "slot": "armor"
@@ -4442,8 +4460,8 @@
     {
       "id": "eq_08_039",
       "name": "有无之环",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "虚实禁器",
       "type": "戒指",
       "slot": "acc"
@@ -4451,8 +4469,8 @@
     {
       "id": "eq_08_040",
       "name": "真实之眼",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "虚实禁器",
       "type": "护符",
       "slot": "acc"
@@ -4460,8 +4478,8 @@
     {
       "id": "eq_08_041",
       "name": "轮回不渡",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "轮回禁器",
       "type": "刀剑",
       "slot": "weapon",
@@ -4470,8 +4488,8 @@
     {
       "id": "eq_08_042",
       "name": "忘生之枪",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "轮回禁器",
       "type": "长枪",
       "slot": "weapon"
@@ -4479,8 +4497,8 @@
     {
       "id": "eq_08_043",
       "name": "往生尽头",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "轮回禁器",
       "type": "法杖",
       "slot": "weapon"
@@ -4488,8 +4506,8 @@
     {
       "id": "eq_08_044",
       "name": "前尘断弦",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "轮回禁器",
       "type": "弓弩",
       "slot": "weapon"
@@ -4497,8 +4515,8 @@
     {
       "id": "eq_08_045",
       "name": "千生不灭",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "轮回禁器",
       "type": "护甲",
       "slot": "armor"
@@ -4506,8 +4524,8 @@
     {
       "id": "eq_08_046",
       "name": "轮回之外",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "轮回禁器",
       "type": "披风",
       "slot": "armor"
@@ -4515,8 +4533,8 @@
     {
       "id": "eq_08_047",
       "name": "生死无间",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "轮回禁器",
       "type": "戒指",
       "slot": "acc"
@@ -4524,8 +4542,8 @@
     {
       "id": "eq_08_048",
       "name": "未死之魂",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "轮回禁器",
       "type": "护符",
       "slot": "acc"
@@ -4533,8 +4551,8 @@
     {
       "id": "eq_08_049",
       "name": "无主天锋",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "自由禁器",
       "type": "刀剑",
       "slot": "weapon"
@@ -4542,8 +4560,8 @@
     {
       "id": "eq_08_050",
       "name": "破命长钉",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "自由禁器",
       "type": "长枪",
       "slot": "weapon"
@@ -4551,8 +4569,8 @@
     {
       "id": "eq_08_051",
       "name": "无上禁令",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "自由禁器",
       "type": "法杖",
       "slot": "weapon"
@@ -4560,8 +4578,8 @@
     {
       "id": "eq_08_052",
       "name": "诸天无界",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "自由禁器",
       "type": "弓弩",
       "slot": "weapon"
@@ -4569,8 +4587,8 @@
     {
       "id": "eq_08_053",
       "name": "不缚神衣",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "自由禁器",
       "type": "护甲",
       "slot": "armor"
@@ -4578,8 +4596,8 @@
     {
       "id": "eq_08_054",
       "name": "彼岸天翼",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "自由禁器",
       "type": "披风",
       "slot": "armor"
@@ -4587,8 +4605,8 @@
     {
       "id": "eq_08_055",
       "name": "无律之环",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "自由禁器",
       "type": "戒指",
       "slot": "acc"
@@ -4596,8 +4614,8 @@
     {
       "id": "eq_08_056",
       "name": "无主神格",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "自由禁器",
       "type": "护符",
       "slot": "acc"
@@ -4605,8 +4623,8 @@
     {
       "id": "eq_08_057",
       "name": "未央",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "不熄之约",
       "type": "刀剑",
       "slot": "weapon",
@@ -4615,8 +4633,8 @@
     {
       "id": "eq_08_058",
       "name": "无归之誓",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "不熄之约",
       "type": "长枪",
       "slot": "weapon"
@@ -4624,8 +4642,8 @@
     {
       "id": "eq_08_059",
       "name": "余生之祈",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "不熄之约",
       "type": "法杖",
       "slot": "weapon"
@@ -4633,8 +4651,8 @@
     {
       "id": "eq_08_060",
       "name": "天明以前",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "不熄之约",
       "type": "弓弩",
       "slot": "weapon"
@@ -4642,8 +4660,8 @@
     {
       "id": "eq_08_061",
       "name": "长夜不侵",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "不熄之约",
       "type": "护甲",
       "slot": "armor"
@@ -4651,8 +4669,8 @@
     {
       "id": "eq_08_062",
       "name": "人间未烬",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "不熄之约",
       "type": "披风",
       "slot": "armor"
@@ -4660,8 +4678,8 @@
     {
       "id": "eq_08_063",
       "name": "此生不负",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "不熄之约",
       "type": "戒指",
       "slot": "acc",
@@ -4670,8 +4688,8 @@
     {
       "id": "eq_08_064",
       "name": "最后的心跳",
-      "rarity": "超神器",
-      "rarityRank": 8,
+      "rarity": "圣灭之器",
+      "rarityRank": 10,
       "theme": "不熄之约",
       "type": "护符",
       "slot": "acc",

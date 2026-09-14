@@ -29,63 +29,82 @@ export const STATUS = {
 
 /* ---------------- 队伍角色 ---------------- */
 export const ACTORS = {
+  /* 注：四个内部 id（kaito/cang/lei/ryze）保留为纯引擎键——
+     天赋树、立绘、武器归属、羁绊表都按它们索引。玩家看不到 id，
+     看到的是 name/title/role。改 id 收益为零，破坏面却很大。 */
+
+  /* —— 主角：叶天邪，游戏 ID「邪天」 ——
+     资源用「龙魂」（沿用 rage 机制）：开战为 0，靠出手、挨打、格挡累积。
+     这套机制天然适合他——越打越猛，但开局最脆，符合「拿命换爆发」的定位。 */
   kaito: {
-    id: 'kaito', name: '凯', title: '炎之剑士', portrait: 'kaito',
-    role: '剑士', joinLevel: 1,
-    // 凯用「愤怒」而非术力：开战为 0，靠攻击/受击/格挡积攒
-    resource: 'rage',
-    base: { hp: 320, mp: 40, atk: 46, def: 26, spd: 30, cri: 0.10, blk: 0.18, par: 0.08, rageMul: 1.0, mpRegen: 3 },
-    grow: { hp: 46, mp: 4, atk: 4.9, def: 2.5, spd: 1.4 },
-    weaponSkill: ['xinzhan', 'lianren', 'leiming', 'jiaoyan', 'miehun'],
+    id: 'kaito', name: '邪天', title: '逆骨邪龙', portrait: 'kaito',
+    realName: '叶天邪', role: '近战', joinLevel: 1,
+    resource: 'rage', resourceName: '龙魂',
+    base: { hp: 340, mp: 40, atk: 50, def: 24, spd: 32, cri: 0.12, blk: 0.16, par: 0.10, rageMul: 1.15, mpRegen: 3 },
+    grow: { hp: 49, mp: 4, atk: 5.4, def: 2.4, spd: 1.5 },
+    weaponSkill: ['ni_claw', 'ni_scale', 'ni_roar', 'ni_twin', 'ni_golden'],
     skills: [
-      { id: 'xinzhan', lv: 1 }, { id: 'lianren', lv: 3 }, { id: 'liepo', lv: 6 },
-      { id: 'xinyan', lv: 8 }, { id: 'leiming', lv: 9 }, { id: 'jiaoyan', lv: 12 },
-      { id: 'miehun', lv: 15 }, { id: 'zhenmiehun', lv: 20 },
+      { id: 'ni_claw', lv: 1 }, { id: 'ni_scale', lv: 3 }, { id: 'ni_ember', lv: 5 }, { id: 'ni_roar', lv: 6 },
+      { id: 'ni_burst', lv: 8 }, { id: 'ni_twin', lv: 10 }, { id: 'ni_abyss', lv: 14 },
+      { id: 'ni_defy', lv: 18 }, { id: 'ni_golden', lv: 24 },
     ],
-    quote: '「我的剑，不会为仇恨而挥——它为守护而出鞘！」',
-    winQuote: '还站得起来吗？那就继续。',
+    quote: '「我死过一次了。这辈子轮到我说了算。」',
+    winQuote: '还有谁？',
   },
+
+  /* —— 璃仙儿 ——
+     治疗 + 增益。设定上她知道的比主角多得多，但从不一次说完，
+     数值上做成「续航极强、爆发极弱」，逼玩家把她当作战线而不是输出。 */
   cang: {
-    id: 'cang', name: '苍', title: '苍蓝术士', portrait: 'cang',
-    role: '治愈', joinLevel: 2,
-    resource: 'mp',
-    base: { hp: 230, mp: 110, atk: 30, def: 20, spd: 28, cri: 0.06, blk: 0.10, par: 0.05, rageMul: 0.9, mpRegen: 6 },
-    grow: { hp: 34, mp: 12, atk: 3.0, def: 1.9, spd: 1.3 },
-    weaponSkill: ['liaoshang', 'bingzhen', 'shengguang', 'leiting', 'fuyin'],
+    id: 'cang', name: '仙儿', title: '谪尘之灵', portrait: 'cang',
+    realName: '璃仙儿', role: '治愈', joinLevel: 2,
+    resource: 'mp', resourceName: '灵息',
+    base: { hp: 236, mp: 124, atk: 28, def: 20, spd: 29, cri: 0.05, blk: 0.11, par: 0.06, rageMul: 0.9, mpRegen: 7 },
+    grow: { hp: 35, mp: 13, atk: 2.8, def: 2.0, spd: 1.3 },
+    weaponSkill: ['xi_mend', 'xi_veil', 'xi_purge', 'xi_bloom'],
     skills: [
-      { id: 'liaoshang', lv: 2 }, { id: 'bingzhen', lv: 4 }, { id: 'qifu', lv: 7 },
-      { id: 'shengguang', lv: 9 }, { id: 'leiting', lv: 11 }, { id: 'fuyin', lv: 13 }, { id: 'zhenyan', lv: 15 },
+      { id: 'xi_mend', lv: 2 }, { id: 'xi_veil', lv: 4 }, { id: 'xi_purge', lv: 7 },
+      { id: 'xi_bloom', lv: 9 }, { id: 'xi_chain', lv: 11 }, { id: 'xi_seal', lv: 13 },
+      { id: 'xi_return', lv: 14 },
     ],
-    quote: '「别逞强了，笨蛋。——把手给我。」',
-    winQuote: '伤口我来处理，你只管往前冲。',
+    quote: '「你要走的那条路，我走过一次。所以这次我跟着你。」',
+    winQuote: '手伸过来，别逞强。',
   },
+
+  /* —— 天痕 ——
+     速度型，靠行动条压制吃饭。定位是「先你一步到场的那个人」——
+     剧情上是对手起家，所以数值给得锋利：极快、极脆、会心极高。 */
   lei: {
-    id: 'lei', name: '雷', title: '疾风之枪', portrait: 'lei',
-    role: '枪兵', joinLevel: 4,
-    resource: 'mp',
-    base: { hp: 280, mp: 60, atk: 42, def: 24, spd: 36, cri: 0.14, blk: 0.12, par: 0.14, rageMul: 1.1, mpRegen: 4 },
-    grow: { hp: 41, mp: 6, atk: 4.5, def: 2.3, spd: 1.9 },
-    weaponSkill: ['tuchuan', 'lianshe', 'leiting', 'xunyou'],
+    id: 'lei', name: '天痕', title: '断风枪手', portrait: 'lei',
+    realName: '天痕', role: '游击', joinLevel: 4,
+    resource: 'mp', resourceName: '气劲',
+    base: { hp: 272, mp: 62, atk: 44, def: 22, spd: 39, cri: 0.17, blk: 0.10, par: 0.15, rageMul: 1.1, mpRegen: 4 },
+    grow: { hp: 39, mp: 6, atk: 4.7, def: 2.1, spd: 2.1 },
+    weaponSkill: ['th_pierce', 'th_volley', 'th_mark', 'th_gale'],
     skills: [
-      { id: 'tuchuan', lv: 4 }, { id: 'lianshe', lv: 6 }, { id: 'zhuihun', lv: 9 },
-      { id: 'leiting', lv: 12 }, { id: 'xunyou', lv: 14 },
+      { id: 'th_pierce', lv: 4 }, { id: 'th_volley', lv: 6 }, { id: 'th_mark', lv: 9 }, { id: 'th_accel', lv: 10 },
+      { id: 'th_gale', lv: 12 }, { id: 'th_last', lv: 15 },
     ],
-    quote: '「速度就是我的答案——看都看不清，就别谈什么胜负了！」',
-    winQuote: '太慢了，太慢了！',
+    quote: '「你比我快？行啊。那你追得上我第二枪吗。」',
+    winQuote: '记住这个速度。下次我还要更快。',
   },
+
+  /* —— 果果 ——
+     看上去十二三岁，实际是全队最危险的那个。数值刻意做成极端：
+     血少得离谱、输出高得离谱，放出去要么秒杀全场要么自己先倒。 */
   ryze: {
-    id: 'ryze', name: '璃', title: '冰晶少女', portrait: 'ryze',
-    role: '法师', joinLevel: 6,
-    resource: 'mp',
-    base: { hp: 210, mp: 130, atk: 34, def: 18, spd: 26, cri: 0.08, blk: 0.08, par: 0.06, rageMul: 1.2, mpRegen: 7 },
-    grow: { hp: 31, mp: 14, atk: 5.3, def: 1.8, spd: 1.2 },
-    weaponSkill: ['bingzhen', 'baoxue', 'bingfeng', 'fuyin'],
+    id: 'ryze', name: '果果', title: '不知名的圣子', portrait: 'ryze',
+    realName: '果果', role: '术士', joinLevel: 6,
+    resource: 'mp', resourceName: '神识',
+    base: { hp: 196, mp: 146, atk: 38, def: 16, spd: 27, cri: 0.09, blk: 0.06, par: 0.05, rageMul: 1.2, mpRegen: 8 },
+    grow: { hp: 28, mp: 16, atk: 6.1, def: 1.6, spd: 1.2 },
+    weaponSkill: ['gg_spark', 'gg_collapse', 'gg_zero', 'gg_seal'],
     skills: [
-      { id: 'bingzhen', lv: 6 }, { id: 'baoxue', lv: 8 }, { id: 'bingfeng', lv: 11 },
-      { id: 'juedui', lv: 13 }, { id: 'fuyin', lv: 15 },
+      { id: 'gg_spark', lv: 6 }, { id: 'gg_collapse', lv: 8 }, { id: 'gg_zero', lv: 11 },
+      { id: 'gg_wither', lv: 13 }, { id: 'gg_seal', lv: 15 },
     ],
-    quote: '「……我这样的人，也可以站在光里吗？」',
-    winQuote: '对不起……但我必须走下去。',
+    quote: '「这个世界的规则我看过了。写得不太好。」',
+    winQuote: '嗯。下一个。',
   },
 };
 
@@ -93,156 +112,185 @@ export const ACTORS = {
    type: atk 攻击 / heal 治疗 / buff 增益 / debuff 减益 / revive 复活
 ------------------------------------------- */
 export const SKILLS = {
-  /* —— 凯 —— */
-  xinzhan: {
-    id: 'xinzhan', name: '心斩', mp: 0, type: 'atk', elem: 'none', power: 1.0, hits: 1,
-    target: 'one', desc: '凝聚斗气的一击。回复自身少量热血。', rage: 12,
+  /* ============ 邪天 · 逆骨邪龙线 ============
+     设计主轴：所有强招都要付代价——自伤、破防、或者把行动条压给敌人。
+     龙魂（rage）开局为 0，所以前两回合他是全队最弱的，越往后越不讲理。 */
+  ni_claw: {
+    id: 'ni_claw', name: '逆鳞爪', mp: 0, type: 'atk', elem: 'none', power: 1.05, hits: 1,
+    target: 'one', desc: '骨中逆纹浮出，一记贯穿爪。积攒龙魂。', rage: 14,
     fx: 'slash',
   },
-  lianren: {
-    id: 'lianren', name: '连刃·三连斩', mp: 14, type: 'atk', elem: 'none', power: 0.62, hits: 3,
-    target: 'one', desc: '连续三次斩击，命中数越多热血越高。', rage: 16,
+  ni_scale: {
+    id: 'ni_scale', name: '龙鳞·三叠', mp: 0, type: 'atk', elem: 'none', power: 0.66, hits: 3,
+    target: 'one', desc: '三段叠爪，段数越多龙魂涨得越快。', rage: 18,
     fx: 'flurry', multi: true,
   },
-  liepo: {
-    id: 'liepo', name: '裂地·炎爆斩', mp: 22, type: 'atk', elem: 'fire', power: 1.75, hits: 1,
-    target: 'all', desc: '烈焰横扫，对全体敌人造成炎属性伤害，有机会点燃。', rage: 18,
-    fx: 'fire', inflict: { id: 'burn', chance: 0.4 },
+  ni_ember: {
+    id: 'ni_ember', name: '龙炎·喷', mp: 0, type: 'atk', elem: 'fire', power: 1.25, hits: 1,
+    target: 'all', desc: '低头喷出一口龙炎，全体炎属性伤害，有机会点燃。', rage: 15,
+    fx: 'fire', inflict: { id: 'burn', chance: 0.45 },
   },
-  leiming: {
-    id: 'leiming', name: '雷鸣·千鸟突', mp: 26, type: 'atk', elem: 'thunder', power: 2.05, hits: 1,
-    target: 'one', desc: '雷光贯穿单体，高概率使其眩晕。', rage: 20,
-    fx: 'bolt', inflict: { id: 'stun', chance: 0.35 },
+  ni_roar: {
+    id: 'ni_roar', name: '龙吼·慑', mp: 0, type: 'debuff', target: 'all',
+    desc: '龙魂外放震慑全场：敌方全体行动条后退，并有机会迟缓。', rage: 16,
+    fx: 'roar', gaugePush: 20, inflict: { id: 'slow', chance: 0.45 },
   },
-  jiaoyan: {
-    id: 'jiaoyan', name: '焦炎·狮子奋迅', mp: 34, type: 'buff', target: 'self',
-    desc: '炎之斗气爆发：攻击力大幅上升，且行动更快。', rage: 25,
-    fx: 'blaze', buff: { id: 'atkUp', turns: 3 }, buff2: { id: 'haste', turns: 3 },
+  ni_burst: {
+    id: 'ni_burst', name: '血爆·逆冲', mp: 25, type: 'atk', elem: 'dark', power: 1.60, hits: 2,
+    target: 'one', desc: '【龙魂·壹】燃烧自身精血双击，自伤最大生命 8%。', rage: 0,
+    fx: 'dark', multi: true, release: 1, selfDamage: 0.08,
   },
-  /* 怒气三段解放：25 随时能放但用掉就攒不到高段，60 是标准奥义，
-     100 要一直挨打才攒得到，有翻车风险但回报最大。 */
-  xinyan: {
-    id: 'xinyan', name: '心焰·炽刃', mp: 25, type: 'atk', elem: 'fire', power: 1.45, hits: 2,
-    target: 'one', desc: '【解放·壹】怒气凝成炽刃，双击并点燃。', rage: 0,
-    fx: 'fire', multi: true, release: 1, inflict: { id: 'burn', chance: 0.7 },
+  ni_twin: {
+    id: 'ni_twin', name: '光暗双龙魂', mp: 45, type: 'atk', elem: 'holy', power: 1.15, hits: 4,
+    target: 'one', desc: '【龙魂·贰】光暗两道龙魂交缠贯穿，无视半数防御。', rage: 0,
+    fx: 'twin', ult: true, multi: true, release: 2, pierce: 0.5,
   },
-  miehun: {
-    id: 'miehun', name: '奥义·灭魂炎狱斩', mp: 60, type: 'atk', elem: 'fire', power: 1.05, hits: 5,
-    target: 'one', desc: '【解放·贰】五段斩在敌人体内燃起炎狱。', rage: 0,
-    fx: 'fire', ult: true, multi: true, release: 2, inflict: { id: 'burn', chance: 0.9 },
+  ni_abyss: {
+    id: 'ni_abyss', name: '深渊爪皇', mp: 55, type: 'atk', elem: 'dark', power: 2.35, hits: 1,
+    target: 'all', desc: '【龙魂·贰】前世那只手伸了出来。全体暗属性重击，高概率封印。', rage: 0,
+    fx: 'abyss', ult: true, release: 2, inflict: { id: 'seal', chance: 0.6 },
   },
-  zhenmiehun: {
-    id: 'zhenmiehun', name: '真·灭魂炎狱斩', mp: 100, type: 'atk', elem: 'fire', power: 1.3, hits: 5,
-    target: 'all', desc: '【解放·叁】炎狱吞没全场，并烧回自身三成生命。', rage: 0,
-    fx: 'fire', ult: true, multi: true, release: 3, selfHeal: 0.3,
-    inflict: { id: 'burn', chance: 1 },
+  ni_defy: {
+    id: 'ni_defy', name: '逆天·苍穹断', mp: 80, type: 'atk', elem: 'dark', power: 1.45, hits: 5,
+    target: 'all', desc: '【龙魂·叁】五段撕裂全场，自伤三成生命，但回满龙魂。', rage: 0,
+    fx: 'defy', ult: true, multi: true, release: 3, selfDamage: 0.30,
   },
-
-  /* —— 苍 —— */
-  liaoshang: {
-    id: 'liaoshang', name: '疗伤', mp: 14, type: 'heal', power: 0.55, target: 'ally',
-    desc: '以术式治愈一名同伴。', rage: 10, fx: 'heal',
-  },
-  bingzhen: {
-    id: 'bingzhen', name: '冰针', mp: 12, type: 'atk', elem: 'ice', power: 1.45, hits: 1,
-    target: 'one', desc: '冰之针贯穿敌人。', rage: 12, fx: 'ice',
-  },
-  qifu: {
-    id: 'qifu', name: '苍之祈愿', mp: 30, type: 'heal', power: 0.40, target: 'party',
-    desc: '苍蓝之光治愈全体同伴，并提升防御。', rage: 14, fx: 'heal',
-    buff: { id: 'defUp', turns: 3 },
-  },
-  shengguang: {
-    id: 'shengguang', name: '圣光·裁罪', mp: 22, type: 'atk', elem: 'holy', power: 1.65, hits: 1,
-    target: 'one', desc: '苍白的审判之光，对魔性之物格外有效。', rage: 14, fx: 'holy',
-  },
-  leiting: {
-    id: 'leiting', name: '雷霆', mp: 24, type: 'atk', elem: 'thunder', power: 1.60, hits: 1,
-    target: 'all', desc: '落雷轰击全体敌人。', rage: 14, fx: 'thunder',
-  },
-  fuyin: {
-    id: 'fuyin', name: '福音・复苏之光', mp: 46, type: 'revive', power: 0.45, target: 'ally',
-    desc: '唤醒倒下的同伴并回复其生命。', rage: 20, fx: 'heal',
-  },
-  zhenyan: {
-    id: 'zhenyan', name: '奥义·苍之绝唱', mp: 120, type: 'heal', power: 0.85, target: 'party',
-    desc: '【奥义】苍蓝之光笼罩全军：大幅回复、附加再生，并让全队立刻抢到先手。', rage: 0,
-    fx: 'heal', ult: true, buff: { id: 'regen', turns: 4 }, gauge: 45,
+  ni_golden: {
+    id: 'ni_golden', name: '黄金龙神·临', mp: 100, type: 'atk', elem: 'holy', power: 2.10, hits: 4,
+    target: 'all', desc: '【龙魂·叁】三转形态显化，全体圣属性四段，并回复自身五成生命。', rage: 0,
+    fx: 'golden', ult: true, multi: true, release: 3, selfHeal: 0.5,
   },
 
-  /* —— 雷 —— */
-  tuchuan: {
-    id: 'tuchuan', name: '突穿', mp: 0, type: 'atk', elem: 'none', power: 1.05, hits: 1,
-    target: 'one', desc: '高速突刺。', rage: 13, fx: 'pierce',
+  /* ============ 仙儿 · 谪尘之灵 ============
+     纯续航位。刻意不给她任何高倍率攻击技——
+     她的价值是让邪天敢用那些自伤技，而不是自己去砍人。 */
+  xi_mend: {
+    id: 'xi_mend', name: '灵息·补', mp: 12, type: 'heal', target: 'ally',
+    desc: '回复单体生命，并清除一个轻度异常。', power: 1.0, fx: 'heal', cleanse: 1,
   },
-  lianshe: {
-    id: 'lianshe', name: '连突·四连枪', mp: 16, type: 'atk', elem: 'none', power: 0.55, hits: 4,
-    target: 'one', desc: '四连突刺，暴击率提升，并把目标的行动条往后打。', rage: 17,
-    fx: 'pierce', multi: true, criBonus: 0.2, gauge: -22,
+  xi_veil: {
+    id: 'xi_veil', name: '谪尘帷', mp: 18, type: 'buff', target: 'allies',
+    desc: '全队防御上升，并获得少量伤害吸收。', fx: 'veil',
+    buff: { id: 'defUp', turns: 3 }, shield: 0.12,
   },
-  zhuihun: {
-    id: 'zhuihun', name: '追魂枪', mp: 22, type: 'atk', elem: 'dark', power: 1.9, hits: 1,
-    target: 'one', desc: '锁定灵魂的一击，无视部分防御。', rage: 18, fx: 'pierce', pierceDef: 0.5,
+  xi_purge: {
+    id: 'xi_purge', name: '净尘', mp: 20, type: 'heal', target: 'allies',
+    desc: '全队小幅回复，并清除所有负面状态。', power: 0.55, fx: 'purge', cleanseAll: true,
   },
-  xunyou: {
-    id: 'xunyou', name: '奥义·疾风迅游枪', mp: 90, type: 'atk', elem: 'thunder', power: 0.72, hits: 7,
-    target: 'one', desc: '【奥义】化作疾风，七连贯穿。', rage: 0,
-    fx: 'pierce', ult: true, multi: true,
+  xi_bloom: {
+    id: 'xi_bloom', name: '花开千年', mp: 30, type: 'heal', target: 'allies',
+    desc: '全队大幅回复，并附加三回合再生。', power: 1.05, fx: 'bloom',
+    buff: { id: 'regen', turns: 3 },
   },
-
-  /* —— 璃 —— */
-  baoxue: {
-    id: 'baoxue', name: '暴雪', mp: 20, type: 'atk', elem: 'ice', power: 1.5, hits: 1,
-    target: 'all', desc: '暴风雪覆盖全场，有机会让敌人迟缓。', rage: 14, fx: 'frost',
-    inflict: { id: 'slow', chance: 0.5 },
+  xi_chain: {
+    id: 'xi_chain', name: '灵息·牵', mp: 26, type: 'buff', target: 'allies',
+    desc: '全队立刻推进行动条，抢下先手。', fx: 'chain', gaugePull: 30,
   },
-  bingfeng: {
-    id: 'bingfeng', name: '冰封之棺', mp: 26, type: 'atk', elem: 'ice', power: 1.7, hits: 1,
-    target: 'one', desc: '将敌人封入冰棺，高概率冰封。', rage: 16, fx: 'ice',
-    inflict: { id: 'frozen', chance: 0.45 },
+  xi_seal: {
+    id: 'xi_seal', name: '缚灵印', mp: 28, type: 'debuff', target: 'one',
+    desc: '封住目标的技能，只能普攻或格挡。', fx: 'seal',
+    inflict: { id: 'seal', chance: 0.85 },
   },
-  juedui: {
-    id: 'juedui', name: '奥义·绝对零度', mp: 150, type: 'atk', elem: 'ice', power: 2.25, hits: 1,
-    target: 'all', desc: '【奥义】连时空都冻结的极寒。', rage: 0,
-    fx: 'frost', ult: true, inflict: { id: 'frozen', chance: 0.5 },
+  xi_return: {
+    id: 'xi_return', name: '前生缘·归', mp: 60, type: 'revive', target: 'ally',
+    desc: '【奥义】把倒下的同伴拉回来，并回复其全部生命。', fx: 'revive', ult: true, reviveFull: true,
   },
 
-  /* —— 通用/共享 —— */
-  'guard': { id: 'guard', name: '格挡', mp: 0, type: 'guard', target: 'self', desc: '摆出防御姿态，减伤并积攒热血。' },
+  /* ============ 天痕 · 断风枪手 ============
+     行动条操控专家。他不负责打最高的那一下，负责让敌人永远慢半拍。 */
+  th_pierce: {
+    id: 'th_pierce', name: '断风·刺', mp: 8, type: 'atk', elem: 'none', power: 1.35, hits: 1,
+    target: 'one', desc: '一记直刺，无视部分防御。', fx: 'pierce', pierce: 0.3,
+  },
+  th_volley: {
+    id: 'th_volley', name: '连突·四连枪', mp: 16, type: 'atk', elem: 'none', power: 0.60, hits: 4,
+    target: 'one', desc: '四段连突，并把目标的行动条往后打。', fx: 'flurry',
+    multi: true, gaugePush: 22,
+  },
+  th_mark: {
+    id: 'th_mark', name: '猎标', mp: 14, type: 'debuff', target: 'one',
+    desc: '标记目标：其防御下降，且全队对它的会心率上升。', fx: 'mark',
+    inflict: { id: 'defDown', chance: 1 }, markCrit: 0.2,
+  },
+  th_accel: {
+    id: 'th_accel', name: '提速', mp: 12, type: 'buff', target: 'self',
+    desc: '把气劲压进腿上：自身速度大幅提升，连续抢两次出手。', fx: 'aura',
+    buff: { id: 'haste', turns: 3 },
+  },
+  th_gale: {
+    id: 'th_gale', name: '疾风·裂空', mp: 24, type: 'atk', elem: 'thunder', power: 1.80, hits: 1,
+    target: 'all', desc: '横扫全场的雷属性枪风，有机会眩晕。', fx: 'bolt',
+    inflict: { id: 'stun', chance: 0.3 },
+  },
+  th_last: {
+    id: 'th_last', name: '奥义·追不上的那一枪', mp: 55, type: 'atk', elem: 'thunder', power: 1.30, hits: 5,
+    target: 'one', desc: '【奥义】五段爆发，命中后自身立刻再动一次。', fx: 'bolt',
+    ult: true, multi: true, extraTurn: true,
+  },
+
+  /* ============ 果果 · 不知名的圣子 ============
+     极端玻璃炮。倍率全队最高，但她挨两下就会倒——
+     玩家必须先学会保她，才能用她。 */
+  gg_spark: {
+    id: 'gg_spark', name: '识·点', mp: 10, type: 'atk', elem: 'holy', power: 1.40, hits: 1,
+    target: 'one', desc: '一点神识落下，命中处凭空塌陷。', fx: 'spark',
+  },
+  gg_collapse: {
+    id: 'gg_collapse', name: '规则·崩', mp: 24, type: 'atk', elem: 'dark', power: 2.10, hits: 1,
+    target: 'all', desc: '强行改写一小片区域的规则，全体承受暗属性伤害。', fx: 'collapse',
+    inflict: { id: 'defDown', chance: 0.5 },
+  },
+  gg_zero: {
+    id: 'gg_zero', name: '归零', mp: 32, type: 'atk', elem: 'ice', power: 2.60, hits: 1,
+    target: 'one', desc: '把目标的存在往回抹一段，高概率冰封。', fx: 'ice',
+    inflict: { id: 'frozen', chance: 0.55 },
+  },
+  gg_wither: {
+    id: 'gg_wither', name: '花谢', mp: 30, type: 'debuff', target: 'all',
+    desc: '全体剧毒与迟缓。她说这叫「让时间按它本来的样子走」。', fx: 'wither',
+    inflict: { id: 'poison', chance: 0.8 }, inflict2: { id: 'slow', chance: 0.6 },
+  },
+  gg_seal: {
+    id: 'gg_seal', name: '奥义·这一页不算', mp: 70, type: 'atk', elem: 'holy', power: 3.40, hits: 2,
+    target: 'all', desc: '【奥义】她合上书又翻开。全场两段圣属性抹除。', fx: 'golden',
+    ult: true, multi: true,
+  },
 };
 
 /* ---------------- 连携技 ----------------
    条件：两人在行动条顺序上相邻 + 羁绊达标。发动时消耗两人的当前回合。
    这是羁绊系统在战斗里的出口——培养羁绊不再只是结局分支的开关。 */
 export const COMBOS = {
-  yanbing: {
-    id: 'yanbing', name: '炎冰·双极', members: ['kaito', 'ryze'], bond: 2,
-    power: 1.9, hits: 3, elem: 'fire', target: 'one', fx: 'fire',
-    desc: '璃先封冰，凯再炎爆。目标处于冰封时伤害翻倍。',
+  /* 连携技要求双方羁绊达标。设计意图：让「带谁出场」变成一个真选择，
+     而不是永远上四个数值最高的。 */
+  polar: {
+    id: 'polar', name: '冻骨·爪落', members: ['kaito', 'ryze'], bond: 2,
+    power: 1.9, hits: 3, elem: 'ice', target: 'one', fx: 'ice',
+    desc: '果果先把目标冻在原地，邪天的爪再落下。目标冰封时伤害翻倍。',
     bonusVs: { status: 'frozen', mul: 2 },
   },
-  shuangren: {
-    id: 'shuangren', name: '双刃突进', members: ['kaito', 'lei'], bond: 2,
+  twinlance: {
+    id: 'twinlance', name: '双锋·破阵', members: ['kaito', 'lei'], bond: 2,
     power: 1.35, hits: 4, elem: 'none', target: 'one', fx: 'pierce',
-    desc: '凯突进撕开缺口，雷贴身补刀。必定会心。',
+    desc: '天痕一枪撕开缺口，邪天贴身补上四爪。必定会心。',
     alwaysCrit: true,
   },
-  cangbing: {
-    id: 'cangbing', name: '苍冰结界', members: ['cang', 'ryze'], bond: 3,
+  sanctuary: {
+    id: 'sanctuary', name: '尘外结界', members: ['cang', 'ryze'], bond: 3,
     power: 0, type: 'support', target: 'party', fx: 'heal',
-    desc: '全体回复并披上冰甲，两回合内防御大幅提升。',
+    desc: '仙儿撑起帷幕，果果在里面改写了两回合的规则。全体回复并硬化防御。',
     healRatio: 0.35, buff: { id: 'defUp', turns: 2 },
   },
-  jifeng: {
-    id: 'jifeng', name: '疾风祝福', members: ['cang', 'lei'], bond: 3,
+  windbless: {
+    id: 'windbless', name: '牵风', members: ['cang', 'lei'], bond: 3,
     power: 0, type: 'support', target: 'party', fx: 'aura',
-    desc: '苍为全队加持，雷带着全队抢先手。',
+    desc: '仙儿把灵息接到天痕的枪上，全队跟着他一起抢先手。',
     buff: { id: 'haste', turns: 3 }, pushAll: 34,
   },
-  buxi: {
-    id: 'buxi', name: '不熄之约', members: ['kaito', 'cang', 'lei', 'ryze'], bond: 4,
-    power: 2.4, hits: 4, elem: 'holy', target: 'all', fx: 'thunder',
-    desc: '四人同时出手。只有全员羁绊 Lv4 以上才会亮起。',
+  defiance: {
+    id: 'defiance', name: '化身邪龙', members: ['kaito', 'cang', 'lei', 'ryze'], bond: 4,
+    power: 2.4, hits: 4, elem: 'dark', target: 'all', fx: 'defy',
+    desc: '四个人同时出手。全员羁绊 Lv4 以上才会亮起——这一招的前提是没人打算走。',
     finale: true,
   },
 };
@@ -283,15 +331,18 @@ export const ITEMS = {
 
 /* ---------------- 商店 ---------------- */
 export const SHOPS = {
-  village: { name: '铁匠铺 & 药屋', items: ['potion', 'ether', 'leather', 'iron_sword', 'wood_staff', 'ring_pow'] },
-  harbor: { name: '港町商会', items: ['potion', 'potion_hi', 'ether', 'revive', 'seal', 'smoke', 'chain', 'blue_staff', 'hunter_spear', 'ring_fast'] },
-  north: { name: '北境补给站', items: ['potion_hi', 'elixir', 'revive', 'bomb', 'flame_sword', 'storm_spear', 'ring_life', 'holy_cloak'] },
-  final: { name: '深渊前哨 · 最后的交易', items: ['potion_hi', 'elixir', 'revive', 'bomb', 'demon_mail', 'bond_ring'] },
-  /* 第二部：只列消耗品，装备货架由 loot.js 按队伍等级现场生成 */
-  spirit: { name: '仙灵之野 · 换物处', items: ['potion_hi', 'ether', 'revive', 'elixir'] },
-  edge: { name: '断天之径 · 无名者的摊子', items: ['potion_hi', 'elixir', 'revive', 'bomb', 'seal'] },
-  divine: { name: '神域 · 静室补给', items: ['elixir', 'revive', 'bomb', 'seal', 'ether'] },
-  last: { name: '终幕之前 · 最后一次整备', items: ['elixir', 'revive', 'bomb'] },
+  /* 网游的商店和单机不一样：NPC 只卖消耗品和垫底装备，
+     真正的装备来自掉落和玩家交易。所以这里刻意把货架做薄——
+     想变强就得去打，不能靠买。 */
+  novice: { name: '苍梧新手区 · 杂货摊',
+    items: ['potion', 'ether', 'leather', 'iron_sword', 'wood_staff'] },
+  field: { name: '野外营地 · 行商',
+    items: ['potion', 'potion_hi', 'ether', 'smoke', 'chain', 'hunter_spear', 'ring_pow'] },
+  northgate: { name: '北境试炼门前 · 最后一次补给',
+    items: ['potion_hi', 'elixir', 'revive', 'seal', 'bomb', 'ring_life', 'ring_fast'] },
+  warcamp: { name: '刷新点外围 · 黑市',
+    items: ['potion_hi', 'elixir', 'revive', 'bomb', 'seal', 'demon_mail', 'bond_ring',
+            'flame_sword', 'blue_staff', 'storm_spear', 'holy_sword', 'holy_cloak'] },
 };
 
 /* ---------------- 敌人 ----------------
@@ -399,6 +450,66 @@ export const ENEMIES = {
       { id: 'king_roar', w: 3 }, { id: 'meteor', w: 3 }, { id: 'drain', w: 2 }, { id: 'annihilate', w: 2 },
     ],
     theme: '旧日英雄', boss: true,
+  },
+
+  /* ===================== 开场关卡（新手区 · 苍梧野外） =====================
+     网游文的怪和单机 RPG 的怪不一样：它们有刷新点、有归属争议、
+     有「谁先打到谁就拿走」的规矩。exp/gold 按 realm.js 的经验曲线配。 */
+  cangwu_rat: {
+    id: 'cangwu_rat', name: '灰毛地鼠', shape: 'wolf',
+    palette: { body: '#6b5a4a', trim: '#463a2e', eye: '#d9b26a', fang: '#f2e6d0' },
+    hp: 60, atk: 11, def: 2, spd: 22, exp: 16, gold: 8, hot: 2,
+    weak: [], quote: '（新手区第一只怪。它甚至不太想理你。）',
+    skills: [{ id: 'atk', w: 1 }],
+  },
+  cangwu_boar: {
+    id: 'cangwu_boar', name: '獠牙野彘', shape: 'wolf',
+    palette: { body: '#4a3b2e', trim: '#2e2419', eye: '#ff8a3a', fang: '#fff0d8' },
+    hp: 130, atk: 20, def: 7, spd: 20, exp: 34, gold: 18, hot: 5,
+    weak: ['fire'], quote: '（低头，刨地，然后直线冲过来。）',
+    skills: [{ id: 'atk', w: 7 }, { id: 'heavy', w: 4 }],
+  },
+  grave_crawler: {
+    id: 'grave_crawler', name: '腐土爬行者', shape: 'humanoid',
+    palette: { hair: '#2a2a1e', cloth: '#3c3a26', trim: '#6b7a3a', skin: '#8a9468', eye: '#b7ff5a', weapon: 'none' },
+    hp: 175, atk: 25, def: 9, spd: 24, exp: 46, gold: 26, hot: 7,
+    weak: ['holy'], quote: '（它爬过的地方，草会黑掉一圈。）',
+    skills: [{ id: 'atk', w: 6 }, { id: 'poisonbite', w: 4 }],
+  },
+  /* —— 玩家敌人：网游文的核心冲突从来不是怪，是别的玩家 —— */
+  tianque_scout: {
+    id: 'tianque_scout', name: '【天阙】外围哨', shape: 'humanoid',
+    palette: { hair: '#c8a84a', cloth: '#3a3320', trim: '#fde68a', skin: '#d9b898', eye: '#ffd24a', weapon: 'sword' },
+    hp: 230, atk: 31, def: 14, spd: 30, exp: 62, gold: 55, hot: 10,
+    weak: ['dark'], quote: '这个点是天阙的。识相的自己走。',
+    skills: [{ id: 'atk', w: 7 }, { id: 'heavy', w: 3 }],
+  },
+  xuanming_stalker: {
+    id: 'xuanming_stalker', name: '【玄冥】跟单', shape: 'humanoid',
+    palette: { hair: '#241a33', cloth: '#2a1d3d', trim: '#a855f7', skin: '#c4a8c4', eye: '#c98aff', weapon: 'bow' },
+    hp: 190, atk: 40, def: 8, spd: 38, exp: 70, gold: 78, hot: 11,
+    weak: ['holy'], quote: '我们不抢首杀。我们只在你打完之后出现。',
+    skills: [{ id: 'atk', w: 5 }, { id: 'snipe', w: 5 }],
+  },
+  /* —— 一转试炼 BOSS —— */
+  bone_warden: {
+    id: 'bone_warden', name: '逆骨之守', shape: 'humanoid', boss: true,
+    palette: { hair: '#7a1030', cloth: '#2a0d18', trim: '#ff3b6b', skin: '#e0d4c8', eye: '#ff3b6b', weapon: 'axe' },
+    hp: 1450, atk: 52, def: 22, spd: 28, exp: 520, gold: 400, hot: 30,
+    weak: ['holy'],
+    quote: '龙魂不是给的。是你自己从骨头里拽出来的。',
+    skills: [{ id: 'atk', w: 5 }, { id: 'heavy', w: 4 }, { id: 'roarpush', w: 3 }],
+    phase2: { atk: 1.35, quote: '就这点？那你还是躺回去比较好。' },
+  },
+  /* —— 公会战：争夺刷新点的第一场正面冲突 —— */
+  tianque_captain: {
+    id: 'tianque_captain', name: '【天阙】队长·执圭', shape: 'humanoid', boss: true,
+    palette: { hair: '#e0c060', cloth: '#4a4020', trim: '#fde68a', skin: '#e0c4a0', eye: '#ffe14d', weapon: 'sword' },
+    hp: 1980, atk: 61, def: 27, spd: 34, exp: 760, gold: 900, hot: 34,
+    weak: ['dark'],
+    quote: '全服只有两件禁断之器。它们不该落在一个没有公会的人手上。',
+    skills: [{ id: 'atk', w: 5 }, { id: 'heavy', w: 3 }, { id: 'snipe', w: 2 }, { id: 'roarpush', w: 2 }],
+    phase2: { atk: 1.3, quote: '……你根本不是第一次打这种仗。你到底是谁？' },
   },
 };
 

@@ -977,7 +977,7 @@ G.onBattleLose = function (b) {
     G.battle = null;
     $('cmdmenu').classList.add('hidden');
     $('cmd-buttons').innerHTML = '';
-    gotoScene('c5_defeat');
+    gotoScene('arc_defeat');
   }, 1200);
 };
 G.onBattleEscape = function (b) {
