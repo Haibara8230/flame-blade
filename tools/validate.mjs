@@ -81,6 +81,15 @@ function walk(id, from) {
   if (!hasExit) errs.push(`${id}: 死路（无 next/choices/branch/ending）`);
 }
 
+/* 《炎之刃》时期的固定装备。那批剧情（chapter-one/journey/finale/beyond）
+   已随改编退役，这些装备也就跟着退役了——它们仍留在 EQUIPS 里是因为
+   power.js 的类型查表和 tools/balance.mjs 的夹具还引用着 id。
+   现役内容的可达性检查不该把它们算进来，否则 7 条常红错误会淹掉真问题。 */
+const LEGACY_EQUIP = new Set([
+  'flame_sword', 'holy_sword', 'blue_staff', 'storm_spear', 'snow_staff',
+  'demon_mail', 'bond_ring', 'holy_cloak', 'mu_sword', 'elixir',
+]);
+
 walk('prologue', '(root)');
 // 失败路线与隐藏路线由运行时代码触发
 walk('arc_defeat', '(battle-lose)');
@@ -149,9 +158,11 @@ for (const a of Object.values(ACTORS)) {
 {
   const OK = obtainable(reachable);
   for (const [k, e] of Object.entries(EQUIPS)) {
+    if (LEGACY_EQUIP.has(k)) continue;
     if (!OK.has(k)) errs.push(`装备 ${e.name}(${k}) 玩家无法获得——不在任何开放商店出售，也没有场景发放`);
   }
   for (const [k, it] of Object.entries(ITEMS)) {
+    if (LEGACY_EQUIP.has(k)) continue;
     if (!OK.has(k)) errs.push(`道具 ${it.name}(${k}) 玩家无法获得——不在任何开放商店出售，也没有场景发放`);
   }
 }

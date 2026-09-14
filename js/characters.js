@@ -333,15 +333,12 @@ export const ITEMS = {
 
 /* ---------------- 商店 ---------------- */
 export const SHOPS = {
-  /* 只有两个货架，对应剧情里两次整备（新手村口、上山之前）。
-     NPC 只卖消耗品和垫底装备——真正的装备来自掉落，想变强就得去打。
-     ⚠ 原著中的商店设置未考证。 */
+  /* 目前剧情只到第八章，只有新手村村口一个摊子是可达的。
+     NPC 只卖消耗品和垫底装备——原文里真正的装备来自掉落和任务。 */
   novice: { name: '新手村 · 杂货摊',
-    items: ['potion', 'ether', 'leather', 'iron_sword', 'wood_staff', 'ring_pow'] },
-  field: { name: '上山之前 · 最后一次整备',
-    items: ['potion', 'potion_hi', 'elixir', 'ether', 'revive', 'seal', 'bomb', 'smoke',
-            'chain', 'demon_mail', 'blue_staff', 'hunter_spear', 'storm_spear',
-            'flame_sword', 'holy_sword', 'holy_cloak', 'ring_life', 'ring_fast', 'bond_ring'] },
+    items: ['potion', 'potion_hi', 'ether', 'revive', 'seal', 'bomb', 'smoke',
+            'leather', 'chain', 'iron_sword', 'wood_staff', 'hunter_spear',
+            'ring_pow', 'ring_life', 'ring_fast'] },
 };
 
 /* ---------------- 敌人 ----------------
@@ -459,7 +456,16 @@ export const ENEMIES = {
      已拆除：天阙外围哨 / 玄冥跟单 / 逆骨之守 / 天阙队长·执圭
      —— 那四个连同「天阙公会战」整段都是原创虚构，原著中不存在。 */
 
-  /* 第七章 新手村 · 第八章「杀狼！」 */
+  /* 第八章「杀狼！」——原文：野狼 5 级，生命 170，喜群居，
+     会对靠近的人类主动发起攻击，移动速度约为玩家基础移动力的 1.5 倍。
+     速度值按「1.5 倍」折算给高，血量按原文 170 直接用。 */
+  wild_wolf: {
+    id: 'wild_wolf', name: '野狼', shape: 'wolf',
+    palette: { body: '#6a6258', trim: '#3a352e', eye: '#ff6a4a', fang: '#f6efe2' },
+    hp: 170, atk: 19, def: 5, spd: 33, exp: 42, gold: 16, hot: 4,
+    weak: ['fire'], quote: '（一声长嚎。另外两只被惊动了。）',
+    skills: [{ id: 'atk', w: 8 }, { id: 'heavy', w: 2 }],
+  },
   novice_wolf: {
     id: 'novice_wolf', name: '灰狼', shape: 'wolf',
     palette: { body: '#6a6a72', trim: '#3e3e46', eye: '#ffd24a', fang: '#f4efe4' },
