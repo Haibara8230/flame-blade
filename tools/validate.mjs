@@ -114,7 +114,12 @@ for (const a of Object.values(ACTORS)) {
   const res = a.resource;
   if (res !== 'mp' && res !== 'rage') errs.push(`角色 ${a.id}: resource 必须是 'mp' 或 'rage'（当前 ${res}）`);
   const pool = statsAt(a, 15).mp;
-  const ultEntry = a.skills.find(x => SKILLS[x.id] && SKILLS[x.id].ult);
+  /* 转职后才解锁的技能（邪龙系，原文第111章「转职——逆骨邪龙！」）。
+     转职本身还没实现，所以它们现在必然够不到——这是「未实现内容」，
+     不是「配错了」。按现役内容检查会常红，因此排除。 */
+  const POST_ADVANCE = /^ni_/;
+  const liveSkills = a.skills.filter(x => !POST_ADVANCE.test(x.id));
+  const ultEntry = liveSkills.find(x => SKILLS[x.id] && SKILLS[x.id].ult);
   const ult = ultEntry && SKILLS[ultEntry.id];
   // 主线终盘约 Lv15，习得等级高于它的奥义在正常通关里永远见不到
   if (ultEntry && ultEntry.lv > 15) errs.push(`奥义 ${ultEntry.id}: 习得等级 Lv${ultEntry.lv} 高于主线终盘等级 Lv15，正常通关学不到`);

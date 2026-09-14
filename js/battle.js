@@ -4,7 +4,7 @@
    ============================================================ */
 import { ACTORS, SKILLS, COMBOS, ENEMIES, ENEMY_SKILLS, EQUIPS, ITEMS, STATUS, statsAt, enemyStatsAt } from './characters.js';
 import { eqBonus as equipBonus, eqElemBonus as equipElem } from './loot.js';
-import { talentBonus, talentElem } from './growth.js';
+import { talentBonus, talentElem, derived } from './growth.js';
 
 /* 装备词缀与天赋用同一套键名，战斗里永远查这两个合并后的函数。 */
 function eqBonus(unit, key) { return equipBonus(unit, key) + talentBonus(unit, key); }
@@ -416,11 +416,27 @@ export function computeDamage(B, atkUnit, defUnit, power, opt = {}) {
   const lvl = atkUnit.level || 1;
   const dlv = defUnit.level || 1;
   const lvK = 1 + (lvl - dlv) * 0.02;
-  const rand = rnd(0.94, 1.06);
+  /* 伤害浮动区间由攻击者的【幸运】决定。
+     原文里系统对幸运 0 的警告是「攻击时全部取攻击值的下限」，
+     所以幸运 0 的角色这里恒定取 0.94，一点运气都没有。
+     敌人没有固定属性，沿用原来的区间。 */
+  const roll = atkUnit.isEnemy ? { lo: 0.94, hi: 1.06 } : derived(atkUnit).roll;
+  const rand = rnd(roll.lo, roll.hi);
   let dmg = base * lvK * rand;
-  const criRate = (atkUnit.cri || 0.06) + (opt.criBonus || 0) + (atkUnit.isEnemy ? 0.03 : 0);
+  /* 暴击率：玩家侧完全由【幸运】决定（原文：幸运影响暴击率，幸运 0 则最低）。
+     装备与技能的加成仍然叠加，否则装备上的「致命」词缀会失去意义。 */
+  const criRate = atkUnit.isEnemy
+    ? (atkUnit.cri || 0.06) + (opt.criBonus || 0) + 0.03
+    : derived(atkUnit).crit + (atkUnit.cri || 0) + (opt.criBonus || 0);
   const crit = chance(criRate);
   if (crit) dmg *= 1.72 + eqBonus(atkUnit, 'critDmg');     // 「致命」词缀
+  /* 【擦身反手】一类技能：上一次挨打时闪开了，这一刀才有加成。
+     主角幸运为 0、永远不会暴击，这是他唯一能打出高伤的途径——
+     而且必须先读对一次攻击，属于「操作换伤害」。 */
+  if (opt.afterDodgeBonus && atkUnit.justDodged) {
+    dmg *= 1 + opt.afterDodgeBonus;
+    opt.dodgeCounter = true;
+  }
   // 属性克制
   if (opt.weak && opt.elem && opt.weak.includes(opt.elem)) { dmg *= 1.5; opt.isWeak = true; }
   // 装备特效：属性伤害、猎弱、弑王
@@ -470,6 +486,7 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
         elem, criBonus: spec.criBonus || 0, pierceDef: spec.pierceDef || 0, hits,
         weakTarget: !!(tgWeak && elem && tgWeak.includes(elem)),
         partyCut: tg.isEnemy ? 0 : partyDamageCut(B),
+        afterDodgeBonus: spec.afterDodgeBonus || 0,
       });
       arr.push(r);
     }
@@ -525,10 +542,27 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
       if (weak && weak.includes(elem)) { r.dmg = Math.floor(r.dmg * 1.5); elemBonus = true; }
       if (elemBonus && !atkUnit.isEnemy && h === 0) gainBreak(B, tg, 1 + eqBonus(atkUnit, 'breakPlus'));
       const isEnemy = atkUnit.isEnemy;
-      /* 防御判定：敌人打我方时先滚弹反、再滚格挡。
+      /* 防御判定：敌人打我方时先滚回避，再滚弹反、格挡。
          概率来自角色属性 + 装备，选了「格挡」指令则本轮大幅提升。 */
-      let guardMul = 1, guardKind = null;
+      let guardMul = 1, guardKind = null, dodged = false;
       if (isEnemy && !tg.isEnemy) {
+        /* 回避判定，排在弹反 / 格挡之前，命中则攻击完全落空。
+           两个来源都是原文里的东西：
+             · 自由属性【敏捷】——「1 敏捷 = 1 回避 + 1 命中」
+             · 天赋属性【反应力】—— 等同现实的反应能力，主角 72，常人 7~10
+           攻击方的【感知力】折算成命中，抵掉一部分回避。
+           这是主角在「职业赋予失败、整个新手期没有职业」时唯一真正的依仗。 */
+        const d = derived(tg);
+        const evaFromAgi = Math.min(0.25, (tg.eva || 0) * 0.01);
+        const acc = atkUnit.isEnemy ? 0 : derived(atkUnit).accuracy;
+        const evade = clamp(d.evade + evaFromAgi + (tg.evadeBonus || 0) - acc, 0, 0.75);
+        if (chance(evade)) {
+          guardMul = 0; guardKind = 'dodge'; dodged = true;
+          // 记下「刚闪过」，【擦身反手】一类技能会吃这个加成
+          tg.justDodged = true;
+        }
+      }
+      if (isEnemy && !tg.isEnemy && !dodged) {
         /* 预判格挡：下了格挡指令就进入架势，弹反窗口大幅放宽。
            par 来自角色属性 + 装备（疾风之靴的 par+0.05 到这里才第一次有意义）。 */
         const par = clamp((tg.par || 0) + (tg.guardStance ? 0.34 : 0), 0, 0.85);
@@ -538,7 +572,10 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
       }
       const finalDmg = Math.floor(r.dmg * guardMul);
 
-      if (guardKind === 'parry') {
+      if (guardKind === 'dodge') {
+        tg.hurtP = 0;
+        addFloat(B, '闪避', tg.x, tg.y - 118, '#8fe6ff', 28);
+      } else if (guardKind === 'parry') {
         // 完全抵消，不走 damage()（它有最低 1 点伤害的下限）
         tg.hurtP = 0;
         addFloat(B, '弹反！', tg.x, tg.y - 118, '#fff6c0', 30);
@@ -790,6 +827,10 @@ export function beginNextTurn(B) {
 function startOfTurn(B, u) {
   u.guardStance = false;
   u.parryReady = false;
+  /* 【读招】的回避加成与「刚闪过」的标记都只维持到本单位下次出手。
+     它们必须在这里清掉，否则加成会一直叠着不掉，主角变成无敌。 */
+  u.evadeBonus = 0;
+  u.justDodged = false;
   if (u.broken > 0) {
     u.broken--;
     if (u.broken === 0) addLog(B, `${u.name} 重新站稳了架势。`);
@@ -1082,6 +1123,12 @@ function execBuff(B, m, sk) {
       applyBuff(B, sk.buff, [m]);
       if (sk.buff2) applyBuff(B, sk.buff2, [m]);
       if (sk.gauge) shiftGauge(B, m, sk.gauge);
+      /* 【读招】一类技能：临时拉高回避，持续到该单位下次出手。
+         主角没有职业、没有暴击，回避是他唯一能主动操作的变量。 */
+      if (sk.evadeUp) {
+        m.evadeBonus = sk.evadeUp;
+        addFloat(B, `回避 +${Math.round(sk.evadeUp * 100)}%`, m.x, m.y - 150, '#8fe6ff', 22);
+      }
       flash(B, 0.35);
       shake(B, 8);
       gainRage(B, m, sk.rage || 12);

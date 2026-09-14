@@ -1,37 +1,73 @@
 /* ============================================================
    growth.js — 角色养成
 
-   升级不再只是数字自己往上跳。每级会给：
-     · 3 点【属性点】—— 玩家自己分配到 力/体/敏/念
-     · 1 点【技能点】—— 投进角色专属的天赋树
+   属性体系按原文（见 realm.js 的说明与 refs/notes/）：
 
-   两者都存进存档，都在 recalc() 里参与最终属性计算，
-   也都会被二周目继承。这是「同一个角色能练成不同样子」的地基。
+     自由属性 力量/体质/敏捷/精神 —— 升级获得点数，玩家自行分配
+     固定属性 幸运/悟性/魅力     —— 创号时一次性分配，之后不随升级增长
+     天赋属性 反应力/感知力/专注力 —— 系统扫描得来，不可分配
+
+   换算直接用原文给的战士公式：
+     1 力量 = 2 物攻 ／ 1 体质 = 10 生命 + 1 防御
+     1 敏捷 = 1 回避 + 1 命中 ／ 1 精神 = 2 魔攻 + 10 魔法值
+
+   ⚠ 下面的「修行树」（原 TALENTS）是本项目自己的系统，原著没有。
+   为避免和原文的「天赋属性」撞名，这里统一叫修行。
    ============================================================ */
+import {
+  FREE_STATS, FIXED_STATS, TALENT_STATS, TALENT_AVG,
+  applyFreeStats, luckCrit, luckRoll, luckDrop, witExp, charmFavor,
+  reactEvade, senseAccuracy, focusResist,
+} from './realm.js';
 
-export const STAT_POINTS_PER_LEVEL = 3;
+/* 升级给的点数。原文没写每级给几点自由属性点，这里取 5——
+   25 点起手、每级 +5，到 10 级转职时正好翻倍，手感上对得住「升级」两个字。 */
+export const STAT_POINTS_PER_LEVEL = 5;
 export const SP_PER_LEVEL = 1;
 
-/* ---------------- 属性点 ----------------
-   四围各自影响两项派生属性，避免出现「只堆一项」的最优解。 */
-export const STATS = [
-  { id: 'str', name: '力', desc: '攻击力 +2.4　会心率 +0.2%', col: '#ff8048' },
-  { id: 'vit', name: '体', desc: '生命 +14　防御力 +1.3', col: '#7dffa8' },
-  { id: 'agi', name: '敏', desc: '速度 +1.1　弹反率 +0.3%', col: '#8fe6ff' },
-  { id: 'foc', name: '念', desc: '术力 +9　格挡率 +0.3%', col: '#c08ad6' },
-];
+/* 面板用的属性表，直接引自 realm.js，避免两处各写一份 */
+export const STATS = FREE_STATS.map(s => ({
+  id: s.id, name: s.name, col: s.col, desc: s.desc,
+}));
+export { FIXED_STATS, TALENT_STATS };
 
+/* 自由属性 → 派生属性。
+   回避(eva)与命中(acc)是本次新增的两项，battle.js 会真的滚它们。 */
 export function applyStatPoints(s, alloc = {}) {
-  const { str = 0, vit = 0, agi = 0, foc = 0 } = alloc;
-  s.atk += Math.round(str * 2.4);
-  s.cri += str * 0.002;
-  s.hp += vit * 14;
-  s.def += Math.round(vit * 1.3);
-  s.spd += Math.round(agi * 1.1);
-  s.par += agi * 0.003;
-  s.mp += foc * 9;
-  s.blk += foc * 0.003;
+  applyFreeStats(s, alloc);
   return s;
+}
+
+/* 固定属性：创号时定死，之后只能靠装备。member.fixed = {luck,wit,chm} */
+export function fixedOf(member) {
+  const f = (member && member.fixed) || {};
+  return { luck: f.luck || 0, wit: f.wit || 0, chm: f.chm || 0 };
+}
+
+/* 天赋属性：系统扫描得来。member.talentAttr = {react,sense,focus} */
+export function talentAttrOf(member) {
+  const t = (member && member.talentAttr) || {};
+  return {
+    react: t.react ?? TALENT_AVG,
+    sense: t.sense ?? TALENT_AVG,
+    focus: t.focus ?? TALENT_AVG,
+  };
+}
+
+/* 战斗与结算要用的派生值，集中在这里算，battle.js / main.js 直接取 */
+export function derived(member) {
+  const f = fixedOf(member);
+  const t = talentAttrOf(member);
+  return {
+    crit: luckCrit(f.luck),            // 幸运 → 暴击率（幸运 0 就是 0）
+    roll: luckRoll(f.luck),            // 幸运 → 伤害浮动（幸运 0 恒取下限）
+    dropMul: luckDrop(f.luck),         // 幸运 → 爆率
+    expMul: witExp(f.wit),             // 悟性 → 经验加成
+    favor: charmFavor(f.chm),          // 魅力 → NPC 好感
+    evade: reactEvade(t.react),        // 反应力 → 闪避
+    accuracy: senseAccuracy(t.sense),  // 感知力 → 命中
+    resist: focusResist(t.focus),      // 专注力 → 异常抗性
+  };
 }
 
 /* ---------------- 天赋树 ----------------

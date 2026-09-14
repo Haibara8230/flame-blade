@@ -493,8 +493,14 @@ function makeMember(id, level = null) {
     resource: def.resource || 'mp',
     equips, skills: def.skills.filter(s => s.lv <= lv).map(s => s.id),
     bonus: { atk: 0, def: 0, hp: 0 },   // 剧情给的永久加成，recalc 后重新叠加
-    // 养成：属性点 / 技能点 / 天赋，全部进存档并被二周目继承
-    alloc: { str: 0, vit: 0, agi: 0, foc: 0 },
+    /* 属性体系按原文分三层（见 realm.js）：
+       alloc      自由属性 力量/体质/敏捷/精神——创号分配，升级继续加点
+       fixed      固定属性 幸运/悟性/魅力——创号定死，之后只能靠装备
+       talentAttr 天赋属性 反应力/感知力/专注力——系统扫描，不可分配
+       三者都进存档。角色定义里给的是原文中的数值，作为默认值。 */
+    alloc: { ...(def.alloc || { str: 4, vit: 4, agi: 4, spi: 4 }) },
+    fixed: { ...(def.fixed || { luck: 0, wit: 0, chm: 0 }) },
+    talentAttr: { ...(def.talentAttr || {}) },
     points: 0, sp: 0, talents: {},
     isEnemy: false,
   };
@@ -530,6 +536,9 @@ function recalc(m) {
   m.maxHp = st.hp; m.maxMp = st.mp; m.atk = st.atk; m.def = st.def; m.spd = st.spd;
   m.cri = st.cri; m.mpRegen = st.mpRegen;
   m.blk = st.blk; m.par = st.par; m.rageMul = st.rageMul;
+  /* 回避 / 命中来自自由属性【敏捷】（原文：1 敏捷 = 1 回避 + 1 命中）。
+     battle.js 的回避判定会读 m.eva，攻击方的命中读天赋属性【感知力】。 */
+  m.eva = st.eva || 0; m.acc = st.acc || 0;
   const b = m.bonus;
   if (b) { m.atk += b.atk || 0; m.def += b.def || 0; m.maxHp += b.hp || 0; }
   m.hp = Math.min(m.maxHp, Math.max(1, Math.round(m.maxHp * hpR)));
@@ -641,6 +650,22 @@ function runAction(a) {
   if (typeof a.item === 'string') { G.bag[a.item] = (G.bag[a.item] || 0) + 1; toast(`获得【${EQUIPS[a.item]?.name || ITEMS[a.item]?.name || a.item}】`); }
   if (typeof a.equip === 'string') { const owner = G.party.find(m => ACTORS[m.id]) || G.party[0]; if (owner) { const slotIdx = ['weapon', 'armor', 'acc'].indexOf(EQUIPS[a.equip]?.slot); if (slotIdx >= 0) owner.equips[slotIdx] = a.equip; } }
   if (a.gold) { G.gold += a.gold; }
+  /* 创号分配：把玩家在剧情里选的自由属性 / 固定属性真正写到角色身上。
+     原文的角色创建是一次性、不可更改的（没有删号重练），所以这里
+     也只在第一次生效——场景的 once 标记保证不会重复执行。 */
+  if (a.build) {
+    const m = G.party.find(p => p.id === (a.build.who || 'kaito'));
+    if (m) {
+      if (a.build.alloc) m.alloc = { ...a.build.alloc };
+      if (a.build.fixed) m.fixed = { ...a.build.fixed };
+      if (a.build.talentAttr) m.talentAttr = { ...a.build.talentAttr };
+      recalc(m);
+      m.hp = m.maxHp;
+      if (m.resource !== 'rage') m.mp = m.maxMp;
+      const f = m.fixed || {};
+      toast(`※ 属性已确定　幸运${f.luck ?? 0}／悟性${f.wit ?? 0}／魅力${f.chm ?? 0}`);
+    }
+  }
   if (a.exp) {
     const ups = gainExp(a.exp);
     toast(`※ 全队获得 ${a.exp} 点历练经验`);

@@ -33,23 +33,46 @@ export const ACTORS = {
      天赋树、立绘、武器归属、羁绊表都按它们索引。玩家看不到 id，
      看到的是 name/title/role。改 id 收益为零，破坏面却很大。 */
 
-  /* —— 主角：叶天邪，游戏 ID「邪天」 ——
-     资源用「龙魂」（沿用 rage 机制）：开战为 0，靠出手、挨打、格挡累积。
-     这套机制天然适合他——越打越猛，但开局最脆，符合「拿命换爆发」的定位。 */
+  /* —— 主角：叶天邪，游戏 ID「邪天」——
+     原文此时的状态：**职业赋予失败，整个新手期没有职业**。
+     所以他这里拿不到任何邪龙系技能——那些要到转职（原文第111章
+     「转职——逆骨邪龙！」）之后才有，技能表里按等级锁在后面。
+
+     他现在能依靠的只有三样，全是原文给的：
+       · 自由属性 力量10 / 体质7 / 敏捷4 / 精神4（近战向）
+       · 固定属性 魅力10 / 幸运0 / 悟性0 —— 幸运 0 意味着
+         **永不暴击，且每一刀都取伤害下限**，这是真生效的
+       · 天赋属性 反应力72 / 感知力53 / 专注力42（常人 7~10）
+         —— 七倍于常人的反应力折算成闪避，这是他越级打怪的本钱
+
+     base 里只放「身体底子」，属性点带来的部分由 alloc 在 recalc 时叠加，
+     避免同一份数值被算两次。 */
   kaito: {
-    id: 'kaito', name: '邪天', title: '逆骨邪龙', portrait: 'kaito',
+    id: 'kaito', name: '邪天', title: '无职业', portrait: 'kaito',
     realName: '叶天邪', role: '近战', joinLevel: 1,
-    resource: 'rage', resourceName: '龙魂',
-    base: { hp: 340, mp: 40, atk: 50, def: 24, spd: 32, cri: 0.12, blk: 0.16, par: 0.10, rageMul: 1.15, mpRegen: 3 },
-    grow: { hp: 49, mp: 4, atk: 5.4, def: 2.4, spd: 1.5 },
-    weaponSkill: ['ni_claw', 'ni_scale', 'ni_roar', 'ni_twin', 'ni_golden'],
+    resource: 'rage', resourceName: '斗气',
+    /* 幸运 0 → cri 基础值必须是 0，不能沿用旧的 0.12 */
+    base: { hp: 210, mp: 10, atk: 24, def: 10, spd: 32, cri: 0, blk: 0.10, par: 0.06, rageMul: 1.0, mpRegen: 2 },
+    grow: { hp: 12, mp: 2, atk: 2.2, def: 1.1, spd: 0.9 },
+    /* 原文的配点，创号时由玩家分配，这里是默认值 */
+    alloc: { str: 10, vit: 7, agi: 4, spi: 4 },
+    fixed: { luck: 0, wit: 0, chm: 10 },
+    talentAttr: { react: 72, sense: 53, focus: 42 },
+    weaponSkill: ['yt_slash', 'yt_read', 'yt_stone'],
     skills: [
-      { id: 'ni_claw', lv: 1 }, { id: 'ni_scale', lv: 3 }, { id: 'ni_ember', lv: 5 }, { id: 'ni_roar', lv: 6 },
-      { id: 'ni_burst', lv: 8 }, { id: 'ni_twin', lv: 10 }, { id: 'ni_abyss', lv: 14 },
-      { id: 'ni_defy', lv: 18 }, { id: 'ni_golden', lv: 24 },
+      /* 无职业阶段：没有职业技能，只有他自己打出来的东西 */
+      { id: 'yt_slash', lv: 1 },   // 新手短剑的基础斩击
+      { id: 'yt_read', lv: 2 },    // 读招——反应力换来的先手
+      { id: 'yt_stone', lv: 3 },   // 投石拉怪，原文第八章的开场手段
+      { id: 'yt_counter', lv: 5 }, // 极限闪避后的反击
+      { id: 'yt_focus', lv: 8 },   // 专注力：稳住自己
+      /* —— 以下为转职之后（原文第111章）才会解锁，此处仅占位 —— */
+      { id: 'ni_claw', lv: 40 }, { id: 'ni_scale', lv: 42 }, { id: 'ni_ember', lv: 45 },
+      { id: 'ni_roar', lv: 48 }, { id: 'ni_burst', lv: 52 }, { id: 'ni_twin', lv: 58 },
+      { id: 'ni_abyss', lv: 64 }, { id: 'ni_defy', lv: 72 }, { id: 'ni_golden', lv: 80 },
     ],
-    quote: '「我死过一次了。这辈子轮到我说了算。」',
-    winQuote: '还有谁？',
+    quote: '「别人等我一天一夜都是应该。但我不会多等谁一秒。」',
+    winQuote: '下一个。',
   },
 
   /* —— 璃仙儿 ——
@@ -114,6 +137,40 @@ export const ACTORS = {
    type: atk 攻击 / heal 治疗 / buff 增益 / debuff 减益 / revive 复活
 ------------------------------------------- */
 export const SKILLS = {
+  /* ============ 邪天 · 无职业阶段 ============
+     原文：见习职业赋予失败，整个新手期没有职业，
+     系统建议十级后找职业导师直接转职。
+
+     所以这一段他没有任何职业技能。下面五招全部来自他自己的东西——
+     反应力 72、感知力 53、专注力 42，以及原文第八章他实际用的打法。
+     刻意都做成低耗、低倍率：他这时候是真的弱，强的是操作。 */
+  yt_slash: {
+    id: 'yt_slash', name: '短剑斩', mp: 0, type: 'atk', elem: 'none', power: 1.0, hits: 1,
+    target: 'one', desc: '新手短剑的一记平斩。没有职业加成，全靠手上功夫。', rage: 12,
+    fx: 'slash',
+  },
+  yt_stone: {
+    id: 'yt_stone', name: '投石', mp: 0, type: 'debuff', target: 'one',
+    desc: '捡起一颗石子甩出去。伤害只有 1 点，但能把仇恨拉过来，' +
+          '并让目标的行动条后退——原文第八章的开场手段。', rage: 8,
+    fx: 'pierce', gauge: -26,
+  },
+  yt_read: {
+    id: 'yt_read', name: '读招', mp: 0, type: 'buff', target: 'self',
+    desc: '七倍于常人的反应力用在看上——本回合回避率大幅提升，并抢先出手。', rage: 14,
+    fx: 'aura', buff: { id: 'haste', turns: 2 }, evadeUp: 0.3,
+  },
+  yt_counter: {
+    id: 'yt_counter', name: '擦身反手', mp: 0, type: 'atk', elem: 'none', power: 1.45, hits: 1,
+    target: 'one', desc: '让开极小的幅度，贴着狼牙擦过去，再反手撩上来。' +
+          '躲避幅度越大用时越长——他从不多让一分。', rage: 18,
+    fx: 'slash', afterDodgeBonus: 0.6,
+  },
+  yt_focus: {
+    id: 'yt_focus', name: '凝神', mp: 0, type: 'buff', target: 'self',
+    desc: '专注力压住外界干扰：本场异常抗性提升，并回复少量生命。', rage: 20,
+    fx: 'veil', buff: { id: 'defUp', turns: 3 }, selfHeal: 0.12,
+  },
   /* ============ 邪天 · 逆骨邪龙线 ============
      设计主轴：所有强招都要付代价——自伤、破防、或者把行动条压给敌人。
      龙魂（rage）开局为 0，所以前两回合他是全队最弱的，越往后越不讲理。 */
@@ -135,7 +192,7 @@ export const SKILLS = {
   ni_roar: {
     id: 'ni_roar', name: '龙吼·慑', mp: 0, type: 'debuff', target: 'all',
     desc: '龙魂外放震慑全场：敌方全体行动条后退，并有机会迟缓。', rage: 16,
-    fx: 'roar', gaugePush: 20, inflict: { id: 'slow', chance: 0.45 },
+    fx: 'roar', gauge: -20, inflict: { id: 'slow', chance: 0.45 },
   },
   ni_burst: {
     id: 'ni_burst', name: '血爆·逆冲', mp: 25, type: 'atk', elem: 'dark', power: 1.60, hits: 2,
@@ -186,7 +243,7 @@ export const SKILLS = {
   },
   xi_chain: {
     id: 'xi_chain', name: '灵息·牵', mp: 26, type: 'buff', target: 'allies',
-    desc: '全队立刻推进行动条，抢下先手。', fx: 'chain', gaugePull: 30,
+    desc: '全队立刻推进行动条，抢下先手。', fx: 'chain', gauge: 30,
   },
   xi_seal: {
     id: 'xi_seal', name: '缚灵印', mp: 28, type: 'debuff', target: 'one',
@@ -207,7 +264,7 @@ export const SKILLS = {
   th_volley: {
     id: 'th_volley', name: '连突·四连枪', mp: 16, type: 'atk', elem: 'none', power: 0.60, hits: 4,
     target: 'one', desc: '四段连突，并把目标的行动条往后打。', fx: 'flurry',
-    multi: true, gaugePush: 22,
+    multi: true, gauge: -22,
   },
   th_mark: {
     id: 'th_mark', name: '猎标', mp: 14, type: 'debuff', target: 'one',
@@ -462,7 +519,7 @@ export const ENEMIES = {
   wild_wolf: {
     id: 'wild_wolf', name: '野狼', shape: 'wolf',
     palette: { body: '#6a6258', trim: '#3a352e', eye: '#ff6a4a', fang: '#f6efe2' },
-    hp: 170, atk: 19, def: 5, spd: 33, exp: 42, gold: 16, hot: 4,
+    baseLevel: 5, hp: 170, atk: 12, def: 4, spd: 31, exp: 42, gold: 16, hot: 4,
     weak: ['fire'], quote: '（一声长嚎。另外两只被惊动了。）',
     skills: [{ id: 'atk', w: 8 }, { id: 'heavy', w: 2 }],
   },
@@ -476,7 +533,7 @@ export const ENEMIES = {
   wolf_alpha: {
     id: 'wolf_alpha', name: '狼群首领', shape: 'wolf',
     palette: { body: '#4a4a56', trim: '#26262e', eye: '#ff8a3a', fang: '#fffaf0' },
-    hp: 260, atk: 26, def: 9, spd: 28, exp: 78, gold: 46, hot: 8,
+    baseLevel: 8, hp: 430, atk: 17, def: 8, spd: 29, exp: 78, gold: 46, hot: 8,
     weak: ['fire'], quote: '（比其它狼大了一圈。它在等你先动。）',
     skills: [{ id: 'atk', w: 7 }, { id: 'heavy', w: 4 }],
   },

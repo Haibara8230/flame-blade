@@ -83,6 +83,137 @@ export const FORBIDDEN = {
   },
 };
 
+/* ---------------- 属性体系（按原文） ----------------
+   原文第 2~3 章给的是三层结构，本项目照搬：
+
+     ① 自由属性 25 点 —— 力量 / 体质 / 敏捷 / 精神，每项 4~10，
+        升级可继续获得自由属性点。
+     ② 固定属性 10 点 —— 幸运 / 悟性 / 魅力，每项 0~10，
+        **不随升级增长**，只能靠装备或特殊途径提升。
+     ③ 天赋属性 —— 反应力 / 感知力 / 专注力，由系统扫描得来，
+        等同于玩家在现实世界的能力，不可分配。常人平均 7~10。
+
+   叶天邪的实际选择（原文）：
+     自由 力量10 / 体质7 / 敏捷4 / 精神4
+     固定 魅力10 / 幸运0 / 悟性0
+     天赋 反应力72 / 感知力53 / 专注力42（约七倍于常人）
+*/
+
+export const FREE_POINTS = 25;          // 初始自由属性点
+export const FREE_MIN = 4, FREE_MAX = 10;
+export const FIXED_POINTS = 10;         // 初始固定属性点
+export const FIXED_MIN = 0, FIXED_MAX = 10;
+
+/* 自由属性。conv 是原文给出的「战士」换算，直接照抄：
+     1 力量 = 2 物攻
+     1 体质 = 10 生命 + 1 防御
+     1 敏捷 = 1 回避 + 1 命中
+     1 精神 = 2 魔攻 + 10 魔法值 */
+export const FREE_STATS = [
+  { id: 'str', name: '力量', col: '#ff8048', desc: '物理攻击 +2',
+    conv: { atk: 2 } },
+  { id: 'vit', name: '体质', col: '#7dffa8', desc: '生命 +10　防御 +1',
+    conv: { hp: 10, def: 1 } },
+  { id: 'agi', name: '敏捷', col: '#8fe6ff', desc: '回避 +1　命中 +1',
+    conv: { eva: 1, acc: 1 } },
+  { id: 'spi', name: '精神', col: '#c08ad6', desc: '魔法攻击 +2　魔法值 +10',
+    conv: { matk: 2, mp: 10 } },
+];
+
+/* 固定属性。原文明确写了各自管什么，效果按原文实现——
+   尤其是幸运：原文系统警告「幸运为 0，爆率和暴击率会降到最低，
+   攻击时全部取攻击值的下限」。这条在本项目里是真生效的。 */
+export const FIXED_STATS = [
+  { id: 'luck', name: '幸运', col: '#ffd24a',
+    desc: '爆率、暴击率、偶然事件成功率' },
+  { id: 'wit', name: '悟性', col: '#7fd8c0',
+    desc: '领悟能力；每点额外 +0.3% 经验' },
+  { id: 'chm', name: '魅力', col: '#ff8ab0',
+    desc: '命运世界居民与动物对你的好感' },
+];
+
+/* 天赋属性。原文：等同现实世界的能力，由系统扫描，不可分配。
+   常人平均 7~10；叶天邪 72 / 53 / 42。
+   本项目把它接到战斗里——这是主角在「没有职业」阶段唯一的依仗。 */
+export const TALENT_STATS = [
+  { id: 'react', name: '反应力', col: '#ff6a8a',
+    desc: '对外界刺激快速做出反应的能力' },
+  { id: 'sense', name: '感知力', col: '#8fd8ff',
+    desc: '感受外界刺激的范围和能力' },
+  { id: 'focus', name: '专注力', col: '#c9a8ff',
+    desc: '凝聚精神不受外界刺激影响的能力' },
+];
+
+export const TALENT_AVG = 8.5;          // 原文「平均为 7 到 10 左右」
+
+/* 自由属性 → 派生属性 */
+export function applyFreeStats(s, alloc = {}) {
+  for (const st of FREE_STATS) {
+    const v = alloc[st.id] || 0;
+    for (const [k, mul] of Object.entries(st.conv)) {
+      s[k] = (s[k] || 0) + v * mul;
+    }
+  }
+  return s;
+}
+
+/* 固定属性的实际效果 */
+
+/* 幸运 → 暴击率。原文：幸运 0 时暴击率「降到最低」。
+   这里取 0 幸运 = 0% 暴击，满幸运 = 25%。 */
+export function luckCrit(luck = 0) {
+  return Math.max(0, Math.min(10, luck)) * 0.025;
+}
+
+/* 幸运 → 伤害浮动区间。原文：幸运 0「攻击时全部取攻击值的下限」。
+   所以 0 幸运的人每一刀都是最小值，没有任何运气可言；
+   幸运越高，浮动区间的上沿越高。 */
+export function luckRoll(luck = 0) {
+  const k = Math.max(0, Math.min(10, luck)) / 10;
+  return { lo: 0.94, hi: 0.94 + 0.12 * k };   // luck 0 → [0.94, 0.94] 恒定下限
+}
+
+/* 幸运 → 掉落率倍率（原文的「爆率」） */
+export function luckDrop(luck = 0) {
+  return 1 + Math.max(0, Math.min(10, luck)) * 0.08;
+}
+
+/* 悟性 → 经验加成。原文：每多一点悟性额外获得 0.3% 经验。 */
+export function witExp(wit = 0) {
+  return 1 + Math.max(0, Math.min(10, wit)) * 0.003;
+}
+
+/* 魅力 → NPC / 动物好感。原文没给数值，这里做成一个 0~1 的系数，
+   供剧情判定「能不能从 NPC 嘴里问出东西」。 */
+export function charmFavor(chm = 0) {
+  return Math.max(0, Math.min(10, chm)) / 10;
+}
+
+/* 天赋属性 → 战斗数值。
+   原文没给换算公式（它只是个扫描出来的数字），这部分是本项目的设计：
+   常人（TALENT_AVG）处收益为 0——天赋属性衡量的是「比常人强多少」，
+   一个普通人不该因为「有反应力」就白拿闪避。超出常人的部分才折算，
+   且收益递减，所以七倍于常人很强，但不会变成免疫一切攻击。 */
+function talentScale(v, cap) {
+  const x = Math.max(0, v) / TALENT_AVG;            // 常人 = 1
+  const over = Math.max(0, x - 1);                  // 超出常人的倍数
+  return cap * (1 - 1 / (1 + over * 0.35));         // over=0 → 0；over→∞ → cap
+}
+export function reactEvade(react = TALENT_AVG) { return talentScale(react, 0.42); }
+export function senseAccuracy(sense = TALENT_AVG) { return talentScale(sense, 0.30); }
+export function focusResist(focus = TALENT_AVG) { return talentScale(focus, 0.45); }
+
+/* ---------------- 七大基础职业（原文第3章） ---------------- */
+export const BASE_CLASSES = [
+  { id: 'warrior', name: '战士', desc: '强大的物理攻击与相对强大的物理防御，近战输出核心。行动力、命中、回避相对薄弱。' },
+  { id: 'guard', name: '盾卫', desc: '防御专长。' },
+  { id: 'archer', name: '弓箭手', desc: '远程物理，主属性偏敏捷。' },
+  { id: 'assassin', name: '刺客', desc: '高爆发近战，脆。' },
+  { id: 'priest', name: '牧师', desc: '治疗与增益。' },
+  { id: 'mage', name: '魔法师', desc: '远程法术输出。' },
+  { id: 'summoner', name: '召唤师', desc: '召唤协战。' },
+];
+
 /* ---------------- 三转职业线 ----------------
    原项目里角色一入队职业就定死了。网游文的核心爽点之一是转职：
    同一个角色在剧情节点上整个换一套打法、换立绘、换资源机制。
@@ -239,7 +370,11 @@ export function canAdvance(level, stage, flags = {}) {
 }
 
 export default {
-  GAME_NAME, SERVER_NAME, TIERS, TIER_BY_RANK, MAX_TIER, FORBIDDEN,
+  GAME_NAME, SERVER_NAME,
+  FREE_POINTS, FREE_MIN, FREE_MAX, FIXED_POINTS, FIXED_MIN, FIXED_MAX,
+  FREE_STATS, FIXED_STATS, TALENT_STATS, TALENT_AVG, BASE_CLASSES,
+  applyFreeStats, luckCrit, luckRoll, luckDrop, witExp, charmFavor,
+  reactEvade, senseAccuracy, focusResist, TIERS, TIER_BY_RANK, MAX_TIER, FORBIDDEN,
   CLASS_LINE, CLASS_BY_STAGE, SUB_IDENTITIES, GUILDS, WAR_OBJECTIVES, FACTIONS,
   MAX_LEVEL, expToNext, expFromKill, tierInfo, tierUnlocked, canAdvance,
 };
