@@ -71,22 +71,24 @@ export const ACTORS = {
     winQuote: '手伸过来，别逞强。',
   },
 
-  /* —— 天痕 ——
-     速度型，靠行动条压制吃饭。定位是「先你一步到场的那个人」——
-     剧情上是对手起家，所以数值给得锋利：极快、极脆、会心极高。 */
+  /* —— 梦羽衣 · 幻影妖莲 ——
+     查证：在更早的一款游戏里就与主角相识；仙儿离开后陪主角度过最难的一段。
+     称号「幻影妖莲」，另有「血梦天堂妖罗」「血妖月」等称呼。
+     ⚠ 她的实际登场时间点未考证——本项目暂放在游击位，等原文校对。
+     数值定位是我配的：极快、极脆、会心高。 */
   lei: {
-    id: 'lei', name: '天痕', title: '断风枪手', portrait: 'lei',
-    realName: '天痕', role: '游击', joinLevel: 4,
-    resource: 'mp', resourceName: '气劲',
+    id: 'lei', name: '梦羽衣', title: '幻影妖莲', portrait: 'lei',
+    realName: '梦羽衣', role: '游击', joinLevel: 4,
+    resource: 'mp', resourceName: '妖力',
     base: { hp: 272, mp: 62, atk: 44, def: 22, spd: 39, cri: 0.17, blk: 0.10, par: 0.15, rageMul: 1.1, mpRegen: 4 },
     grow: { hp: 39, mp: 6, atk: 4.7, def: 2.1, spd: 2.1 },
     weaponSkill: ['th_pierce', 'th_volley', 'th_mark', 'th_gale'],
     skills: [
-      { id: 'th_pierce', lv: 4 }, { id: 'th_volley', lv: 6 }, { id: 'th_mark', lv: 9 }, { id: 'th_accel', lv: 10 },
-      { id: 'th_gale', lv: 12 }, { id: 'th_last', lv: 15 },
+      { id: 'th_pierce', lv: 4 }, { id: 'th_volley', lv: 6 }, { id: 'th_mark', lv: 9 },
+      { id: 'th_accel', lv: 10 }, { id: 'th_gale', lv: 12 }, { id: 'th_last', lv: 15 },
     ],
-    quote: '「你比我快？行啊。那你追得上我第二枪吗。」',
-    winQuote: '记住这个速度。下次我还要更快。',
+    quote: '「你那副样子，我在上一个游戏里就看腻了。」',
+    winQuote: '影子比人先到——这句话你该习惯了。',
   },
 
   /* —— 果果 ——
@@ -331,18 +333,15 @@ export const ITEMS = {
 
 /* ---------------- 商店 ---------------- */
 export const SHOPS = {
-  /* 网游的商店和单机不一样：NPC 只卖消耗品和垫底装备，
-     真正的装备来自掉落和玩家交易。所以这里刻意把货架做薄——
-     想变强就得去打，不能靠买。 */
-  novice: { name: '苍梧新手区 · 杂货摊',
-    items: ['potion', 'ether', 'leather', 'iron_sword', 'wood_staff'] },
-  field: { name: '野外营地 · 行商',
-    items: ['potion', 'potion_hi', 'ether', 'smoke', 'chain', 'hunter_spear', 'ring_pow'] },
-  northgate: { name: '北境试炼门前 · 最后一次补给',
-    items: ['potion_hi', 'elixir', 'revive', 'seal', 'bomb', 'ring_life', 'ring_fast'] },
-  warcamp: { name: '刷新点外围 · 黑市',
-    items: ['potion_hi', 'elixir', 'revive', 'bomb', 'seal', 'demon_mail', 'bond_ring',
-            'flame_sword', 'blue_staff', 'storm_spear', 'holy_sword', 'holy_cloak'] },
+  /* 只有两个货架，对应剧情里两次整备（新手村口、上山之前）。
+     NPC 只卖消耗品和垫底装备——真正的装备来自掉落，想变强就得去打。
+     ⚠ 原著中的商店设置未考证。 */
+  novice: { name: '新手村 · 杂货摊',
+    items: ['potion', 'ether', 'leather', 'iron_sword', 'wood_staff', 'ring_pow'] },
+  field: { name: '上山之前 · 最后一次整备',
+    items: ['potion', 'potion_hi', 'elixir', 'ether', 'revive', 'seal', 'bomb', 'smoke',
+            'chain', 'demon_mail', 'blue_staff', 'hunter_spear', 'storm_spear',
+            'flame_sword', 'holy_sword', 'holy_cloak', 'ring_life', 'ring_fast', 'bond_ring'] },
 };
 
 /* ---------------- 敌人 ----------------
@@ -452,64 +451,56 @@ export const ENEMIES = {
     theme: '旧日英雄', boss: true,
   },
 
-  /* ===================== 开场关卡（新手区 · 苍梧野外） =====================
-     网游文的怪和单机 RPG 的怪不一样：它们有刷新点、有归属争议、
-     有「谁先打到谁就拿走」的规矩。exp/gold 按 realm.js 的经验曲线配。 */
-  cangwu_rat: {
-    id: 'cangwu_rat', name: '灰毛地鼠', shape: 'wolf',
-    palette: { body: '#6b5a4a', trim: '#463a2e', eye: '#d9b26a', fang: '#f2e6d0' },
-    hp: 60, atk: 11, def: 2, spd: 22, exp: 16, gold: 8, hot: 2,
-    weak: [], quote: '（新手区第一只怪。它甚至不太想理你。）',
+
+  /* ===================== 第一卷「永恒命运之刻」 =====================
+     ⚠ 以下敌人按查证到的章节标题设置（第八章「杀狼！」、第十五章「再战鬼谷子」）。
+     具体形象、数值、技能组均为本项目设计，原著未考证。
+
+     已拆除：天阙外围哨 / 玄冥跟单 / 逆骨之守 / 天阙队长·执圭
+     —— 那四个连同「天阙公会战」整段都是原创虚构，原著中不存在。 */
+
+  /* 第七章 新手村 · 第八章「杀狼！」 */
+  novice_wolf: {
+    id: 'novice_wolf', name: '灰狼', shape: 'wolf',
+    palette: { body: '#6a6a72', trim: '#3e3e46', eye: '#ffd24a', fang: '#f4efe4' },
+    hp: 95, atk: 16, def: 4, spd: 24, exp: 24, gold: 12, hot: 3,
+    weak: ['fire'], quote: '（新手村外第一群怪。它们成群，从不单独出现。）',
     skills: [{ id: 'atk', w: 1 }],
   },
-  cangwu_boar: {
-    id: 'cangwu_boar', name: '獠牙野彘', shape: 'wolf',
-    palette: { body: '#4a3b2e', trim: '#2e2419', eye: '#ff8a3a', fang: '#fff0d8' },
-    hp: 130, atk: 20, def: 7, spd: 20, exp: 34, gold: 18, hot: 5,
-    weak: ['fire'], quote: '（低头，刨地，然后直线冲过来。）',
+  wolf_alpha: {
+    id: 'wolf_alpha', name: '狼群首领', shape: 'wolf',
+    palette: { body: '#4a4a56', trim: '#26262e', eye: '#ff8a3a', fang: '#fffaf0' },
+    hp: 260, atk: 26, def: 9, spd: 28, exp: 78, gold: 46, hot: 8,
+    weak: ['fire'], quote: '（比其它狼大了一圈。它在等你先动。）',
     skills: [{ id: 'atk', w: 7 }, { id: 'heavy', w: 4 }],
   },
-  grave_crawler: {
-    id: 'grave_crawler', name: '腐土爬行者', shape: 'humanoid',
-    palette: { hair: '#2a2a1e', cloth: '#3c3a26', trim: '#6b7a3a', skin: '#8a9468', eye: '#b7ff5a', weapon: 'none' },
-    hp: 175, atk: 25, def: 9, spd: 24, exp: 46, gold: 26, hot: 7,
-    weak: ['holy'], quote: '（它爬过的地方，草会黑掉一圈。）',
-    skills: [{ id: 'atk', w: 6 }, { id: 'poisonbite', w: 4 }],
+
+  /* 幽风平原 —— 查证：十五级以下弱小怪物活跃，初级玩家练级之地 */
+  plain_sprite: {
+    id: 'plain_sprite', name: '幽风精', shape: 'humanoid',
+    palette: { hair: '#2e4a48', cloth: '#33564f', trim: '#7fd8c0', skin: '#9fc4bb', eye: '#b7ffe6', weapon: 'none' },
+    hp: 140, atk: 21, def: 7, spd: 30, exp: 40, gold: 22, hot: 5,
+    weak: ['thunder'], quote: '（风停下来的时候，才看得见它。）',
+    skills: [{ id: 'atk', w: 7 }, { id: 'snipe', w: 3 }],
   },
-  /* —— 玩家敌人：网游文的核心冲突从来不是怪，是别的玩家 —— */
-  tianque_scout: {
-    id: 'tianque_scout', name: '【天阙】外围哨', shape: 'humanoid',
-    palette: { hair: '#c8a84a', cloth: '#3a3320', trim: '#fde68a', skin: '#d9b898', eye: '#ffd24a', weapon: 'sword' },
-    hp: 230, atk: 31, def: 14, spd: 30, exp: 62, gold: 55, hot: 10,
-    weak: ['dark'], quote: '这个点是天阙的。识相的自己走。',
-    skills: [{ id: 'atk', w: 7 }, { id: 'heavy', w: 3 }],
+  plain_beast: {
+    id: 'plain_beast', name: '平原角兽', shape: 'wolf',
+    palette: { body: '#5a4a36', trim: '#332a1e', eye: '#ffb24a', fang: '#fff4e0' },
+    hp: 210, atk: 27, def: 12, spd: 22, exp: 58, gold: 34, hot: 7,
+    weak: ['ice'], quote: '（低头把角对准你，然后就不动了。）',
+    skills: [{ id: 'atk', w: 6 }, { id: 'heavy', w: 4 }],
   },
-  xuanming_stalker: {
-    id: 'xuanming_stalker', name: '【玄冥】跟单', shape: 'humanoid',
-    palette: { hair: '#241a33', cloth: '#2a1d3d', trim: '#a855f7', skin: '#c4a8c4', eye: '#c98aff', weapon: 'bow' },
-    hp: 190, atk: 40, def: 8, spd: 38, exp: 70, gold: 78, hot: 11,
-    weak: ['holy'], quote: '我们不抢首杀。我们只在你打完之后出现。',
-    skills: [{ id: 'atk', w: 5 }, { id: 'snipe', w: 5 }],
-  },
-  /* —— 一转试炼 BOSS —— */
-  bone_warden: {
-    id: 'bone_warden', name: '逆骨之守', shape: 'humanoid', boss: true,
-    palette: { hair: '#7a1030', cloth: '#2a0d18', trim: '#ff3b6b', skin: '#e0d4c8', eye: '#ff3b6b', weapon: 'axe' },
-    hp: 1450, atk: 52, def: 22, spd: 28, exp: 520, gold: 400, hot: 30,
-    weak: ['holy'],
-    quote: '龙魂不是给的。是你自己从骨头里拽出来的。',
-    skills: [{ id: 'atk', w: 5 }, { id: 'heavy', w: 4 }, { id: 'roarpush', w: 3 }],
-    phase2: { atk: 1.35, quote: '就这点？那你还是躺回去比较好。' },
-  },
-  /* —— 公会战：争夺刷新点的第一场正面冲突 —— */
-  tianque_captain: {
-    id: 'tianque_captain', name: '【天阙】队长·执圭', shape: 'humanoid', boss: true,
-    palette: { hair: '#e0c060', cloth: '#4a4020', trim: '#fde68a', skin: '#e0c4a0', eye: '#ffe14d', weapon: 'sword' },
-    hp: 1980, atk: 61, def: 27, spd: 34, exp: 760, gold: 900, hot: 34,
+
+  /* 第十五章「再战鬼谷子」——「再战」说明之前已经交过手。
+     ⚠ 他的身份、立场、战斗方式原著未考证，这里只按「反复出现的对手」来配。 */
+  guiguzi: {
+    id: 'guiguzi', name: '鬼谷子', shape: 'humanoid', boss: true,
+    palette: { hair: '#d8d8d0', cloth: '#2a2a33', trim: '#8fa8c8', skin: '#d4c0a8', eye: '#9fd8ff', weapon: 'staff' },
+    hp: 1380, atk: 48, def: 20, spd: 31, exp: 480, gold: 360, hot: 28,
     weak: ['dark'],
-    quote: '全服只有两件禁断之器。它们不该落在一个没有公会的人手上。',
-    skills: [{ id: 'atk', w: 5 }, { id: 'heavy', w: 3 }, { id: 'snipe', w: 2 }, { id: 'roarpush', w: 2 }],
-    phase2: { atk: 1.3, quote: '……你根本不是第一次打这种仗。你到底是谁？' },
+    quote: '（又是你。上次没打完的，这次接着来。）',
+    skills: [{ id: 'atk', w: 5 }, { id: 'heavy', w: 3 }, { id: 'snipe', w: 3 }, { id: 'roarpush', w: 2 }],
+    phase2: { atk: 1.32, quote: '（这次你比上次快了不少。）' },
   },
 };
 

@@ -1,15 +1,17 @@
 /* 《邪龙逆天》流程装配。
 
-   当前活跃流程是 chapter-rebirth.js（序章 ~ 第四章，一转 + 第一场公会战）。
+   当前活跃流程：chapter-destiny.js —— 第一卷「永恒命运之刻」的已实现部分
+   （序章 ~ 第十五章「再战鬼谷子」）。章节顺序按查证到的真实目录排；
+   台词与场景内容为原创，需要原文校对。详见该文件头部说明。
 
-   原《炎之刃》的四个章节文件（chapter-one / journey / finale / beyond）
-   仍留在仓库里，但已经从流程中摘出去——它们的台词全部建立在旧角色
-   （凯 / 苍 / 雷 / 璃）和旧世界观上，在新阵容下会读成另一个游戏。
-   要么整段重写，要么不挂。现在选择不挂，等后续章节按网游文的节拍补齐。 */
-import { REBIRTH, REBIRTH_ENDINGS } from './chapter-rebirth.js';
+   已退役的文件（保留在仓库，未挂进流程）：
+     · chapter-rebirth.js —— 上一版开场。天阙公会战、执圭、逆骨之守、
+       苍梧区服等内容为原创虚构，与原著不符，已整体停用。
+     · chapter-one / journey / finale / beyond —— 改造前《炎之刃》的剧情。 */
+import { DESTINY, DESTINY_ENDINGS } from './chapter-destiny.js';
 
-export const ENDINGS = { ...REBIRTH_ENDINGS };
-export const SCENES = { ...REBIRTH };
+export const ENDINGS = { ...DESTINY_ENDINGS };
+export const SCENES = { ...DESTINY };
 
 for (const [id, sc] of Object.entries(SCENES)) {
   sc.id = id;

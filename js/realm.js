@@ -18,8 +18,8 @@
 
 /* ---------------- 世界 ---------------- */
 
-export const GAME_NAME = '神魔大陆';        // 剧中玩家登录的那款全息网游
-export const SERVER_NAME = '第七区·苍梧';
+export const GAME_NAME = '命运';        // 查证自第一卷第二章「《命运》世界」
+export const SERVER_NAME = '';         // 书中是否分区未知
 
 /* ---------------- 十一阶装备位阶 ----------------
    前五阶是凡品，靠打怪和商店就能堆起来；
@@ -86,6 +86,8 @@ export const FORBIDDEN = {
 /* ---------------- 三转职业线 ----------------
    原项目里角色一入队职业就定死了。网游文的核心爽点之一是转职：
    同一个角色在剧情节点上整个换一套打法、换立绘、换资源机制。
+
+   ⚠ 职业名查证自百科；**等级门槛 10/40/70 与试炼是本项目自配**，原著未考证。
 
    每一转都要求：等级达标 + 完成对应的剧情试炼。
    光刷等级转不了，光推剧情也转不了——两条腿都得走。 */
@@ -173,34 +175,17 @@ export function expFromKill(enemyLv, playerLv, isBoss = false) {
    power 是势力值，会随剧情推进变化；
    stance 决定他们见到你时的默认态度。 */
 export const GUILDS = {
+  /* ⚠ 已拆除：天阙 / 玄冥 / 落霞 / 九幽 四个公会是原创虚构，原著中不存在，已删。
+     目前唯一查证到的组织是「天魂佣兵团」，但它的定位、规模、与主角的关系都不清楚，
+     所以只留一个占位条目，不敢给数值。补齐需要原文。 */
   player: {
-    id: 'player', name: '无名', tag: '—', col: '#FF3B6B',
-    desc: '你还没有公会。在这个服务器上，这意味着你谁也不是。',
-    power: 0, stance: 'self',
+    id: 'player', name: '无', tag: '—', col: '#FF3B6B',
+    desc: '主角起步时没有任何组织归属。', power: 0, stance: 'self',
   },
-  tianque: {
-    id: 'tianque', name: '天阙', tag: '【天阙】', col: '#FDE68A',
-    desc: '第七区第一大公会。会长「执圭」是全服第一个满级的人，' +
-          '也是第一个宣布「禁断之器必须归公会所有」的人。',
-    power: 100, stance: 'hostile',
-  },
-  xuanming: {
-    id: 'xuanming', name: '玄冥', tag: '【玄冥】', col: '#A855F7',
-    desc: '暗杀与情报起家，不抢首杀，只抢掉落。' +
-          '他们不在乎你是谁，只在乎你身上那件东西值多少。',
-    power: 72, stance: 'hostile',
-  },
-  luoxia: {
-    id: 'luoxia', name: '落霞', tag: '【落霞】', col: '#2DD4BF',
-    desc: '由散人和被大公会挤出来的人拼起来的联盟。人多，但不齐。' +
-          '他们需要一个能站在最前面的人。',
-    power: 48, stance: 'neutral',
-  },
-  jiuyou: {
-    id: 'jiuyou', name: '九幽', tag: '【九幽】', col: '#7C3AED',
-    desc: '不像玩家公会——没有招募，没有频道，成员全部顶着同一个空白头像。' +
-          '有人说他们根本不是玩家。',
-    power: 88, stance: 'unknown',
+  tianhun: {
+    id: 'tianhun', name: '天魂佣兵团', tag: '【天魂】', col: '#FDE68A',
+    desc: '原著中出现过的组织。具体设定待考证。',
+    power: null, stance: 'unknown', unverified: true,
   },
 };
 
