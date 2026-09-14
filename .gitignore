@@ -12,6 +12,11 @@ shots-final/
 tools/shots/
 screenshots/mobile-*.png
 
+# ---- 原文素材（不进仓库）----
+# 用于校对的小说原文放这里。它是版权材料，只在本地做参考，
+# 不提交、不随项目分发。生成的结构化笔记放 refs/notes/，同样不提交。
+refs/
+
 # ---- 编辑器 / 系统 ----
 .vscode/
 .idea/
