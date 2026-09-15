@@ -192,8 +192,10 @@ game/
 ├── equipment-catalog.json    装备命名策划稿（512 件 / 11 阶）
 ├── refs/                     原文与笔记（.gitignore，不进仓库）
 └── js/
-    ├── realm.js          ★ 数值唯一事实源：三层属性 / 11 阶装备 / 三转 / 经验曲线
-    ├── characters.js       角色 / 技能 / 敌人 / 道具 / 商店
+    ├── realm.js          ★ 世界观数值：三层属性 / 11 阶装备 / 三转
+    │                        ⚠ 它导出的 MAX_LEVEL(99) / expToNext / expFromKill
+    │                        没有任何文件 import——经验曲线实际在 characters.js
+    ├── characters.js       角色 / 技能 / 敌人 / 道具 / 商店 / 经验曲线（50 级）
     ├── chapter-destiny.js★ 第一卷剧情（序章 ~ 第8章，当前唯一活跃剧情）
     ├── story.js            流程装配
     ├── battle.js           战斗引擎（行动条 / 资源 / 弹反 / 状态）

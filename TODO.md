@@ -12,20 +12,7 @@
 
 ## A. 缺陷（现有功能没按预期工作）
 
-### A4. `validate.mjs` 的成长模拟仍是硬编码 ★最高优先
-
-成长模拟用的是写死的经验值（`['战斗 第三章 2场', 220]`），不读 `SCENES` 里真实的敌人配置。
-它现在推算并打印的是「凯 Lv.15」——**「凯」这个角色名在当前流程里已经不存在了**，
-而真实结局是邪天 Lv6~9。
-
-也就是说这一段输出**看起来像验证，实际上什么都没验证**，改敌人等级不会被它发现。
-
-修法：把经验推导接到 `SCENES` + `ENEMIES[].exp`
-（注意 `battle.js` 里 exp 会按 `1 + (lv-1)*0.22` 放大，且 `wild_wolf` 有 `baseLevel` 修正）。
-
-> 已确认：2026-09-15 实跑，输出里仍是「凯 Lv.15」。
-
-### A2. `weaponSkill` 定义了却基本没用
+### A2. `weaponSkill` 定义了却基本没用 ★最高优先
 
 四个角色各配了 3~5 个技能 id，但全代码库只有一处读它
 （`js/battle.js:911`，且只取第 0 个当普攻）。后面 2~4 个条目从未被任何代码引用。
@@ -50,6 +37,32 @@ const equips = ['weapon', 'armor', 'acc'].map(slot => defaultEquip(id, slot)).fi
 改成定长数组 `[weapon, armor, acc]`（空位保留 `null`），不要 filter。
 
 > 已确认：2026-09-15 复核，代码未变。
+
+### A12. 经验曲线有两套，游戏用的不是 realm.js 那套 ★
+
+`js/realm.js` 导出了 `MAX_LEVEL = 99`、分段 `expToNext`（1-9 冲刺 / 10-39 平稳 /
+40-69 拉长 / 70+ 陡峭）和 `expFromKill`（等级压制双向生效，越级最多 +120% 经验、
+碾压低级怪收益归零）。
+
+**没有任何文件 import 这三个**。游戏实际跑的是 `js/characters.js` 的
+`MAX_LEVEL = 50` 和 `expToNext = 42 + lv² * 3.2`，`battle.js` 结算经验时
+直接用 `enemyStatsAt(...).exp` 之和，**根本没有调用 `expFromKill`**——
+也就是说「等级压制」这套设计一天都没生效过。
+
+后果：realm.js 自称「数值唯一事实源」，但等级这一块它说了不算；
+两套并存，迟早有人改错一边还以为改对了。
+（README 此前正是照 realm.js 写的，已改正。）
+
+要决定的是哪一套是正的：
+- 用 characters.js 那套 → 把 realm.js 的 `MAX_LEVEL`/`expToNext`/`expFromKill` 删掉；
+- 用 realm.js 那套 → 把 `battle.js` 的结算改成 `expFromKill`，
+  `main.js` 的 import 换源，并重新配平（99 级曲线比现在陡得多）。
+
+考虑到原著是升级向的网游文、等级压制正是「逼玩家往前走」的核心手感，
+**倾向后者**，但那是一次真正的数值改动，要连 balance / battlesim 一起重跑。
+
+> 已确认：2026-09-15，`grep -rn "expFromKill\|MAX_LEVEL\|expToNext" js/ tools/`
+> 除 realm.js 自身外无任何引用点。`validate.mjs` 现在会把等级上限的分歧报成警告。
 
 ### A11. `FORBIDDEN.fate` 与查证到的原文设定冲突
 
@@ -189,6 +202,14 @@ A10 修好后，`mobile.cjs` 用真实 `PointerEvent` 覆盖的是：
   并加上断言：必须走到结局、队伍必须仍是单人、控制台必须零报错，失败时退出码非 0
   （此前无论结果如何都 exit 0）。
   实跑：邪天单人从 Lv1 起步，自动战斗中途死 3 次，Lv7 抵达结局，零报错。
+- **A4 `validate.mjs` 的成长模拟重建** —— 此前是一张手抄的经验表
+  （`['战斗 第三章 2场', 220]` 之类），不读 `SCENES` 里任何真实数据，
+  推算并打印「凯 Lv.15」——而「凯」这个角色在当前流程里已经不存在。
+  现在从 `prologue` 真的走一遍剧情图，累加沿途战斗的 `enemyStatsAt(...).exp`
+  与场景发放的经验，用 `characters.js` 的 `expToNext` 升级，全是游戏真正在跑的函数。
+  输出：4 场战斗、累计经验 465、终局 Lv.6。
+  已反向验证——把野狼经验从 42 改成 4，终局立刻掉到 Lv.3 并报「主线经验偏低」。
+  另加两项校验：有战斗没被这条路径走到会报警；等级上限两套不一致会报警（见 A12）。
 - **A8 `battlesim.mjs` 重建** —— 崩溃的真实原因不是 `createBattle` 换了签名，
   而是它跑的 `c1_battle1` / `c3_battle1` / `c4_zain` / `c5_final` 四个场景在剧情重写时
   全被删了，`SCENES[id]` 返回 undefined，`createBattle` 取 `stage.bg` 时抛 TypeError。

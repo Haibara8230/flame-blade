@@ -224,24 +224,90 @@ for (const [k, uri] of Object.entries(PORTRAITS)) {
 }
 console.log('立绘结构: 全部通过（' + Object.keys(PORTRAITS).length + ' 张）');
 
-/* ---- 成长曲线模拟：按主线战斗最小经验推算队伍等级 ---- */
+/* ---- 成长曲线模拟：沿真实剧情路径推算主角等级 ----
+
+   2026-09-15 重建。此前这里是一张手抄的经验表
+   （['战斗 第三章 2场', 220] 之类），不读 SCENES 里任何真实数据，
+   所以改敌人等级、改奖励、删整章它都不会发现——它推算并打印的是
+   「凯 Lv.15」，而「凯」这个角色在当前流程里根本不存在了。
+   看起来像验证，实际什么都没验证。
+
+   现在改成：从 prologue 出发真的走一遍剧情图，把沿途战斗的敌人经验
+   （enemyStatsAt 的等级缩放公式）和场景发的经验都累加起来，
+   用 characters.js 的 expToNext 升级——全部是游戏真正在跑的那几个函数。 */
 {
-  const { expToNext: e2n } = await import('../js/characters.js');
-  let lv = 1, exp = 0;
-  const script = [
-    ['战斗 第一章 2场', 80], ['章末奖励', 300],
-    ['战斗 第二章 2场', 150], ['章末奖励', 450],
-    ['战斗 第三章 2场', 220], ['章末奖励', 650],
-    ['战斗 第四章 2场', 300], ['章末奖励', 800],
-    ['最终决战', 1000],
-  ];
-  for (const [label, g] of script) {
-    exp += g;
-    while (exp >= e2n(lv) && lv < 40) { exp -= e2n(lv); lv++; }
-    console.log(`  进度 ${label.padEnd(16)} 累计经验+${g} → 凯 Lv.${lv}（余 ${exp}）`);
+  const { expToNext: e2n, MAX_LEVEL } = await import('../js/characters.js');
+
+  /* 沿 next / choices 走一条确定路径：抉择一律取第一个分支。
+     战斗都在主线 next 链上，不被抉择挡住，所以这条路径覆盖全部战斗；
+     真有战斗被挂到分支里，下面的「有战斗没走到」会报出来。 */
+  const path = [];
+  {
+    const seen = new Set();
+    let id = 'prologue';
+    while (id && SCENES[id] && !seen.has(id)) {
+      seen.add(id);
+      const sc = SCENES[id];
+      path.push(id);
+      if (sc.choices && sc.choices.length) id = sc.choices[0].goto;
+      else if (sc.branch) id = sc.branch.yes;
+      else id = sc.next;
+    }
   }
-  if (lv < 14) warns.push(`主线经验偏低：终盘凯只有 Lv.${lv}，建议 ≥15`);
-  if (lv > 24) warns.push(`主线经验偏高：终盘凯达到 Lv.${lv}`);
+
+  /* 场景发的经验：pre 里的 { exp: N }，以及走到的那个分支的 action */
+  const sceneExp = sc => {
+    let g = 0;
+    const eat = list => { for (const a of list || []) if (a && typeof a.exp === 'number') g += a.exp; };
+    eat(sc.pre);
+    if (sc.choices && sc.choices[0]) eat(sc.choices[0].action);
+    return g;
+  };
+
+  let lv = 1, exp = 0, battles = 0, totalExp = 0;
+  const rows = [];
+  for (const id of path) {
+    const sc = SCENES[id];
+    let gain = sceneExp(sc), label = null;
+    if (sc.enemies && sc.enemies.length) {
+      battles++;
+      // battle.js 结算时用的就是 enemyStatsAt(...).exp 之和
+      gain += sc.enemies.reduce((a, e) => a + (enemyStatsAt(e.ref, e.level || 1)?.exp || 0), 0);
+      label = `${id}（${sc.enemies.map(e => ENEMIES[e.ref]?.name || e.ref).join('+')}）`;
+    } else if (gain > 0) label = `${id}（剧情奖励）`;
+    if (!label) continue;
+    exp += gain; totalExp += gain;
+    while (exp >= e2n(lv) && lv < MAX_LEVEL) { exp -= e2n(lv); lv++; }
+    rows.push(`  进度 ${label.padEnd(34)} +${String(gain).padStart(4)} → Lv.${lv}（余 ${exp}/${e2n(lv)}）`);
+  }
+  rows.forEach(r => console.log(r));
+  console.log(`  合计 ${battles} 场战斗，累计经验 ${totalExp}，终局 Lv.${lv}`);
+
+  /* 剧本里有战斗，但这条路径一场都没走到 —— 多半是主线断了 */
+  const allBattles = Object.values(SCENES).filter(sc => sc.enemies && sc.enemies.length).length;
+  if (battles < allBattles) warns.push(`成长模拟只走到 ${battles}/${allBattles} 场战斗，其余挂在分支里（模拟结论偏低）`);
+  if (!battles) errs.push('成长模拟一场战斗都没走到，主线可能断了');
+
+  /* 基准来自 playthrough.cjs 的真实通关记录（2026-09-15：Lv7~8 收尾）。
+     注意方向：这里每场只打一次，所以是**下界**——实测更高不是出了错，
+     而是自动战斗死了 3 次，arc_defeat 把人送回 d_hunt 重打，经验又拿了一遍。
+     band 给得宽，是为了抓「整章经验被删 / 被翻倍」这种量级的问题，
+     而不是每次微调数值都来烦人。 */
+  const REAL = { low: 4, high: 12, note: 'playthrough 实测 Lv7~8（含 3 次战死重打）' };
+  if (lv < REAL.low) warns.push(`主线经验偏低：模拟终局只有 Lv.${lv}（${REAL.note}）`);
+  if (lv > REAL.high) warns.push(`主线经验偏高：模拟终局 Lv.${lv}（${REAL.note}）`);
+}
+
+/* ---- 经验曲线只能有一套 ----
+   realm.js 也导出了 MAX_LEVEL / expToNext / expFromKill（99 级、分段曲线、
+   等级压制），但没有任何文件 import 它们——游戏跑的是 characters.js 那一套
+   （50 级、二次曲线、没有等级压制）。两套并存迟早会有人改错一边。 */
+{
+  const ch = await import('../js/characters.js');
+  const rm = await import('../js/realm.js');
+  if (ch.MAX_LEVEL !== rm.MAX_LEVEL) {
+    warns.push(`等级上限有两套：characters.js ${ch.MAX_LEVEL} / realm.js ${rm.MAX_LEVEL}——游戏用的是前者，realm.js 那套没有任何人 import`);
+  }
 }
 
 /* ---- Boss 强度对照表：按剧本里真实的遭遇等级换算，基准值之间没有可比性 ---- */
