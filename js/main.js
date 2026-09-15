@@ -585,6 +585,12 @@ function addMember(id, level) {
     m.skills = ACTORS[id].skills.filter(s => s.lv <= m.level).map(s => s.id);
     m.hp = m.maxHp; m.mp = m.maxMp;
   }
+  /* makeMember 只走 statsAt，不含属性换算。原文里生命/攻击/防御**全部**由
+     自由属性推导（生命=体质×10、物攻=力量×2+装备…），base 已按原文归零，
+     所以不在这里 recalc 一次，新成员的面板就是一排 0。
+     此前靠角色创建那一步兜底，等于在创建之前主角有 0 点生命。 */
+  recalc(m);
+  m.hp = m.maxHp; m.mp = m.maxMp;
   G.party.push(m);
   return m;
 }
@@ -663,7 +669,21 @@ function runAction(a) {
   if (a.objective) G.flags.currentObjective = a.objective;
   if (typeof a.join === 'string' && ACTORS[a.join]) { addMember(a.join); toast(`※ ${ACTORS[a.join].name} 加入了队伍！`); }
   if (typeof a.item === 'string') { G.bag[a.item] = (G.bag[a.item] || 0) + 1; toast(`获得【${EQUIPS[a.item]?.name || ITEMS[a.item]?.name || a.item}】`); }
-  if (typeof a.equip === 'string') { const owner = G.party.find(m => ACTORS[m.id]) || G.party[0]; if (owner) { const slotIdx = SLOTS.indexOf(EQUIPS[a.equip]?.slot); if (slotIdx >= 0) owner.equips[slotIdx] = a.equip; } }
+  if (typeof a.equip === 'string') {
+    const owner = G.party.find(m => ACTORS[m.id]) || G.party[0];
+    const eq = EQUIPS[a.equip];
+    if (owner && eq) {
+      const slotIdx = SLOTS.indexOf(eq.slot);
+      if (slotIdx >= 0) owner.equips[slotIdx] = a.equip;
+      /* 装上之后必须重算——此前只塞进槽位就完事，面板一点没变。
+         永恒命运之刻的「攻击+50、攻击+5%、四大基本属性+10」全靠 recalc 生效。 */
+      recalc(owner);
+      /* 武器自带的技能。原文第11章：永恒命运之刻自带【命运之赐】（被动）
+         与【命运七杀】七招 + 禁断技，七杀一律「命运之核缺失，不可使用」。 */
+      for (const sid of eq.skills || []) if (!owner.skills.includes(sid)) owner.skills.push(sid);
+      toast(`※ 获得【${eq.name}】`, 2600);
+    }
+  }
   if (a.gold) { G.gold += a.gold; }
   /* 创号分配：把玩家在剧情里选的自由属性 / 固定属性真正写到角色身上。
      原文的角色创建是一次性、不可更改的（没有删号重练），所以这里

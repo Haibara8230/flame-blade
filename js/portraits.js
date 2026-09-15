@@ -311,14 +311,18 @@ const RECIPES = {
   `, '#2e2a1c', '#0a0906'),
 
   /* ---- 果果（第9章，从黑色挂饰的白光里出来） ----
-     「她的身体很小，而细看之下，她那张小小的脸儿却是无比的精致，可爱之中呈现着
-       不带一丝瑕疵，不染一丝凡尘的完美美感。身段纤细，裙裳之下，两只裸着的
-       细嫩小脚脚尖自然下垂……」「眨巴着星钻一般的眼睛」
-     不染一丝凡尘 → 全白发、肤色最白；星钻般的眼睛 → 大眼 + 白瞳 + 星芒。 */
+     原文第9章：「这是一个**头发漆黑，目如星钻，皮肤和衣裙又纯白无暇**的小女孩
+       ……不仅仅是她看上去最多十二三岁的年纪，就连她的身体，粗看只看也不过
+       三十公分的高度。」
+     第10章：「那双**漆黑的眼睛**顿时亮了一下，如同镶嵌了两颗小星星一般扑闪扑闪」
+       「她那张小小的脸儿却是无比的精致，可爱之中呈现着不带一丝瑕疵，
+         不染一丝凡尘的完美美感。」
+     ⚠ 第一版画成了白发白瞳，两处都错——原文写的是**漆黑的头发、漆黑的眼睛**，
+     纯白无暇的是**皮肤和衣裙**。「星钻」指的是眼里的星芒，不是瞳色发白。 */
   guoguo: e => svgWrap(`
-    ${hairSide('#f0edfb', 320)}
-    ${face({ id: 'guoguo' + e, expr: e, eye: '#cfeeff', glow: '#ffffff', brow: '#a396c4', blush: '#ffc0ce', skin: '#fff6f2', faceShape: 'round', eyeShape: 'big', eyeSpacing: 1.08, browThick: 3 })}
-    ${hairCap('#f6f4ff', { vol: 42, side: 168, line: 96 })}
+    ${hairSide('#0e0b16', 320)}
+    ${face({ id: 'guoguo' + e, expr: e, eye: '#241c30', glow: '#ffffff', brow: '#1a1424', blush: '#ffc0ce', skin: '#fffaf8', faceShape: 'round', eyeShape: 'big', eyeSpacing: 1.08, browThick: 3 })}
+    ${hairCap('#14101c', { vol: 42, side: 168, line: 96 })}
     <!-- 星钻般的眼芒 -->
     <path d="M129 143 l3 -10 l3 10 l10 3 l-10 3 l-3 10 l-3 -10 l-10 -3 Z" fill="#ffffff"/>
     <path d="M168 143 l3 -10 l3 10 l10 3 l-10 3 l-3 10 l-3 -10 l-10 -3 Z" fill="#ffffff"/>

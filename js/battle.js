@@ -957,6 +957,9 @@ function resolvePlayerCmd(B, m, cmd) {
     case 'skill': {
       const sk = SKILLS[cmd.skill];
       if (!sk) break;
+      /* 原文第11章：命运七杀每一杀都标着「命运之核缺失，不可使用」。
+         面板上看得到、点不动——不给它编一个效果出来。 */
+      if (sk.locked) { addLog(B, `<span class="dmg">※ ${sk.name}：${sk.locked}</span>`); break; }
       if (isSealed(m)) { addLog(B, `<span class="dmg">${m.name} 被封印了，无法使用术式！</span>`); break; }
       // 凯「炎道·薪尽」：解放的怒气消耗打折
       const disc = sk.release ? (1 + talentBonus(m, 'releaseCost')) : 1;

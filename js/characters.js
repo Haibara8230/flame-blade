@@ -128,6 +128,23 @@ export const SKILLS = {
     power: 1.0, hits: 1, target: 'one', rage: 12, fx: 'slash',
     desc: '新手剑并不华丽的砍、劈、刺。',
   },
+  /* ---- 命运七杀（原文第11章，永恒命运之刻自带） ----
+     「命运七杀：以永恒命运之刻的制裁之力对目标造成连续七次不同的命运制裁，
+       制裁效果不可抗拒，不可叠加，攻击范围未知，技能冷却时间未知。」
+     七杀的耗魔 100 起、每级翻倍，到第七杀 9999；效果原文一律写「未知」，
+     状态一律是「**命运之核缺失，不可使用**」。
+     所以这里全部 locked: true —— 面板上看得到、点不动，和原文一致。
+     ⚠ 一个字都不要替原文补：效果就是「未知」。 */
+  fate_kill_1: { id: 'fate_kill_1', name: '血刹', sub: '第一杀 · 生命制裁', mp: 100, type: 'atk', target: 'one', locked: '命运之核缺失，不可使用', desc: '效果未知。' },
+  fate_kill_2: { id: 'fate_kill_2', name: '魔刹', sub: '第二杀 · 魔力制裁', mp: 200, type: 'atk', target: 'one', locked: '命运之核缺失，不可使用', desc: '效果未知。' },
+  fate_kill_3: { id: 'fate_kill_3', name: '神溃', sub: '第三杀 · 天罡制裁', mp: 400, type: 'atk', target: 'one', locked: '命运之核缺失，不可使用', desc: '效果未知。' },
+  fate_kill_4: { id: 'fate_kill_4', name: '毒蚀', sub: '第四杀 · 守护制裁', mp: 800, type: 'atk', target: 'one', locked: '命运之核缺失，不可使用', desc: '效果未知。' },
+  fate_kill_5: { id: 'fate_kill_5', name: '亡魂', sub: '第五杀 · 生死制裁', mp: 1600, type: 'atk', target: 'one', locked: '命运之核缺失，不可使用', desc: '效果未知。' },
+  fate_kill_6: { id: 'fate_kill_6', name: '杀魄', sub: '第六杀 · 阴阳制裁', mp: 3200, type: 'atk', target: 'one', locked: '命运之核缺失，不可使用', desc: '效果未知。' },
+  fate_kill_7: { id: 'fate_kill_7', name: '天诛', sub: '第七杀 · 天命制裁', mp: 9999, type: 'atk', target: 'one', locked: '命运之核缺失，不可使用', desc: '效果未知。' },
+  /* 「禁断技：命运禁罪·天戮：效果未知，命运之核缺失，不可使用。」 */
+  fate_forbidden: { id: 'fate_forbidden', name: '命运禁罪·天戮', sub: '禁断技', mp: 0, type: 'atk', target: 'all', locked: '命运之核缺失，不可使用', desc: '效果未知。' },
+
   /* 原文第7章：「技能：探知术：全职业共有技能，损耗魔法值1点，
      探知不高于自己等级十级的怪物属性。」 */
   scan: {
@@ -180,6 +197,10 @@ export const EQUIPS = {
   fate_moment: {
     id: 'fate_moment', name: '永恒命运之刻（残）', slot: 'weapon', tier: 6,
     atk: 50, atkPct: 0.05, allFree: 10, fixedAll: 10, cleave: true,
+    /* 原文第11章：这把武器自带【命运之赐】（被动，已由 fixedAll 实现）
+       与【命运七杀】七招 + 禁断技【命运禁罪·天戮】，全部「命运之核缺失，不可使用」。 */
+    skills: ['fate_kill_1', 'fate_kill_2', 'fate_kill_3', 'fate_kill_4',
+             'fate_kill_5', 'fate_kill_6', 'fate_kill_7', 'fate_forbidden'],
     bound: '邪天', noTrade: true, noDrop: true, noSteal: true, noDiscard: true,
     price: 0, weight: 0,
     desc: '使用要求：无。品级：仙灵。命运世界的力量核心，有着未知的神秘来历和未知的神秘力量。' +

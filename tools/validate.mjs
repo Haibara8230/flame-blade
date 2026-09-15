@@ -114,7 +114,10 @@ for (const a of Object.values(ACTORS)) {
   if (!a.quote) warns.push(`角色 ${a.id}: 缺少台词`);
 }
 for (const s of Object.values(SKILLS)) {
-  if (s.type === 'atk' && s.power == null) errs.push(`技能 ${s.id}: 缺少威力`);
+  /* locked 的技能不该有威力：原文第11章的命运七杀效果一律写「未知」，
+       状态一律「命运之核缺失，不可使用」。给它编一个 power 才是错的。 */
+    if (s.locked) { if (s.power != null) errs.push(`技能 ${s.id}: 标了 locked 却配了威力——原文写的是「效果未知」，不要替它补`); }
+    else if (s.type === 'atk' && s.power == null) errs.push(`技能 ${s.id}: 缺少威力`);
   if (s.ult && !s.type === 'atk') warns.push(`技能 ${s.id}: 奥义类型异常`);
 }
 // 奥义覆盖
