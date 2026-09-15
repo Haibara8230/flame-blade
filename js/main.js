@@ -899,7 +899,7 @@ function startBattleFromScene(sc) {
 function launchBattle(sc) {
   G.battleCheckpoint = JSON.parse(JSON.stringify({ sceneId: sc.id || G.sceneId, party: G.party, bag: G.bag, gold: G.gold, flags: G.flags }));
   G.battleScene = null;
-  const stage = { bg: sc.bg || G.bg, introLines: sc.introLines };
+  const stage = { bg: sc.bg || G.bg, introLines: sc.introLines, script: sc.script };
   const def = {
     id: sc.id || G.sceneId, bg: sc.bg || G.bg, enemies: sc.enemies,
     escape: sc.escape !== false, boss: !!sc.boss,
@@ -917,7 +917,25 @@ function launchBattle(sc) {
   $('cmdmenu').classList.remove('hidden');
   b.ui.mode = 'wait';
   $('cmd-buttons').innerHTML = '';
-  buildCommandUI();
+  if (b.scripted) buildScriptUI(b); else buildCommandUI();
+}
+
+/* 演出战斗的界面：只留「倍速」和「跳过」。
+   这一场是原文的独角戏，玩家不需要下任何指令——他连技能都没有。 */
+function buildScriptUI(b) {
+  $('cmd-actor').innerHTML = `<div class="an">${b.party[0]?.name || ''}</div>
+    <div style="color:#bbb2dd">按原文演出中</div>`;
+  const row = $('cmd-buttons');
+  row.innerHTML = '';
+  const mk = (label, sub, fn) => {
+    const btn = document.createElement('button');
+    btn.className = 'cbtn';
+    btn.innerHTML = `${label}${sub ? `<span class="sub">${sub}</span>` : ''}`;
+    btn.onclick = e => { e.stopPropagation(); sfx('ui'); fn(); };
+    row.appendChild(btn);
+  };
+  mk('倍速', BT.battleSpeedLabel(), () => { BT.cycleBattleSpeed(); buildScriptUI(b); });
+  mk('跳过', '直接看结果', () => { BT.skipScript(b); });
 }
 
 /* 战利品：普通战斗小概率掉一件，首领必掉且保底稀有。
@@ -967,12 +985,8 @@ G.onBattleWin = function (b, exp, gold) {
     G.gold += gold;
     const ups = gainExp(exp);
     showLevelUps(ups);
-    /* 战后回复：固定两成，不再回满。
-       补给与休整因此变成真正需要规划的事，而不是每场打完自动清零。 */
-    for (const m of G.party) if (!m.dead) {
-      m.hp = Math.min(m.maxHp, m.hp + Math.floor(m.maxHp * 0.20));
-      m.mp = Math.min(m.maxMp, m.mp + Math.floor(m.maxMp * 0.20));
-    }
+    /* ⚠ 此前打完一场白送两成生命与术力，是本项目编的。
+       原文里他杀完三只狼就是带着那一爪的伤走的，没有任何自动回复。 */
     // 复活倒下的同伴（残血）
     for (const m of G.party) if (m.dead) { m.dead = false; m.hp = Math.max(1, Math.floor(m.maxHp * 0.15)); m.pose = 'idle'; }
     for (const m of G.party) if (m.resource === 'rage') m.mp = 0;   // 怒气不跨战斗保留
@@ -1941,6 +1955,7 @@ function loop(now) {
     b.party.forEach((m, i) => { if (m.hp < prevHp[i]) dmgVig = 1; });
     // 日志更新
     $('battle-log').innerHTML = BT.battleLogHTML(b);
+    $('battle-log').classList.toggle('story', !!b.scripted);
     // 格挡条
   } else {
     updateToast(dt);

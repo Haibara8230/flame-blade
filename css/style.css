@@ -113,6 +113,10 @@ body{display:block;overflow:hidden}
   background:linear-gradient(90deg,rgba(6,8,18,.86),rgba(6,8,18,.5));
   border-left:3px solid rgba(255,150,60,.75);border-radius:4px;color:#cfd6ff}
 .battle-log div{opacity:.5;transition:opacity .3s}
+/* 演出战斗：日志里跑的是原文正文，要能读完，所以放高、放大、全部不压暗 */
+.battle-log.story{height:168px;font-size:15px;line-height:1.75}
+.battle-log.story div{opacity:.88}
+.battle-log.story div:last-child{opacity:1}
 .battle-log div:last-child{opacity:1;color:#fff}
 .battle-log .hl{color:var(--gold);font-weight:700}
 .battle-log .dmg{color:#ff5f5f;font-weight:700}

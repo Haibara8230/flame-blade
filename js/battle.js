@@ -76,6 +76,11 @@ export function createBattle(game, def, stage) {
     cmd: null, ui: { mode: 'idle', queue: [] },
     time: 0, message: null, introT: stage.introLines ? 1 : 0,
     t: 0, turn: 0, escapes: 0, active: null,
+    /* 演出战斗：剧本自己按原文的节拍走，玩家只看。
+       原因见 chapter-destiny.js —— 原文第9章那一场如果逐回合模拟要 42 次出手，
+       而原文本身把中段压成了「-12，-13，-14，-12，-12……」五个数字加省略号。
+       所以这里照抄的是**节拍**，不是回合。 */
+    script: stage.script || null, scriptIdx: 0, scripted: !!stage.script,
   };
 
   // 敌人实例
@@ -204,7 +209,9 @@ export function forecastOrder(B, n = 8) {
    ============================================================ */
 function addLog(B, txt, cls = '') {
   B.log.push({ txt, cls });
-  if (B.log.length > 4) B.log.shift();
+  /* 演出战斗里这是原文的正文，留 4 行根本读不完；普通战斗仍然只留 4 行。 */
+  const cap = B.scripted ? 9 : 4;
+  while (B.log.length > cap) B.log.shift();
 }
 
 function addFloat(B, txt, x, y, col, size = 34, crit = false) {
@@ -1428,8 +1435,9 @@ export function updateBattle(B, dt, input) {
       cleanupDead(B);
     }
   } else if (!B.over && !B.cutin) {
+    if (B.scripted) nextScriptBeat(B);
     // 需要玩家输入
-    if (B.ui.mode === 'wait') {
+    else if (B.ui.mode === 'wait') {
       B.game.requestPlayerTurn(B);
       B.ui.mode = 'input';
     }
@@ -1454,6 +1462,106 @@ export function updateBattle(B, dt, input) {
   if (B.flash < 0.01) B.flash = 0;
 
   checkBattleEnd(B);
+}
+
+/* ============================================================
+   演出战斗：按剧本里的节拍播，不做回合模拟
+
+   节拍格式（写在场景的 script 里）：
+     ['旁白', '文本']        —— 一句台词 / 旁白
+     { hit: [i, n] }         —— 对第 i 只敌人连打 n 刀，伤害按真实属性算
+     { take: i }             —— 主角挨第 i 只一下（原文里那一爪是他故意挨的）
+     { down: i }             —— 第 i 只倒下
+     { pause: 0.6 }          —— 停一拍
+   伤害数字一律由 computeDamage 现算，所以永远和面板对得上，
+   不会出现「剧本写死 -15、实际公式改了却还显示 -15」的情况。
+   ============================================================ */
+function nextScriptBeat(B) {
+  const list = B.script || [];
+  if (B.scriptIdx >= list.length) {
+    // 剧本走完：场上还站着的敌人一并倒下，然后按正常流程结算
+    for (const e of B.enemies) if (!e.dead) { e.hp = 0; e.dead = true; e.dying = 0; }
+    B.scripted = false;
+    checkBattleEnd(B);
+    return;
+  }
+  const beat = list[B.scriptIdx++];
+  const hero = B.party[0];
+
+  if (Array.isArray(beat)) {
+    const [who, text] = beat;
+    B.ui.queue.push({
+      dur: Math.max(0.9, Math.min(2.6, text.length * 0.075)),
+      start() { addLog(B, who === '旁白' ? text : `<span class="hl">${who}</span>　${text}`); },
+      tick() { }, resolve() { },
+    });
+    return;
+  }
+  if (beat.pause) {
+    B.ui.queue.push({ dur: beat.pause, start() { }, tick() { }, resolve() { } });
+    return;
+  }
+  if (beat.hit) {
+    const [idx, n] = beat.hit;
+    const tg = B.enemies[idx];
+    if (!tg || tg.dead) return;
+    for (let k = 0; k < n; k++) {
+      B.ui.queue.push({
+        dur: 0.34,
+        start() {
+          hero.pose = 'strike';
+          /* MISS 也照抄原文——第9章那一串里就夹着一个 MISS。
+             用命中判定现算，不写死。 */
+          const miss = chance(0.12);
+          if (miss) {
+            addFloat(B, 'MISS', tg.x, tg.y - 118, '#bbb2dd', 26);
+            addLog(B, 'MISS');
+            return;
+          }
+          const r = computeDamage(B, hero, tg, 1.0, { elem: 'none', hits: 1 });
+          damage(B, tg, r.dmg, { by: hero, attacker: hero });
+          addFx(B, 'slash', tg.x, tg.y - 88, '#fff0d8', { dur: 0.26, ang: 0.9, rx: 70, ry: 60 });
+        },
+        tick(k2) { if (k2 > 0.7) hero.pose = 'idle'; },
+        resolve() { },
+      });
+    }
+    return;
+  }
+  if (beat.take !== undefined) {
+    const src = B.enemies[beat.take];
+    B.ui.queue.push({
+      dur: 0.7,
+      start() {
+        if (!src) return;
+        const r = computeDamage(B, src, hero, 1.0, { elem: 'none', hits: 1 });
+        damage(B, hero, r.dmg, { by: src, attacker: src });
+        shake(B, 12);
+      },
+      tick() { }, resolve() { },
+    });
+    return;
+  }
+  if (beat.down !== undefined) {
+    const tg = B.enemies[beat.down];
+    B.ui.queue.push({
+      dur: 0.8,
+      start() {
+        if (!tg || tg.dead) return;
+        damage(B, tg, tg.hp + 1, { by: hero, attacker: hero });
+      },
+      tick() { }, resolve() { },
+    });
+    return;
+  }
+}
+
+/* 跳过演出：把剩下的节拍一次走完 */
+export function skipScript(B) {
+  if (!B || !B.scripted) return;
+  B.ui.queue.length = 0;
+  B.scriptIdx = (B.script || []).length;
+  nextScriptBeat(B);
 }
 
 function cleanupDead(B) {
