@@ -19,6 +19,7 @@ import {
   applyFreeStats, luckCrit, luckRoll, luckDrop, witExp, charmFavor,
   reactEvade, senseAccuracy, focusResist,
 } from './realm.js';
+import { equipFixedBonus } from './characters.js';
 
 /* 升级给的点数。原文写得很清楚，照抄：
      「叮……你的等级升为1级，生命+10，魔法+10，获得5点自由属性点。」
@@ -32,6 +33,8 @@ export const STATS = FREE_STATS.map(s => ({
   id: s.id, name: s.name, col: s.col, desc: s.desc,
 }));
 export { FIXED_STATS, TALENT_STATS };
+/* 转发 realm.js 里按原文定义的几项，main.js 通过 GR.* 取用 */
+export { formatCoin, COIN, hungerCap, HUNGER_DRAIN, RESISTS, BOSS_RANKS } from './realm.js';
 
 /* 自由属性 → 派生属性。
    回避(eva)与命中(acc)是本次新增的两项，battle.js 会真的滚它们。 */
@@ -41,9 +44,13 @@ export function applyStatPoints(s, alloc = {}) {
 }
 
 /* 固定属性：创号时定死，之后只能靠装备。member.fixed = {luck,wit,chm} */
+/* 固定属性 = 创号分配 + 装备附带。
+   原文：固定属性「不随升级增长，只能靠装备或特殊途径提升」，
+   而永恒命运之刻的「命运之赐」正是那个特殊途径（幸运/悟性/魅力各 +10）。 */
 export function fixedOf(member) {
   const f = (member && member.fixed) || {};
-  return { luck: f.luck || 0, wit: f.wit || 0, chm: f.chm || 0 };
+  const eq = equipFixedBonus((member && member.equips) || []);
+  return { luck: (f.luck || 0) + eq, wit: (f.wit || 0) + eq, chm: (f.chm || 0) + eq };
 }
 
 /* 天赋属性：系统扫描得来。member.talentAttr = {react,sense,focus} */

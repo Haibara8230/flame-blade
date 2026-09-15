@@ -71,9 +71,12 @@ export const ACTORS = {
   kaito: {
     id: 'kaito', name: '邪天', title: '无职业', portrait: 'kaito',
     realName: '叶天邪', role: '近战', joinLevel: 0,
-    resource: 'rage', resourceName: '斗气',
+    /* ⚠ 此前这里是 resource:'rage' / resourceName:'斗气'——原著中没有这个东西。
+       原文第7章的面板上写的是「魔法值：40」（精神 4 × 10），
+       而他唯一的技能探知术「损耗魔法值1点」。所以资源就是魔法值，没有怒气系统。 */
+    resource: 'mp', resourceName: '魔法值',
     /* 幸运 0 → cri 基础值必须是 0。出手速度 100 是原文的初始值。 */
-    base: { hp: 0, mp: 0, atk: 0, def: 0, spd: 100, cri: 0, blk: 0.10, par: 0.06, rageMul: 1.0, mpRegen: 2 },
+    base: { hp: 0, mp: 0, atk: 0, def: 0, spd: 100, cri: 0, blk: 0.10, par: 0.06, rageMul: 1.0, mpRegen: 0 },
     /* 原文：「叮……你的等级升为N级，生命+10，魔法+10，获得5点自由属性点。」
        这句在第12/19/20/23/46/92/102 章反复出现，格式一字不差。 */
     grow: { hp: 10, mp: 10, atk: 0, def: 0, spd: 0 },
@@ -81,18 +84,18 @@ export const ACTORS = {
     alloc: { str: 10, vit: 7, agi: 4, spi: 4 },
     fixed: { luck: 0, wit: 0, chm: 10 },
     talentAttr: { react: 72, sense: 53, focus: 42 },
-    weaponSkill: ['yt_slash', 'yt_read', 'yt_stone'],
+    /* 普攻就是「砍、劈、刺」。原文第9章：
+       「即使是0级的玩家，也会自带一个见习职业的见习技能。而全世界只有叶天邪
+         一个例外，**他没有技能，没有职业**，只能以新手剑并不华丽的砍、劈、刺……」 */
+    weaponSkill: ['plain_strike'],
+    /* 原文第7章的面板里，「技能」一栏只有一个，而且是全职业共有的：
+       「技能：探知术：全职业共有技能，损耗魔法值1点，
+         探知不高于自己等级十级的怪物属性。」
+       ⚠ 此前这里配了 yt_slash / yt_read / yt_stone / yt_counter / yt_focus
+       五个技能，以及 ni_* 一整条邪龙线——全部是本项目编的，原著中他这个阶段
+       一个技能都没有。已删除。邪龙系技能要到原文第111章转职之后才存在。 */
     skills: [
-      /* 无职业阶段：没有职业技能，只有他自己打出来的东西 */
-      { id: 'yt_slash', lv: 1 },   // 新手短剑的基础斩击
-      { id: 'yt_read', lv: 2 },    // 读招——反应力换来的先手
-      { id: 'yt_stone', lv: 3 },   // 投石拉怪，原文第八章的开场手段
-      { id: 'yt_counter', lv: 5 }, // 极限闪避后的反击
-      { id: 'yt_focus', lv: 8 },   // 专注力：稳住自己
-      /* —— 以下为转职之后（原文第111章）才会解锁，此处仅占位 —— */
-      { id: 'ni_claw', lv: 40 }, { id: 'ni_scale', lv: 42 }, { id: 'ni_ember', lv: 45 },
-      { id: 'ni_roar', lv: 48 }, { id: 'ni_burst', lv: 52 }, { id: 'ni_twin', lv: 58 },
-      { id: 'ni_abyss', lv: 64 }, { id: 'ni_defy', lv: 72 }, { id: 'ni_golden', lv: 80 },
+      { id: 'scan', lv: 0 },     // 探知术：全职业共有
     ],
     quote: '「别人等我一天一夜都是应该。但我不会多等谁一秒。」',
     winQuote: '下一个。',
@@ -167,32 +170,18 @@ export const SKILLS = {
      所以这一段他没有任何职业技能。下面五招全部来自他自己的东西——
      反应力 72、感知力 53、专注力 42，以及原文第八章他实际用的打法。
      刻意都做成低耗、低倍率：他这时候是真的弱，强的是操作。 */
-  yt_slash: {
-    id: 'yt_slash', name: '短剑斩', mp: 0, type: 'atk', elem: 'none', power: 1.0, hits: 1,
-    target: 'one', desc: '新手短剑的一记平斩。没有职业加成，全靠手上功夫。', rage: 12,
-    fx: 'slash',
+  /* 普通攻击：新手剑的砍、劈、刺。原文里他这个阶段就只有这个。
+     没有倍率加成、没有属性、没有特效——power 1.0 就是面板攻击力本身。 */
+  plain_strike: {
+    id: 'plain_strike', name: '砍／劈／刺', mp: 0, type: 'atk', elem: 'none',
+    power: 1.0, hits: 1, target: 'one', rage: 12, fx: 'slash',
+    desc: '新手剑并不华丽的砍、劈、刺。',
   },
-  yt_stone: {
-    id: 'yt_stone', name: '投石', mp: 0, type: 'debuff', target: 'one',
-    desc: '捡起一颗石子甩出去。伤害只有 1 点，但能把仇恨拉过来，' +
-          '并让目标的行动条后退——原文第八章的开场手段。', rage: 8,
-    fx: 'pierce', gauge: -26,
-  },
-  yt_read: {
-    id: 'yt_read', name: '读招', mp: 0, type: 'buff', target: 'self',
-    desc: '七倍于常人的反应力用在看上——本回合回避率大幅提升，并抢先出手。', rage: 14,
-    fx: 'aura', buff: { id: 'haste', turns: 2 }, evadeUp: 0.3,
-  },
-  yt_counter: {
-    id: 'yt_counter', name: '擦身反手', mp: 0, type: 'atk', elem: 'none', power: 1.45, hits: 1,
-    target: 'one', desc: '让开极小的幅度，贴着狼牙擦过去，再反手撩上来。' +
-          '躲避幅度越大用时越长——他从不多让一分。', rage: 18,
-    fx: 'slash', afterDodgeBonus: 0.6,
-  },
-  yt_focus: {
-    id: 'yt_focus', name: '凝神', mp: 0, type: 'buff', target: 'self',
-    desc: '专注力压住外界干扰：本场异常抗性提升，并回复少量生命。', rage: 20,
-    fx: 'veil', buff: { id: 'defUp', turns: 3 }, selfHeal: 0.12,
+  /* 原文第7章：「技能：探知术：全职业共有技能，损耗魔法值1点，
+     探知不高于自己等级十级的怪物属性。」 */
+  scan: {
+    id: 'scan', name: '探知术', mp: 1, type: 'scan', target: 'one', rage: 0, fx: 'aura',
+    desc: '全职业共有技能。损耗魔法值 1 点，探知不高于自己等级十级的怪物属性。',
   },
   /* ============ 邪天 · 逆骨邪龙线 ============
      设计主轴：所有强招都要付代价——自伤、破防、或者把行动条压给敌人。
@@ -379,6 +368,34 @@ export const COMBOS = {
 
 /* ---------------- 装备 ---------------- */
 export const EQUIPS = {
+  /* ---- 永恒命运之刻（残） · 原文第11章，逐条照抄 ----
+     「永恒命运之刻（残）：使用要求：无。品级：仙灵。命运世界的力量核心，
+       有着未知的神秘来历和未知的神秘力量。目前处在命运之核全部丧失的残缺状态。
+       已强制认主，主人：邪天，不可交易，不可掉落，不可偷窃，不可丢弃。
+       属性：攻击+50，攻击+5%，四大基本属性+10，
+             普通攻击时将对攻击范围内的所有目标同时造成伤害。
+       技能：命运之赐：被动，永恒命运之刻之主将受到命运之祝福，
+             提升天赋固定属性：幸运+10，悟性+10，魅力+10。
+             （强制附加，效果不可关闭。除非永恒命运之刻离体，
+               否则即使不装备效果也不会消失。）」
+
+     验算（原文第12章）：力量 10+10=20 → 物攻 40，+50 = 90，×1.05 = 94.5
+     ——对应原文「以叶天邪此刻差点破百的攻击力」；
+     升 1 级把 5 点全加力量后 25×2+50=100，×1.05=105 ——「攻击能力顿时破百」。
+
+     ⚠ 剧情要推进到第11章才会授予，当前流程（到第9章前半）还拿不到。 */
+  fate_moment: {
+    id: 'fate_moment', name: '永恒命运之刻（残）', slot: 'weapon', tier: 6,
+    atk: 50, atkPct: 0.05,
+    allFree: 10,              // 四大基本属性（力量/体质/敏捷/精神）各 +10
+    fixedAll: 10,             // 命运之赐：幸运/悟性/魅力 各 +10（被动，离体才消失）
+    cleave: true,             // 普通攻击对攻击范围内的所有目标同时造成伤害
+    bound: '邪天', noTrade: true, noDrop: true, noSteal: true, noDiscard: true,
+    price: 0, weight: 0,
+    desc: '使用要求：无。品级：仙灵。命运世界的力量核心，有着未知的神秘来历和未知的神秘力量。' +
+          '目前处在命运之核全部丧失的残缺状态。已强制认主，主人：邪天，' +
+          '不可交易，不可掉落，不可偷窃，不可丢弃。',
+  },
   /* 原文第7章：「新手短剑：装备要求：无，品级：苍白，属性：攻击+3。」 */
   mu_sword: { id: 'mu_sword', name: '新手短剑', slot: 'weapon', atk: 3, tier: 1,
     desc: '装备要求：无。品级：苍白。', price: 0 },
@@ -552,23 +569,88 @@ export const ENEMIES = {
        物防 8：原文没直接给，由两组伤害数字反解（见 battle.js computeDamage）。
        物攻 32：原文第9章狼爪打在他身上是 -21，而他当时物防 11 → 21+11=32。
        ⚠ 出手速度原文未给，31 是沿用值（原文只说「移动速度至少是玩家的1.5倍」）。 */
-    baseLevel: 5, hp: 170, atk: 32, def: 8, spd: 31, exp: 42, gold: 16, hot: 4,
+        /* gold 0：原文里三只野狼总共只掉了一枚铜币，而且是第一只掉的——
+       「他为0的幸运让在他手下死亡的怪物爆率全部取最低值」。
+       那一枚由剧情场景直接发放，普通击杀不掉钱。 */
+    baseLevel: 5, hp: 170, atk: 32, def: 8, spd: 31, exp: 42, gold: 0, hot: 4,
     weak: ['fire'], quote: '（一声长嚎。另外两只被惊动了。）',
     skills: [{ id: 'atk', w: 8 }, { id: 'heavy', w: 2 }],
   },
-  novice_wolf: {
-    id: 'novice_wolf', name: '灰狼', shape: 'wolf',
-    palette: { body: '#6a6a72', trim: '#3e3e46', eye: '#ffd24a', fang: '#f4efe4' },
-    hp: 95, atk: 16, def: 4, spd: 24, exp: 24, gold: 12, hot: 3,
-    weak: ['fire'], quote: '（新手村外第一群怪。它们成群，从不单独出现。）',
+  /* ---- 以下怪物全部照抄原文的探知术面板 ----
+     ⚠ 原文只给「等级 / 生命 / 描述 / 技能」，**没有给攻击力与防御力**。
+     野狼的 atk 32 / def 8 是由原文的伤害数字反解的（见 battle.js computeDamage）；
+     其余怪物的 atk / def / spd 标注为原文未考证，按与野狼的相对强度推。
+     此前这里的「灰狼」「狼群首领」是本项目编的，原著中不存在，已删除。 */
+
+  /* 原文第7章：「愤怒的小鸡：1级，生命：30，一群躁动的小鸡，
+     偶尔会做出攻击人类的行为。」 */
+  angry_chick: {
+    id: 'angry_chick', name: '愤怒的小鸡', shape: 'wolf',
+    palette: { body: '#f6e08a', trim: '#d8b048', eye: '#ff6a4a', fang: '#fff6d8' },
+    baseLevel: 1, hp: 30, atk: 6, def: 0, spd: 18, exp: 3, gold: 1, hot: 1,
+    weak: [], quote: '（一群躁动的小鸡，偶尔会做出攻击人类的行为。）',
     skills: [{ id: 'atk', w: 1 }],
   },
-  wolf_alpha: {
-    id: 'wolf_alpha', name: '狼群首领', shape: 'wolf',
+
+  /* 原文第7章：「大凶兔：3级，生命：70，因命运之塔的魔气外泄而受到轻微魔化
+     影响的兔子，平时喜欢没事闲逛荡，人畜无害的外表之下掩藏着相当严重的暴力
+     倾向。因身材矮小，习惯下三路攻击。
+     技能：好大一棒槌：抡起肩上大棒狠狠攻击敌人两腿间的部位，
+           对男性目标伤害加成40%，并有极低的概率触发即死。」 */
+  fierce_rabbit: {
+    id: 'fierce_rabbit', name: '大凶兔', shape: 'humanoid',
+    palette: { hair: '#e8e4dc', cloth: '#cfc8bc', trim: '#9a9086', skin: '#f2eee6', eye: '#ff3b4e', weapon: 'axe' },
+    baseLevel: 3, hp: 70, atk: 18, def: 3, spd: 22, exp: 7, gold: 2, hot: 2,
+    weak: [], quote: '（人畜无害的外表之下，掩藏着相当严重的暴力倾向。）',
+    skills: [{ id: 'atk', w: 7 }, { id: 'bigclub', w: 3 }],
+  },
+
+  /* 原文第16章：「巨型凶狼：5级三星级BOSS，生命：1300，凶狼中的变异体，
+     有着远超普通凶狼的巨大体型和强大能力。技能：狂化。」
+     「狂化：当巨型凶狼的生命下降至20%以下时，有50%的概率触发此技能，
+       技能触发后攻击力、攻击速度、移动速度全部提升30%，防御降低30%，持续1分钟。」 */
+  giant_dire_wolf: {
+    id: 'giant_dire_wolf', name: '巨型凶狼', shape: 'wolf', boss: true, star: 3,
     palette: { body: '#4a4a56', trim: '#26262e', eye: '#ff8a3a', fang: '#fffaf0' },
-    baseLevel: 8, hp: 430, atk: 17, def: 8, spd: 29, exp: 78, gold: 46, hot: 8,
-    weak: ['fire'], quote: '（比其它狼大了一圈。它在等你先动。）',
-    skills: [{ id: 'atk', w: 7 }, { id: 'heavy', w: 4 }],
+    baseLevel: 5, hp: 1300, atk: 46, def: 14, spd: 33, exp: 0, gold: 60, hot: 8,
+    scale: 1.8,
+    weak: [], quote: '（凶狼中的变异体，有着远超普通凶狼的巨大体型和强大能力。）',
+    skills: [{ id: 'atk', w: 8 }, { id: 'heavy', w: 3 }],
+    /* 狂化：血量 20% 以下、50% 概率触发，攻击/攻速/移速 +30%，防御 -30%，持续 1 分钟 */
+    phase: { at: 0.20, chance: 0.50, name: '狂化',
+      buff: { atk: 1.30, spd: 1.30, def: 0.70 }, turns: 20,
+      line: '（它仰天发出了一声悚人的狼吼，全身的毛发根根竖起，一双巨大的狼眼蒙上了一层骇人的血色。）' },
+  },
+
+  /* 原文第23章：「血狼：7级，生命：250，嗜血之狼，具有灵敏的行动能力，
+     尖利的牙齿和狼爪是它们的锋利武器，会攻击所有靠近的生灵。技能：无。」
+     原文同章：「生命值只比凶狼多出了50点，但其速度和仇恨距离却要明显的超过凶狼」
+     —— 由此可反推普通凶狼生命 200。 */
+  blood_wolf: {
+    id: 'blood_wolf', name: '血狼', shape: 'wolf',
+    palette: { body: '#5a2a2e', trim: '#2e1418', eye: '#ff2a3a', fang: '#ffe8e8' },
+    baseLevel: 7, hp: 250, atk: 40, def: 10, spd: 38, exp: 0, gold: 3, hot: 5,
+    weak: [], quote: '（嗜血之狼，会攻击所有靠近的生灵。）',
+    skills: [{ id: 'atk', w: 1 }],
+  },
+  dire_wolf: {
+    id: 'dire_wolf', name: '凶狼', shape: 'wolf',
+    palette: { body: '#5c564c', trim: '#332e28', eye: '#ff7a4a', fang: '#f6efe2' },
+    baseLevel: 6, hp: 200, atk: 36, def: 9, spd: 33, exp: 0, gold: 2, hot: 4,
+    weak: [], quote: '（比野狼更大，也更暴戾。）',
+    skills: [{ id: 'atk', w: 8 }, { id: 'heavy', w: 2 }],
+  },
+
+  /* 原文第23章：「变异血狼：7级三星级精英，生命：2000，变异的血狼，
+     拥有比普通血狼更庞大更灵敏的身体，更强大的攻击能力。
+     技能：血狼噬：攻击时有5%的概率将伤害转化做自己的生命值。」 */
+  mutant_blood_wolf: {
+    id: 'mutant_blood_wolf', name: '变异血狼', shape: 'wolf', boss: true, star: 3,
+    palette: { body: '#6a1e26', trim: '#3a0e14', eye: '#ff1a2a', fang: '#fff0f0' },
+    baseLevel: 7, hp: 2000, atk: 58, def: 18, spd: 42, exp: 0, gold: 120, hot: 9,
+    scale: 1.8, weak: [],
+    quote: '（拥有比普通血狼更庞大更灵敏的身体，更强大的攻击能力。）',
+    skills: [{ id: 'atk', w: 8 }, { id: 'bloodbite', w: 2 }],
   },
 
   /* 幽风平原 —— 查证：十五级以下弱小怪物活跃，初级玩家练级之地 */
@@ -893,6 +975,18 @@ Object.assign(ENEMIES.demon_king_final, {
 /* ---------------- 敌人技能 ---------------- */
 export const ENEMY_SKILLS = {
   atk: { id: 'atk', name: '攻击', power: 1.0, elem: 'none' },
+  /* 原文第7章「大凶兔」的技能，照抄：
+     「好大一棒槌：抡起肩上大棒狠狠攻击敌人两腿间的部位，
+       对男性目标伤害加成40%，并有极低的概率触发即死。」
+     ⚠「极低的概率」原文没给数字，取 1%。 */
+  bigclub: { id: 'bigclub', name: '好大一棒槌', power: 1.0, elem: 'none',
+    vsMale: 0.40, instantKill: 0.01,
+    desc: '抡起肩上大棒狠狠攻击敌人两腿间的部位，对男性目标伤害加成 40%，并有极低的概率触发即死。' },
+  /* 原文第23章「变异血狼」的技能，照抄：
+     「血狼噬：攻击时有5%的概率将伤害转化做自己的生命值。」 */
+  bloodbite: { id: 'bloodbite', name: '血狼噬', power: 1.0, elem: 'none',
+    lifestealChance: 0.05,
+    desc: '攻击时有 5% 的概率将伤害转化做自己的生命值。' },
   heavy: { id: 'heavy', name: '重击', power: 1.5, elem: 'none', desc: '势大力沉的一击。' },
   bite: { id: 'bite', name: '撕咬', power: 1.3, elem: 'dark', inflict: { id: 'poison', chance: 0.35 } },
   snipe: { id: 'snipe', name: '狙击', power: 1.35, elem: 'none', pierceDef: 0.4 },
@@ -933,6 +1027,30 @@ export const ENEMY_SKILLS = {
    此前这段公式在 battle.js、tools/validate.mjs、tools/balance.mjs 各抄了一份，
    加了 baseLevel 之后三处会立刻算出不同的结果（工具报出来的首领 ATK 是实际的六倍）。
    现在只留这一处，三边共用。 */
+/* 装备附带的「四大基本属性 +N」与「固定属性 +N」。
+   原文永恒命运之刻：属性「四大基本属性+10」；技能命运之赐「幸运+10，悟性+10，魅力+10」。
+   这两类不是直接加面板，而是加到属性上再走原文的换算公式，所以单独取出来。 */
+/* 百分比攻击加成。**必须在属性换算之后调用**——
+   原文永恒命运之刻是「攻击+50，攻击+5%」，验算要 (力量×2 + 50) × 1.05
+   才能得出原文的「差点破百」（94.5）；先乘再加只有 92，对不上。 */
+export function applyAtkPct(s, equips = []) {
+  let pct = 0;
+  for (const id of equips) pct += (EQUIPS[id]?.atkPct) || 0;
+  if (pct) s.atk = Math.floor(s.atk * (1 + pct));
+  return s;
+}
+
+export function equipFreeBonus(equips = []) {
+  let n = 0;
+  for (const id of equips) n += (EQUIPS[id]?.allFree) || 0;
+  return n;
+}
+export function equipFixedBonus(equips = []) {
+  let n = 0;
+  for (const id of equips) n += (EQUIPS[id]?.fixedAll) || 0;
+  return n;
+}
+
 export function enemyStatsAt(ref, lv) {
   const d = typeof ref === 'string' ? ENEMIES[ref] : ref;
   if (!d) return null;

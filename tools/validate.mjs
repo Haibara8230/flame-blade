@@ -4,6 +4,18 @@ import { ACTORS, SKILLS, ENEMIES, ITEMS, EQUIPS, SHOPS, ELEM, STATUS, ENEMY_SKIL
 import { PORTRAITS } from '../js/portraits.js';
 import { obtainable, openShops } from './reach.mjs';
 
+/* 原文明确「没有」的东西，不该被报成缺陷。
+   · 主角没有奥义、连技能都没有——原文第9章：「全世界只有叶天邪一个例外，
+     他没有技能，没有职业，只能以新手剑并不华丽的砍、劈、刺……」
+   · 原文的探知术面板只给「等级 / 生命 / 描述 / 技能」，从来没有「弱点属性」
+     这一栏，所以照抄原文的怪物没有 weak 是正确的，不是漏配。
+   把这两类排除掉，剩下的警告才有意义。 */
+const CANON_NO_ULT = new Set(['kaito']);
+const CANON_ENEMIES = new Set([
+  'angry_chick', 'fierce_rabbit', 'wild_wolf', 'dire_wolf',
+  'giant_dire_wolf', 'blood_wolf', 'mutant_blood_wolf',
+]);
+
 const errs = [], warns = [];
 const ids = new Set(Object.keys(SCENES));
 
@@ -107,7 +119,7 @@ for (const s of Object.values(SKILLS)) {
 }
 // 奥义覆盖
 const ults = Object.values(ACTORS).map(a => a.skills.map(s => SKILLS[s.id]).filter(s => s && s.ult).length);
-ults.forEach((n, i) => { if (n === 0) warns.push(`角色 ${Object.keys(ACTORS)[i]} 没有奥义`); });
+ults.forEach((n, i) => { const id = Object.keys(ACTORS)[i]; if (n === 0 && !CANON_NO_ULT.has(id)) warns.push(`角色 ${id} 没有奥义`); });
 
 /* ---- 资源系统校验 ---- */
 for (const a of Object.values(ACTORS)) {
@@ -123,7 +135,7 @@ for (const a of Object.values(ACTORS)) {
   const ult = ultEntry && SKILLS[ultEntry.id];
   // 主线终盘约 Lv15，习得等级高于它的奥义在正常通关里永远见不到
   if (ultEntry && ultEntry.lv > 15) errs.push(`奥义 ${ultEntry.id}: 习得等级 Lv${ultEntry.lv} 高于主线终盘等级 Lv15，正常通关学不到`);
-  if (!ult) { warns.push(`角色 ${a.id}: 没有奥义`); }
+  if (!ult) { if (!CANON_NO_ULT.has(a.id)) warns.push(`角色 ${a.id}: 没有奥义`); }
   else if (!ult.mp) {
     // 奥义原本靠「热血满100」开锁，改成资源门槛后 0 消耗 = 可以无限放
     errs.push(`奥义 ${ult.id}: 消耗为 0，改用资源门槛后会变成无限放`);
@@ -140,7 +152,7 @@ for (const a of Object.values(ACTORS)) {
 {
   const atkElems = new Set(Object.values(SKILLS).filter(s => s.type === 'atk').map(s => s.elem));
   for (const e of Object.values(ENEMIES)) {
-    if (!e.weak || !e.weak.length) { warns.push(`敌人 ${e.id}: 没有弱点属性，克制机制对它无效`); continue; }
+    if (!e.weak || !e.weak.length) { if (!CANON_ENEMIES.has(e.id)) warns.push(`敌人 ${e.id}: 没有弱点属性，克制机制对它无效`); continue; }
     for (const w of e.weak) {
       if (!ELEM[w]) errs.push(`敌人 ${e.id}: 未知弱点属性 ${w}`);
       else if (!atkElems.has(w)) errs.push(`敌人 ${e.id}: 弱点 ${w} 没有任何我方攻击技能能打出`);
@@ -164,6 +176,13 @@ for (const a of Object.values(ACTORS)) {
   const OK = obtainable(reachable);
   for (const [k, e] of Object.entries(EQUIPS)) {
     if (LEGACY_EQUIP.has(k)) continue;
+    /* 剧情授予的唯一之器不走商店/掉落。原文里永恒命运之刻是「已强制认主，
+       不可交易，不可掉落，不可偷窃，不可丢弃」，只能由剧情给。
+       但它必须真的有剧情给——所以降级成警告，而不是直接放过。 */
+    if (e.bound || e.noDrop) {
+      if (!OK.has(k)) warns.push(`唯一之器 ${e.name}(${k}) 目前还没有任何场景授予（原文在第11章给出，剧情尚未推进到）`);
+      continue;
+    }
     if (!OK.has(k)) errs.push(`装备 ${e.name}(${k}) 玩家无法获得——不在任何开放商店出售，也没有场景发放`);
   }
   for (const [k, it] of Object.entries(ITEMS)) {

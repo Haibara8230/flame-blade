@@ -2,7 +2,7 @@
    main.js — 主循环 / 场景 / UI / 存档 / 音效
    《炎之刃》FLAME BLADE
    ============================================================ */
-import { ACTORS, SKILLS, COMBOS, ITEMS, EQUIPS, SHOPS, STATUS, ELEM, statsAt, expToNext, ENEMIES, MAX_LEVEL } from './characters.js';
+import { ACTORS, SKILLS, COMBOS, ITEMS, EQUIPS, SHOPS, STATUS, ELEM, statsAt, expToNext, ENEMIES, MAX_LEVEL, equipFreeBonus, equipFixedBonus, applyAtkPct } from './characters.js';
 import { SCENES, ENDINGS } from './story.js';
 import { portraitURL, hasPortrait } from './portraits.js';
 import { rollDrops, rollShopStock, restoreLoot, collectLoot, setLootContext } from './loot.js';
@@ -456,7 +456,10 @@ const G = {
   mode: 'title',        // title | load | scene | battle | shop | ending | panel
   sceneId: null, scene: null,
   lineIdx: 0, typing: 0, typed: 0, fullText: '', shownText: '',
-  party: [], bag: { potion: 3 }, gold: 120,
+  /* 原文第7章的初始面板：「声望：0；金钱：0」——进游戏时身上一个铜板都没有，
+     背包里也没有系统白送的药水。第一笔收入是三只野狼掉的那一枚铜币。
+     ⚠ 此前是 gold:120 + 三瓶药水，都是本项目编的。 */
+  party: [], bag: {}, gold: 0, fame: 0,
   flags: {},
   chapter: '',
   battle: null, stageDef: null,
@@ -502,8 +505,30 @@ function makeMember(id, level = null) {
     fixed: { ...(def.fixed || { luck: 0, wit: 0, chm: 0 }) },
     talentAttr: { ...(def.talentAttr || {}) },
     points: 0, sp: 0, talents: {},
+    /* 原文第7章面板：「饥饿度：0/110（饥饿度的承受上限=100+力量属性，
+       当饥饿度达到承受上限时，每秒会自动掉落1%的生命值。
+       饥饿度可以通过饮食来减少。）」
+       ⚠ 原文没给「每多久涨一点」，本项目按推进剧情/打完一场各涨若干，已标注。 */
+    hunger: 0,
+    /* 原文第7章面板：火/水/风/雷/土/光/暗 七系抗性，初始全部 0%。 */
+    resist: { fire: 0, water: 0, wind: 0, thunder: 0, earth: 0, light: 0, dark: 0 },
+    sex: 'male',    // 大凶兔的「好大一棒槌」对男性目标伤害 +40%
     isEnemy: false,
   };
+}
+
+/* 饥饿度推进。⚠ 原文只给了上限公式与到顶后的惩罚，没给累积速度，
+   这里按「一场战斗 / 一段剧情」各涨一点，是本项目的设定。 */
+function tickHunger(amount = 1) {
+  for (const m of G.party) {
+    const cap = GR.hungerCap((m.alloc && m.alloc.str) || 0);
+    m.hunger = Math.min(cap, (m.hunger || 0) + amount);
+    if (m.hunger >= cap) {
+      // 原文：达到承受上限时，每秒自动掉落 1% 生命值
+      const loss = Math.max(1, Math.floor(m.maxHp * GR.HUNGER_DRAIN));
+      m.hp = Math.max(1, m.hp - loss);
+    }
+  }
 }
 function defaultEquip(id, slot) {
   const map = {
@@ -522,7 +547,12 @@ function defaultEquip(id, slot) {
 function recalc(m) {
   const def = ACTORS[m.id];
   const st = statsAt(def, m.level, m.equips);
-  GR.applyStatPoints(st, m.alloc);      // 玩家分配的属性点
+  /* 装备的「四大基本属性 +N」要先并进配点，再走原文的换算公式
+     （永恒命运之刻：四大基本属性+10 → 力量也 +10 → 物攻 +20）。 */
+  const fb = equipFreeBonus(m.equips);
+  const alloc = fb ? Object.fromEntries(Object.entries(m.alloc || {}).map(([k, v]) => [k, v + fb])) : m.alloc;
+  GR.applyStatPoints(st, alloc);        // 玩家分配的属性点 + 装备附带的基本属性
+  applyAtkPct(st, m.equips);            // 攻击% 必须在属性换算之后
   GR.applyTalentStats(st, m);           // 天赋树的直接属性
   // 遗物是全队共享的被动加成
   st.atk += relicBonus(G, 'atk');
@@ -966,6 +996,7 @@ function battleEndToStory() {
   };
   if (sc.onWin) for (const a of sc.onWin) runAction(a);
   SCENES[nextScene.id] = nextScene;
+  tickHunger(2);            // 打完一场：饥饿度 +2
   G.justWon = sc.id;
   G.battle = null;
   $('cmdmenu').classList.add('hidden');
@@ -1027,7 +1058,7 @@ function buildCommandUI() {
   row.innerHTML = '';
   const m = b.party[G.curActor];
   if (!m || m.dead) return;
-  const resName = m.resource === 'rage' ? '怒气' : '术力';
+  const resName = (ACTORS[m.id] && ACTORS[m.id].resourceName) || (m.resource === 'rage' ? '怒气' : '术力');
   const stage = BT.releaseStage(m);
   $('cmd-actor').innerHTML = `<div class="an">${m.name}</div>
     <div style="color:#bbb2dd">Lv.${m.level} · ${m.title}</div>
@@ -1216,7 +1247,7 @@ function openSkills(m) {
     $('cmdmenu').appendChild(el);
   }
   const list = m.skills.filter(id => SKILLS[id]);
-  const resName = m.resource === 'rage' ? '怒气' : '术力';
+  const resName = (ACTORS[m.id] && ACTORS[m.id].resourceName) || (m.resource === 'rage' ? '怒气' : '术力');
   const sealed = BT.isSealed(m);
   el.innerHTML = `<div class="sk-head"><span>${m.name} 的技能　${resName} ${Math.ceil(m.mp)}/${m.maxMp}</span><span style="color:#ffb98a">${sealed ? '✖ 被封印，无法使用术式' : (m.resource === 'rage' ? '怒气靠攻击与受击积攒' : '术力每回合自然回复')}</span></div>
     <div class="sk-grid">${list.map(id => {
@@ -1254,7 +1285,7 @@ function openBagInBattle(m) {
   let el = $('skilllist');
   if (!el) { el = document.createElement('div'); el.id = 'skilllist'; $('cmdmenu').appendChild(el); }
   const keys = Object.keys(G.bag).filter(k => G.bag[k] > 0 && ITEMS[k]);
-  el.innerHTML = `<div class="sk-head"><span>${m.name} 的道具　持有 ${G.gold} 金</span><span>选择后即可使用</span></div>
+  el.innerHTML = `<div class="sk-head"><span>${m.name} 的道具　持有 ${GR.formatCoin(G.gold)}</span><span>选择后即可使用</span></div>
     <div class="sk-grid">${keys.length ? keys.map(k => {
     const it = ITEMS[k];
     return `<button class="sk" data-it="${k}"><span class="c">×${G.bag[k]}</span><div class="n">${it.name}</div><div class="d">${it.desc}</div></button>`;
@@ -1334,7 +1365,7 @@ function openShop(id) {
   $('dialogue').classList.add('hidden');
   $('choices').classList.add('hidden');
   const panel = $('panel');
-  $('panel-title').textContent = `◆ ${shop.name}　持有 ${G.gold} 金`;
+  $('panel-title').textContent = `◆ ${shop.name}　持有 ${GR.formatCoin(G.gold)}`;
   const body = $('panel-body');
   body.innerHTML = `<div style="grid-column:1/-1">
     ${shop.items.map(k => {
@@ -1373,7 +1404,7 @@ function openShop(id) {
     e.stopPropagation();
     const k = b.dataset.buy;
     const it = ITEMS[k] || EQUIPS[k];
-    if (G.gold < it.price) { toast('金币不足'); return; }
+    if (G.gold < it.price) { toast('钱不够'); return; }
     G.gold -= it.price;
     G.bag[k] = (G.bag[k] || 0) + 1;
     sfx('heal');
@@ -1538,7 +1569,7 @@ function openPartyPanel() {
   enterPanel('party');
   const unspent = G.party.reduce((a, m) => a + (m.points || 0) + (m.sp || 0), 0);
   const teamCP = PW.partyPower(G.party);
-  $('panel-title').textContent = `◈ 队伍状态　战力 ${teamCP}　持有 ${G.gold} 金${unspent ? `　· 有 ${unspent} 点未分配` : ''}`;
+  $('panel-title').textContent = `◈ 队伍状态　战力 ${teamCP}　持有 ${GR.formatCoin(G.gold)}${unspent ? `　· 有 ${unspent} 点未分配` : ''}`;
   const body = $('panel-body');
   body.innerHTML = G.party.map(m => {
     const bp = BD.bondProgress(G, m.id);
@@ -1552,9 +1583,11 @@ function openPartyPanel() {
         <div class="bar hp"><i style="width:${(m.hp / m.maxHp * 100).toFixed(1)}%"></i></div>
         <div class="pv">HP ${Math.ceil(m.hp)} / ${m.maxHp}</div>
         <div class="bar mp"><i style="width:${(m.mp / m.maxMp * 100).toFixed(1)}%"></i></div>
-        <div class="pv">${m.resource === 'rage' ? '怒气' : '术力'} ${Math.ceil(m.mp)} / ${m.maxMp}　攻击 ${m.atk}　防御 ${m.def}　速度 ${m.spd}</div>
+        <div class="pv">${(ACTORS[m.id] && ACTORS[m.id].resourceName) || '术力'} ${Math.ceil(m.mp)} / ${m.maxMp}　攻击 ${m.atk}　防御 ${m.def}　速度 ${m.spd}</div>
         <div class="pv">会心${Math.round((m.cri || 0) * 100)}%　格挡${Math.round((m.blk || 0) * 100)}%　弹反${Math.round((m.par || 0) * 100)}%　EXP ${m.exp}/${expToNext(m.level)}</div>
         <div class="pv">羁绊 Lv.${bp.lv}${bp.full ? '（满）' : `　${bp.cur}/${bp.need}`}</div>
+        <div class="pv">饥饿度 ${m.hunger || 0} / ${GR.hungerCap((m.alloc && m.alloc.str) || 0)}　（到顶后每秒掉 1% 生命）</div>
+        <div class="pv">抗性　${GR.RESISTS.map(r => `${r.name}${Math.round(((m.resist || {})[r.id] || 0) * 100)}%`).join('　')}</div>
         <div>${m.skills.map(sk => `<span class="tag">${SKILLS[sk]?.name || sk}</span>`).join('')}</div>
         <div>${m.equips.filter(Boolean).map(e => {
       const eq = EQUIPS[e];
@@ -1610,7 +1643,7 @@ function openCamp(sceneDef) {
     <div style="font-size:12px;color:#bbb2dd;margin-bottom:10px">战斗后只回复两成生命。要走远路，得先在这里把状态补回来。</div>
     <div class="shop-row">
       <div><b>休整</b><div style="font-size:11.5px;color:#bbb2dd;margin-top:2px">全队回复至满，并解除倒下状态。</div></div>
-      <button class="mini" id="camp-rest" ${G.gold < restCost ? 'disabled' : ''}>${restCost} 金</button>
+      <button class="mini" id="camp-rest" ${G.gold < restCost ? 'disabled' : ''}>${GR.formatCoin(restCost)}</button>
     </div>
     <div style="color:#ffd76a;font-weight:700;margin:14px 0 6px">同伴</div>
     ${rows || '<div style="color:#8a7d8c;font-size:12px">暂时只有你一个人。</div>'}
@@ -1977,8 +2010,11 @@ function showEnding(kind, continueTo) {
 }
 function newGame() {
   G.party = [];
-  G.bag = { potion: 3, ether: 1 };
-  G.gold = 120;
+  /* 原文第7章的初始面板：「声望：0；金钱：0」。背包里也没有系统白送的药水。
+     ⚠ 此前是三瓶回复药 + 一瓶术力泉 + 120 金，都是本项目编的。 */
+  G.bag = {};
+  G.gold = 0;
+  G.fame = 0;
   G.flags = {};
   G.battleCheckpoint = null;
   G.chapter = '';

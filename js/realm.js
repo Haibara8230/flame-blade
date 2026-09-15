@@ -33,34 +33,100 @@ export const SERVER_NAME = '';         // 书中是否分区未知
    weight 掉落权重——注意后四阶权重极低，靠掉落几乎不可能拿到，
           设计上它们是「剧情 / 公会战 / 世界 BOSS 的产物」。
    gate  解锁闸门，没满足就完全不进掉落池。 */
+/* ---------------- 十阶装备（原文第11章） ----------------
+   「苍白之器、钢铁之器、青铜之器、白银之器、黄金之器，构成了命运世界低级到
+     高级装备的等级划分，黄金之器成为了这等级划分的一个分水岭，再向上，则是
+     一个比一个稀少的仙灵之器、天煌之器、神玄之器、圣灭之器，禁断之器。
+     **十个名称**，构成了命运世界所有器的等级阶梯。」
+
+   ⚠ 2026-09-15 按原文改正了两处硬错：
+     · 此前是 **11** 阶，多出一个自己编的「亚·圣灭之器」——原文明写十个名称
+     · 第 7 阶的名字此前写作「天绝之器」，原文是「**天煌之器**」
+
+   原文对各阶的描述也照抄进 desc：
+     「自黄金之器向后，仙灵之器起始，大部分的器就开始具备了唯一性……
+       一件仙灵之器是无数玩家梦寐以求的渴望，而拥有一件天煌之器便足以横行，
+       神玄之器则是打破平衡的存在，出现的几率微乎其微，圣灭之器则是传说之器，
+       极少有人见过。而禁断之器……那只能是虚无飘渺的传说。
+       禁断二字，意味着它不该出现以搅乱这个世界的平衡。」
+
+   ⚠ mul / aff / lv / weight（数值档位、词缀条数、需求等级、掉落权重）
+   原文一概未给，是本项目的配置。 */
 export const TIERS = [
   { rank: 1,  name: '苍白之器', col: '#9CA3AF', mul: 1.00, aff: 0, lv: 1,  weight: 40,
     desc: '新手村的凡铁与粗布。人人都有，人人都嫌弃。' },
-  { rank: 2,  name: '钢铁之器', col: '#D6D3D1', mul: 1.14, aff: 1, lv: 4,  weight: 30,
+  { rank: 2,  name: '钢铁之器', col: '#D6D3D1', mul: 1.16, aff: 1, lv: 4,  weight: 30,
     desc: '正经铁匠铺的出品，第一件让你觉得自己不是平民的东西。' },
-  { rank: 3,  name: '青铜之器', col: '#22C55E', mul: 1.30, aff: 2, lv: 9,  weight: 18,
+  { rank: 3,  name: '青铜之器', col: '#22C55E', mul: 1.35, aff: 2, lv: 9,  weight: 18,
     desc: '带上了第一层附魔纹路，小队副本的主要产出。' },
-  { rank: 4,  name: '白银之器', col: '#3B82F6', mul: 1.50, aff: 3, lv: 16, weight: 8,
-    desc: '公会里能拿出来说一句的装备，通常有明确的流派倾向。' },
-  { rank: 5,  name: '黄金之器', col: '#F59E0B', mul: 1.76, aff: 4, lv: 24, weight: 3,
-    desc: '一区之内叫得出名字的货色，掉一件够公会吵三天。' },
-  { rank: 6,  name: '仙灵之器', col: '#2DD4BF', mul: 2.08, aff: 5, lv: 33, weight: 1.1,
-    gate: 'awaken', desc: '灵脉与仙境的造物，讲究共鸣、净化与庇护。龙魂觉醒后才会对你显形。' },
-  { rank: 7,  name: '天绝之器', col: '#EF4444', mul: 2.50, aff: 6, lv: 42, weight: 0.4,
-    gate: 'reborn2', desc: '触碰天界禁制的极端兵装。带着它上线，天上是会注意到的。' },
-  { rank: 8,  name: '神玄之器', col: '#A855F7', mul: 3.05, aff: 7, lv: 52, weight: 0.14,
-    gate: 'reborn2', desc: '神格残留凝成的器物，已经不完全服从使用者。' },
-  { rank: 9,  name: '亚·圣灭之器', col: '#F0ABFC', mul: 3.75, aff: 8, lv: 63, weight: 0.04,
-    gate: 'reborn3', desc: '圣灭的仿品与半成品。仿品尚且如此，真品可想而知。' },
-  { rank: 10, name: '圣灭之器', col: '#FDE68A', mul: 4.70, aff: 9, lv: 75, weight: 0.008,
-    gate: 'reborn3', desc: '全服公告级别的产物。掉落的那一刻，所有大公会都会知道它在谁手上。' },
-  { rank: 11, name: '禁断之器', col: '#FF3B6B', mul: 6.20, aff: 10, lv: 88, weight: 0,
-    gate: 'never', desc: '全服仅两件，不掉落、不交易、不能被夺走——只能被继承。' },
+  { rank: 4,  name: '白银之器', col: '#3B82F6', mul: 1.58, aff: 3, lv: 16, weight: 8,
+    desc: '需要鉴定师鉴定过才知道属性，公会里能拿出来说一句的装备。' },
+  { rank: 5,  name: '黄金之器', col: '#F59E0B', mul: 1.86, aff: 4, lv: 24, weight: 3,
+    desc: '原文：「黄金之器成为了这等级划分的一个分水岭。」' },
+  { rank: 6,  name: '仙灵之器', col: '#2DD4BF', mul: 2.25, aff: 5, lv: 33, weight: 1.1,
+    gate: 'awaken', desc: '原文：「一件仙灵之器是无数玩家梦寐以求的渴望。」自此大部分器开始具备唯一性。' },
+  { rank: 7,  name: '天煌之器', col: '#EF4444', mul: 2.80, aff: 6, lv: 42, weight: 0.4,
+    gate: 'reborn2', desc: '原文：「拥有一件天煌之器便足以横行。」' },
+  { rank: 8,  name: '神玄之器', col: '#A855F7', mul: 3.55, aff: 7, lv: 52, weight: 0.14,
+    gate: 'reborn2', desc: '原文：「神玄之器则是打破平衡的存在，出现的几率微乎其微。」' },
+  { rank: 9,  name: '圣灭之器', col: '#FDE68A', mul: 4.60, aff: 8, lv: 63, weight: 0.03,
+    gate: 'reborn3', desc: '原文：「圣灭之器则是传说之器，极少有人见过。」' },
+  { rank: 10, name: '禁断之器', col: '#FF3B6B', mul: 6.20, aff: 10, lv: 75, weight: 0,
+    gate: 'never', desc: '原文：「那只能是虚无飘渺的传说。禁断二字，意味着它不该出现以搅乱这个世界的平衡。」' },
 ];
+
+/* ---------------- BOSS 星级（原文第16章） ----------------
+   「在《命运》世界，BOSS的构成共分为1星级、2星级、3星级，以及领主级。
+     其实严格说来，头上挂着1个星或两个星的怪物算不得真正的BOSS，更合适说来
+     应该算是同类怪物中的精英。1星级的BOSS相当于普通怪物中的普通精英，能力
+     超出同类的普通怪物1-2倍，而两星级BOSS则是精英中的精英，能力要超出1星级
+     的1-2倍，三星级则是领地的首领，能力更要强大的多。而领主级BOSS则是大片
+     领地中的最高统治者，有着极其可怕的实力。而领主级BOSS以上，则是虽同样为
+     BOSS，却比正常BOSS可怕无数倍的异兽——仙灵之兽、天煌之兽、神玄之兽、
+     圣灭之兽。」 */
+export const BOSS_RANKS = {
+  1: { star: 1, name: '一星精英', desc: '同类普通怪物中的普通精英，能力超出普通怪物 1~2 倍。' },
+  2: { star: 2, name: '二星精英', desc: '精英中的精英，能力超出一星 1~2 倍。' },
+  3: { star: 3, name: '三星级BOSS', desc: '一片领地的首领。' },
+  4: { star: 4, name: '领主BOSS', desc: '大片领地中的最高统治者，有着极其可怕的实力。' },
+};
+/* 领主级以上的异兽，按器的阶位命名（原文同上） */
+export const BEASTS = ['仙灵之兽', '天煌之兽', '神玄之兽', '圣灭之兽'];
+
+/* ---------------- 七系抗性（原文第7章初始面板） ----------------
+   「火系抗性：0%（初始值）」，水 / 风 / 雷 / 土 / 光 / 暗 同列，初始全部 0%。 */
+export const RESISTS = [
+  { id: 'fire',  name: '火系' }, { id: 'water', name: '水系' },
+  { id: 'wind',  name: '风系' }, { id: 'thunder', name: '雷系' },
+  { id: 'earth', name: '土系' }, { id: 'light', name: '光系' },
+  { id: 'dark',  name: '暗系' },
+];
+
+/* ---------------- 饥饿度（原文第7章初始面板） ----------------
+   「饥饿度：0/110（饥饿度的承受上限=100+力量属性，当饥饿度达到承受上限时，
+     每秒会自动掉落1%的生命值。饥饿度可以通过饮食来减少。）」
+   面板上是 0/110，而他力量 10 —— 正好 100+10，公式对得上。 */
+export function hungerCap(str = 0) { return 100 + Math.max(0, str); }
+export const HUNGER_DRAIN = 0.01;   // 达到上限后每秒掉 1% 生命
+
+/* ---------------- 货币（原文第9章） ----------------
+   「命运世界，一金币=10银币=100铜币。按照官方宣传，开通货币兑换后，
+     1金币=1华夏币。」
+   项目内部一律以**铜币**为最小单位存储，显示时再拆成金/银/铜。 */
+export const COIN = { copperPerSilver: 10, silverPerGold: 10, copperPerGold: 100 };
+export function formatCoin(copper = 0) {
+  const c = Math.max(0, Math.floor(copper));
+  const g = Math.floor(c / 100), s = Math.floor((c % 100) / 10), cc = c % 10;
+  const out = [];
+  if (g) out.push(g + ' 金');
+  if (s) out.push(s + ' 银');
+  if (cc || !out.length) out.push(cc + ' 铜');
+  return out.join(' ');
+}
 
 export const TIER_BY_RANK = {};
 for (const t of TIERS) TIER_BY_RANK[t.rank] = t;
-export const MAX_TIER = 11;
+export const MAX_TIER = 10;   // 原文：「十个名称，构成了命运世界所有器的等级阶梯」
 
 /* ---------------- 禁断之器 ----------------
    weight 为 0，永远不进随机掉落池。它们只能由剧情授予。
@@ -68,14 +134,14 @@ export const MAX_TIER = 11;
    一件属于「还没决定要怎么死的人」。 */
 export const FORBIDDEN = {
   bilo: {
-    id: 'bilo', name: '碧落黄泉', tier: 11, slot: 'weapon', type: '刀剑',
+    id: 'bilo', name: '碧落黄泉', tier: 10, slot: 'weapon', type: '刀剑',
     flavor: '上有碧落，下有黄泉——两端都走到过的人，才提得动它。',
     // 双刃：伤害极高，但每次挥击自伤，血越少反而越强
     eff: { lifesteal: 0.18, lowHpAtk: 0.45, recoil: 0.06, pierce: 0.22 },
     note: '攻击时按最大生命 6% 自伤；生命低于 40% 时攻击力 +45%。',
   },
   fate: {
-    id: 'fate', name: '命运之刻', tier: 11, slot: 'acc', type: '护符',
+    id: 'fate', name: '命运之刻', tier: 10, slot: 'acc', type: '护符',
     flavor: '它不改变结果，只让你在结果落下之前，多看一眼。',
     // 不给纯数值，给「重来一次」的权利
     eff: { lastStand: 1, foresight: 1, statusRes: 0.35, extraTurn: 0.15 },

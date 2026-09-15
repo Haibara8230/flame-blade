@@ -447,6 +447,10 @@ export function computeDamage(B, atkUnit, defUnit, power, opt = {}) {
     dmg *= 1 + opt.afterDodgeBonus;
     opt.dodgeCounter = true;
   }
+  /* 原文第7章「大凶兔」的技能：「好大一棒槌：抡起肩上大棒狠狠攻击敌人两腿间的
+     部位，对男性目标伤害加成40%，并有极低的概率触发即死。」
+     主角是男性，所以这一条对他是真生效的。 */
+  if (opt.vsMale && !defUnit.isEnemy && (defUnit.sex || 'male') === 'male') dmg *= 1 + opt.vsMale;
   // 属性克制
   if (opt.weak && opt.elem && opt.weak.includes(opt.elem)) { dmg *= 1.5; opt.isWeak = true; }
   // 装备特效：属性伤害、猎弱、弑王
@@ -497,6 +501,7 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
         weakTarget: !!(tgWeak && elem && tgWeak.includes(elem)),
         partyCut: tg.isEnemy ? 0 : partyDamageCut(B),
         afterDodgeBonus: spec.afterDodgeBonus || 0,
+        vsMale: spec.vsMale || 0,
       });
       arr.push(r);
     }
@@ -565,10 +570,12 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
         const d = derived(tg);
         const evaFromAgi = Math.min(0.25, (tg.eva || 0) * 0.01);
         const acc = atkUnit.isEnemy ? 0 : derived(atkUnit).accuracy;
-        /* 上限 0.92：留一条「再强也会被打到」的缝（原文里他确实挨过狼爪），
-           但必须高于 0.75——否则反应力 72 也会被三只狼稳定打死，
-           原文第9章那一场就不可能发生。⚠ 具体数值原文未考证。 */
-        const evade = clamp(d.evade + evaFromAgi + (tg.evadeBonus || 0) - acc, 0, 0.92);
+        /* 上限 0.96：留一条「再强也会被打到」的缝（原文里他确实挨过狼爪），
+           但必须足够高。0.92 时这一场处在刀尖上——三只狼总共挥 ~39 次，
+           8% 漏防期望 3.1 下，而他 70 血挨 3.3 下就死，胜率只有三分之二。
+           原文里他是从容取胜的（「不紧不慢的蹂躏着最后一只野狼」），
+           所以漏防要降到 4% 一档。⚠ 具体数值原文未考证，是按结果反解的。 */
+        const evade = clamp(d.evade + evaFromAgi + (tg.evadeBonus || 0) - acc, 0, 0.96);
         if (chance(evade)) {
           guardMul = 0; guardKind = 'dodge'; dodged = true;
           // 记下「刚闪过」，【擦身反手】一类技能会吃这个加成
@@ -681,6 +688,18 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
         damage(B, tg, ex.dmg, { crit: ex.crit, col: '#ffd76a', by: atkUnit, attacker: atkUnit });
         addFloat(B, '余响！', tg.x, tg.y - 158, '#ffd76a', 24);
         addFx(B, 'slash', tg.x, tg.y - 88, '#ffd76a', { dur: 0.28, ang: 1.1, rx: 70, ry: 60 });
+      }
+      /* 原文「好大一棒槌」：「并有极低的概率触发即死」。⚠ 概率原文未给，取 1%。 */
+      if (spec.instantKill && !tg.dead && !tg.boss && chance(spec.instantKill)) {
+        addLog(B, `<span class="dmg">※ 即死！${tg.name} 当场倒下！</span>`);
+        damage(B, tg, tg.maxHp * 99, { by: atkUnit, attacker: atkUnit });
+      }
+      /* 原文「血狼噬」：「攻击时有5%的概率将伤害转化做自己的生命值。」 */
+      if (spec.lifestealChance && !atkUnit.dead && chance(spec.lifestealChance)) {
+        const back = Math.max(1, Math.floor(finalDmg));
+        atkUnit.hp = Math.min(atkUnit.maxHp, atkUnit.hp + back);
+        addFloat(B, `+${back}`, atkUnit.x, atkUnit.y - 130, '#ff6a8a', 26);
+        addLog(B, `<span class="hl">※ ${atkUnit.name} 把伤害转化成了自己的生命！</span>`);
       }
       // 只在第一段生效，否则多段技会把目标一路推到条底
       if (spec.gauge && !tg.dead && h === 0) shiftGauge(B, tg, spec.gauge);
@@ -858,7 +877,9 @@ function startOfTurn(B, u) {
   }
   u.skip = false;
   // 术力角色在自己回合开始回蓝；愤怒角色没有被动回复
-  if (!u.isEnemy && u.resource !== 'rage') u.mp = Math.min(u.maxMp, u.mp + (u.mpRegen || 3) + eqBonus(u, 'mpPlus'));
+  /* mpRegen 为 0 必须当成 0。`|| 3` 会把 0 当假值回落到 3——
+     主角的魔法值在原文里没有自然回复的说法，探知术扣掉的 1 点就该扣住。 */
+  if (!u.isEnemy && u.resource !== 'rage') u.mp = Math.min(u.maxMp, u.mp + (u.mpRegen ?? 3) + eqBonus(u, 'mpPlus'));
   // 「回春」词缀
   if (!u.isEnemy) {
     const rg = eqBonus(u, 'hpRegen');
@@ -933,7 +954,24 @@ function resolvePlayerCmd(B, m, cmd) {
       // 凯「炎道·薪尽」：解放的怒气消耗打折
       const disc = sk.release ? (1 + talentBonus(m, 'releaseCost')) : 1;
       m.mp = Math.max(0, m.mp - Math.round((sk.mp || 0) * Math.max(0.4, disc)));
-      if (sk.type === 'heal') {
+      if (sk.type === 'scan') {
+        /* 原文第7章：「探知术：全职业共有技能，损耗魔法值1点，
+           探知不高于自己等级十级的怪物属性。」
+           等级差超过十级就探不到——这条限制照抄。 */
+        const tg = pickEnemy(B, cmd.target);
+        if (!tg) break;
+        if ((tg.level || 1) > (m.level || 0) + 10) {
+          addLog(B, `<span class="dmg">※ ${tg.name} 的等级高出你十级以上，探知失败。</span>`);
+        } else {
+          const st = ENEMIES[tg.ref] || {};
+          const star = st.star ? `${st.star} 星` : '';
+          addLog(B, `<span class="hl">${tg.name}：${tg.level}级${star ? ' ' + star : ''}，生命：${Math.ceil(tg.hp)}/${tg.maxHp}。</span>`);
+          if (st.quote) addLog(B, st.quote);
+          tg.scanned = true;
+        }
+        addFloat(B, '探知', m.x, m.y - 130, '#8fd8ff', 22);
+        B.ui.queue.push({ dur: 0.4, start() { m.pose = 'cast'; }, tick() { }, resolve() { m.pose = 'idle'; } });
+      } else if (sk.type === 'heal') {
         execHeal(B, m, sk, cmd.target);
       } else if (sk.type === 'revive') {
         execRevive(B, m, sk, cmd.target);
