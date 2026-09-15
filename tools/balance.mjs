@@ -3,6 +3,7 @@
    模型改为：算出全场每「轮」（= 全体 gauge 各涨满一次的时间）里各单位的出手次数期望。 */
 import { ACTORS, ENEMIES, ENEMY_SKILLS, SKILLS, EQUIPS, statsAt, enemyStatsAt } from '../js/characters.js';
 import { combatPower, enemyPower } from '../js/power.js';
+import { applyStatPoints, applyTalentStats, derived } from '../js/growth.js';
 import { SCENES } from '../js/story.js';
 import { obtainable } from './reach.mjs';
 
@@ -27,10 +28,19 @@ function mkEnemy(ref, lv) {
   };
 }
 function mkHero(id, lv, equips, gear) {
-  const s = statsAt(ACTORS[id], lv, equips || []);
+  const def = ACTORS[id];
+  const s = statsAt(def, lv, equips || []);
+  /* 属性点换算必须叠上去。原文里生命/攻击/防御全部由自由属性推导
+     （生命=体质×10、物攻=力量×2+装备…），statsAt 只给等级与装备那部分。
+     此前漏了这一步，被旧的 base.hp=210 盖住了；base 归零后立刻暴露成「我方HP 10」。 */
+  applyStatPoints(s, def.alloc || {});
+  applyTalentStats(s, { talents: {}, talentAttr: def.talentAttr || {} });
   if (gear) for (const k of Object.keys(gear)) s[k] = (s[k] || 0) + gear[k];
   return {
-    id, name: ACTORS[id].name, role: ACTORS[id].role, level: lv,
+    id, name: def.name, role: def.role, level: lv,
+    /* derived() 要靠这三项算闪避/命中/异常抗性 */
+    fixed: { ...(def.fixed || {}) }, talentAttr: { ...(def.talentAttr || {}) }, talents: {},
+    eva: s.eva || 0, acc: s.acc || 0,
     resource: ACTORS[id].resource || 'mp',
     hp: s.hp, mp: s.mp, mpRegen: s.mpRegen, atk: s.atk, def: s.def, spd: s.spd, cri: s.cri,
     blk: s.blk, par: s.par, rageMul: s.rageMul,
@@ -49,9 +59,11 @@ function mkHero(id, lv, equips, gear) {
    装备按「会去杂货摊花钱的玩家」估：d_oldwoman 给 200 金，够买铁之长剑（180）；
    d_resupply 再给 260，够补一件皮甲（150）。 */
 const PARTY = {
-  solo_open:  [['kaito', 1, ['mu_sword', 'cloth']]],       // 头两场：还没来得及买东西
-  solo_pack:  [['kaito', 3, ['iron_sword', 'cloth']]],     // 狼群：换了剑
-  solo_alpha: [['kaito', 5, ['iron_sword', 'leather']]],   // 头狼：补上皮甲
+  /* 原文：整个杀狼段他都是 **0 级**，直到第12章才升到 1 级。
+     装备也照原文——他全程「一身新手衣」，没换过。 */
+  solo_open:  [['kaito', 0, ['mu_sword', 'cloth']]],
+  solo_pack:  [['kaito', 0, ['mu_sword', 'cloth']]],
+  solo_alpha: [['kaito', 1, ['mu_sword', 'cloth']]],
 };
 
 /* 哪一场用哪一档。按敌人等级自动选在这里行不通——
@@ -175,7 +187,15 @@ for (const [name, pkey, foes, , tutorial] of STAGES) {
   // 敌方每轮总输出（已扣掉我方的格挡/弹反期望减伤）
   const parAvg = heroes.reduce((a, h) => a + (h.par || 0), 0) / heroes.length;
   const blkAvg = heroes.reduce((a, h) => a + (h.blk || 0), 0) / heroes.length;
-  const mitigate = 1 - parAvg - blkAvg * 0.62;
+  /* 闪避必须进模型。battle.js 打我方时先滚回避，命中则攻击完全落空，
+     而主角的反应力 72 折算下来有近七成闪避——原文里他就是靠这个活下来的
+     （第9章：三只五级狼「连碰到没有碰到他」）。
+     漏掉这一项，模型会把每一场都判成「会被秒」，结论整个是反的。 */
+  const evaAvg = heroes.reduce((a, h) => {
+    const d = derived(h);
+    return a + Math.min(0.92, d.evade + Math.min(0.25, (h.eva || 0) * 0.01));
+  }, 0) / heroes.length;
+  const mitigate = (1 - evaAvg) * (1 - parAvg - blkAvg * 0.62);
   let eOut = 0;
   for (const e of es) {
     const pool = e.skills || [{ id: 'atk', w: 1 }];

@@ -20,8 +20,10 @@ import {
   reactEvade, senseAccuracy, focusResist,
 } from './realm.js';
 
-/* 升级给的点数。原文没写每级给几点自由属性点，这里取 5——
-   25 点起手、每级 +5，到 10 级转职时正好翻倍，手感上对得住「升级」两个字。 */
+/* 升级给的点数。原文写得很清楚，照抄：
+     「叮……你的等级升为1级，生命+10，魔法+10，获得5点自由属性点。」
+   这句在第12/19/20/23/46/92/102 章反复出现，格式一字不差。
+   生命+10 / 魔法+10 在 ACTORS.kaito.grow 里，这里是那 5 点。 */
 export const STAT_POINTS_PER_LEVEL = 5;
 export const SP_PER_LEVEL = 1;
 

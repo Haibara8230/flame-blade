@@ -46,14 +46,37 @@ export const ACTORS = {
          —— 七倍于常人的反应力折算成闪避，这是他越级打怪的本钱
 
      base 里只放「身体底子」，属性点带来的部分由 alloc 在 recalc 时叠加，
-     避免同一份数值被算两次。 */
+     避免同一份数值被算两次。
+
+     ⚠ 2026-09-15：原文第7章给了完整的初始面板，此前这里的 base 是编的，已照抄。
+
+       人物：邪天　等级：0级　职业：无　声望：0；金钱：0
+       基本属性：力量：10，体质：7，敏捷：4，精神：4
+       固定属性：幸运：0；悟性：0；魅力：10
+       生命值：70　魔法值：40　物理攻击力：23　魔法攻击力：8　物理防御力：11
+       命中：4　回避：4　反应力：72　感知力：53　专注力：42
+       出手速度：100（初始值）　移动速度：100（初始值）
+
+     每一项都能用原文的战士公式验算出来，没有任何「角色自带底子」：
+       生命 70 = 体质7 × 10
+       魔法 40 = 精神4 × 10
+       物攻 23 = 力量10 × 2 + 新手短剑 +3
+       物防 11 = 体质7 × 1 + 新手衣 +4
+       魔攻  8 = 精神4 × 2
+       命中/回避 4 = 敏捷4 × 1
+
+     所以 base 的 hp/mp/atk/def 全部为 0——数值一律由属性推导。
+     grow 也按原文：升级只给「生命+10，魔法+10，5点自由属性点」，
+     攻击和防御的成长全部来自玩家把那 5 点加到哪里。 */
   kaito: {
     id: 'kaito', name: '邪天', title: '无职业', portrait: 'kaito',
-    realName: '叶天邪', role: '近战', joinLevel: 1,
+    realName: '叶天邪', role: '近战', joinLevel: 0,
     resource: 'rage', resourceName: '斗气',
-    /* 幸运 0 → cri 基础值必须是 0，不能沿用旧的 0.12 */
-    base: { hp: 210, mp: 10, atk: 24, def: 10, spd: 32, cri: 0, blk: 0.10, par: 0.06, rageMul: 1.0, mpRegen: 2 },
-    grow: { hp: 12, mp: 2, atk: 2.2, def: 1.1, spd: 0.9 },
+    /* 幸运 0 → cri 基础值必须是 0。出手速度 100 是原文的初始值。 */
+    base: { hp: 0, mp: 0, atk: 0, def: 0, spd: 100, cri: 0, blk: 0.10, par: 0.06, rageMul: 1.0, mpRegen: 2 },
+    /* 原文：「叮……你的等级升为N级，生命+10，魔法+10，获得5点自由属性点。」
+       这句在第12/19/20/23/46/92/102 章反复出现，格式一字不差。 */
+    grow: { hp: 10, mp: 10, atk: 0, def: 0, spd: 0 },
     /* 原文的配点，创号时由玩家分配，这里是默认值 */
     alloc: { str: 10, vit: 7, agi: 4, spi: 4 },
     fixed: { luck: 0, wit: 0, chm: 10 },
@@ -356,7 +379,9 @@ export const COMBOS = {
 
 /* ---------------- 装备 ---------------- */
 export const EQUIPS = {
-  mu_sword: { id: 'mu_sword', name: '木刀', slot: 'weapon', atk: 4, desc: '修行用的木刀。', price: 0 },
+  /* 原文第7章：「新手短剑：装备要求：无，品级：苍白，属性：攻击+3。」 */
+  mu_sword: { id: 'mu_sword', name: '新手短剑', slot: 'weapon', atk: 3, tier: 1,
+    desc: '装备要求：无。品级：苍白。', price: 0 },
   iron_sword: { id: 'iron_sword', name: '铁之长剑', slot: 'weapon', atk: 14, desc: '村里铁匠打的结实长剑。', price: 180 },
   flame_sword: { id: 'flame_sword', name: '炎纹剑·绯', slot: 'weapon', atk: 28, cri: 0.06, desc: '刃纹如火焰流动的名刀。', price: 620 },
   holy_sword: { id: 'holy_sword', name: '圣剑·霜华', slot: 'weapon', atk: 46, cri: 0.10, mp: 20, desc: '冰封千年的圣剑，刃上开着霜花。', price: 0 },
@@ -365,7 +390,10 @@ export const EQUIPS = {
   snow_staff: { id: 'snow_staff', name: '雪晶法杖', slot: 'weapon', atk: 22, mp: 55, desc: '冰晶在杖顶缓缓旋转。', price: 0 },
   hunter_spear: { id: 'hunter_spear', name: '猎兵短枪', slot: 'weapon', atk: 12, spd: 3, desc: '轻巧好用的短枪。', price: 0 },
   storm_spear: { id: 'storm_spear', name: '疾风长枪', slot: 'weapon', atk: 30, spd: 7, desc: '枪身刻着风的纹路。', price: 560 },
-  cloth: { id: 'cloth', name: '旅装', slot: 'armor', def: 6, desc: '普通的旅行衣物。', price: 0 },
+  /* 原文没有单列新手衣的属性，但初始面板的物理防御 11 = 体质7×1 + 4，
+     差额 4 只能来自它。反解得 防御+4。 */
+  cloth: { id: 'cloth', name: '新手衣', slot: 'armor', def: 4, tier: 1,
+    desc: '装备要求：无。品级：苍白。', price: 0 },
   leather: { id: 'leather', name: '皮甲', slot: 'armor', def: 14, hp: 30, blk: 0.03, desc: '轻便的兽皮护甲。', price: 150 },
   chain: { id: 'chain', name: '锁子甲', slot: 'armor', def: 26, hp: 70, blk: 0.06, desc: '细密的铁环护甲。', price: 420 },
   demon_mail: { id: 'demon_mail', name: '魔铠·黑曜', slot: 'armor', def: 38, hp: 130, blk: 0.10, desc: '从魔将身上剥下的漆黑铠甲。', price: 0 },
@@ -519,7 +547,12 @@ export const ENEMIES = {
   wild_wolf: {
     id: 'wild_wolf', name: '野狼', shape: 'wolf',
     palette: { body: '#6a6258', trim: '#3a352e', eye: '#ff6a4a', fang: '#f6efe2' },
-    baseLevel: 5, hp: 170, atk: 12, def: 4, spd: 31, exp: 42, gold: 16, hot: 4,
+    /* 原文第8章：「野狼：5级，生命：170。一种性情比较残暴的动物，喜群居，
+       会对靠近的人类主动发起攻击。」
+       物防 8：原文没直接给，由两组伤害数字反解（见 battle.js computeDamage）。
+       物攻 32：原文第9章狼爪打在他身上是 -21，而他当时物防 11 → 21+11=32。
+       ⚠ 出手速度原文未给，31 是沿用值（原文只说「移动速度至少是玩家的1.5倍」）。 */
+    baseLevel: 5, hp: 170, atk: 32, def: 8, spd: 31, exp: 42, gold: 16, hot: 4,
     weak: ['fire'], quote: '（一声长嚎。另外两只被惊动了。）',
     skills: [{ id: 'atk', w: 8 }, { id: 'heavy', w: 2 }],
   },
@@ -917,18 +950,19 @@ export function enemyStatsAt(ref, lv) {
   };
 }
 
-/* ---------------- 成长曲线 ---------------- */
-/* 第二部把等级上限推到 50，所以后段曲线要放缓，
-   否则 Lv30 之后每一级都要打十几场。 */
-export const MAX_LEVEL = 50;
-export function expToNext(level) {
-  const base = 42 + level * level * 3.2;
-  return Math.floor(level > 27 ? base * (1 - (level - 27) * 0.014) : base);
-}
+/* ---------------- 成长曲线 ----------------
+   已移到 realm.js 并按原文重新校准（0→1=100、1→2=1000、5级野狼=12）。
+   这里原本还有一套 MAX_LEVEL=50 / 42+lv²*3.2，和 realm.js 那套并存，
+   而游戏跑的恰恰是这一套、realm.js 那套没人 import——两套并存已在
+   2026-09-15 收敛掉。转发出去是为了不用改所有 import 点。 */
+export { MAX_LEVEL, expToNext, expFromKill } from './realm.js';
 
 export function statsAt(def, level, equips = []) {
   const g = def.grow, b = def.base;
-  const k = level - 1;
+  /* 0 基：原文里玩家从 **0 级** 起步（第8章「0级，身上只有没什么属性的新手衣」），
+     所以 base 就是 0 级的身板，每升一级加一份 grow。
+     此前是 k = level - 1（1 基），换算过来数值完全不变，只是索引整体下移一级。 */
+  const k = Math.max(0, level);
   const s = {
     hp: Math.floor(b.hp + g.hp * k),
     mp: Math.floor(b.mp + g.mp * k),

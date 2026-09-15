@@ -84,10 +84,10 @@ function chooseCmd(B, m) {
    第一部分：把剧本里每一场战斗真的打完
    ============================================================ */
 
-/* 打到这场时队伍大概什么水平——取自 playthrough.cjs 的真实通关记录
-   （2026-09-15：邪天单人 Lv1 起步，中途死 3 次，Lv7 抵达结局）。
+/* 打到这场时队伍大概什么水平——按原文：整个杀狼段他都是 **0 级**
+   （第8章「0级，身上只有没什么属性的新手衣」），第12章才升到 1 级。
    剧本新增战斗而这里没配等级时，退回按敌人等级估算，不会漏跑。 */
-const LEVEL_AT = { d_fight1: 1, d_fight1b: 1, d_fight2: 3, d_fight3: 5 };
+const LEVEL_AT = { d_fight1: 0, d_fight1b: 0, d_fight2: 0, d_fight3: 1 };
 
 const STAGES = [];
 for (const [sid, sc] of Object.entries(SCENES)) {

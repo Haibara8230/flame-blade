@@ -237,6 +237,7 @@ console.log('立绘结构: 全部通过（' + Object.keys(PORTRAITS).length + ' 
    用 characters.js 的 expToNext 升级——全部是游戏真正在跑的那几个函数。 */
 {
   const { expToNext: e2n, MAX_LEVEL } = await import('../js/characters.js');
+  const { expFromKill } = await import('../js/realm.js');
 
   /* 沿 next / choices 走一条确定路径：抉择一律取第一个分支。
      战斗都在主线 next 链上，不被抉择挡住，所以这条路径覆盖全部战斗；
@@ -271,8 +272,10 @@ console.log('立绘结构: 全部通过（' + Object.keys(PORTRAITS).length + ' 
     let gain = sceneExp(sc), label = null;
     if (sc.enemies && sc.enemies.length) {
       battles++;
-      // battle.js 结算时用的就是 enemyStatsAt(...).exp 之和
-      gain += sc.enemies.reduce((a, e) => a + (enemyStatsAt(e.ref, e.level || 1)?.exp || 0), 0);
+      /* battle.js 结算时走的就是 realm.js 的 expFromKill（按原文校准，
+         而且随玩家当前等级变化——等级压制），不是敌人身上那个静态 exp 字段。 */
+      gain += sc.enemies.reduce((a, e) => a + expFromKill(
+        e.level || 1, lv, { star: ENEMIES[e.ref]?.star || (ENEMIES[e.ref]?.boss ? 3 : 0) }), 0);
       label = `${id}（${sc.enemies.map(e => ENEMIES[e.ref]?.name || e.ref).join('+')}）`;
     } else if (gain > 0) label = `${id}（剧情奖励）`;
     if (!label) continue;
@@ -293,7 +296,10 @@ console.log('立绘结构: 全部通过（' + Object.keys(PORTRAITS).length + ' 
      而是自动战斗死了 3 次，arc_defeat 把人送回 d_hunt 重打，经验又拿了一遍。
      band 给得宽，是为了抓「整章经验被删 / 被翻倍」这种量级的问题，
      而不是每次微调数值都来烦人。 */
-  const REAL = { low: 4, high: 12, note: 'playthrough 实测 Lv7~8（含 3 次战死重打）' };
+  /* 原文：0 级杀九只 5 级野狼才升到 1 级（100 点经验），1→2 还要整整 1000 点。
+     剧本里这四场正好是 9 只狼 + 1 只头狼，所以走完应当**刚好 1 级**——
+     和原文第12章他升到 1 级的时点对得上。 */
+  const REAL = { low: 1, high: 2, note: '原文：九只野狼完成 0→1，1→2 还要 1000 点' };
   if (lv < REAL.low) warns.push(`主线经验偏低：模拟终局只有 Lv.${lv}（${REAL.note}）`);
   if (lv > REAL.high) warns.push(`主线经验偏高：模拟终局 Lv.${lv}（${REAL.note}）`);
 }

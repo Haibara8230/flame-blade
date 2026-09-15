@@ -547,7 +547,8 @@ function recalc(m) {
 function addMember(id, level) {
   if (G.party.find(p => p.id === id)) return G.party.find(p => p.id === id);
   const explicit = level != null;
-  const m = makeMember(id, level ?? Math.max(ACTORS[id].joinLevel, 1));
+  /* 原文里玩家从 0 级起步，所以不能再把下限钳到 1（第7章面板：「等级：0级」）。 */
+  const m = makeMember(id, level ?? Math.max(ACTORS[id].joinLevel, 0));
   // 新成员等级不低于队伍平均-1（剧情加入时自动拉齐）
   if (!explicit && G.party.length) {
     const avg = Math.round(G.party.reduce((s, p) => s + p.level, 0) / G.party.length);
@@ -1981,7 +1982,7 @@ function newGame() {
   G.flags = {};
   G.battleCheckpoint = null;
   G.chapter = '';
-  addMember('kaito', 1);
+  addMember('kaito', 0);   // 原文：等级 0 级，职业：无
   for (const m of G.party) { m.hp = m.maxHp; m.mp = m.resource === 'rage' ? 0 : m.maxMp; }
   G.mode = 'scene';
   $('title').classList.add('hidden');
@@ -2322,7 +2323,7 @@ window.__choice = function (i) {
   return 'picked ' + i;
 };
 window.__partyJoin = function (id, lv) { const m = addMember(id, lv); return m.name + ' Lv.' + m.level; };
-window.__newGame = function (level = 1, members = ['kaito']) {
+window.__newGame = function (level = 0, members = ['kaito']) {
   newGame();
   G.party = [];
   for (const id of members) addMember(id, level);

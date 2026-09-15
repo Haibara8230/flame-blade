@@ -5,6 +5,7 @@
 import { ACTORS, SKILLS, COMBOS, ENEMIES, ENEMY_SKILLS, EQUIPS, ITEMS, STATUS, statsAt, enemyStatsAt } from './characters.js';
 import { eqBonus as equipBonus, eqElemBonus as equipElem } from './loot.js';
 import { talentBonus, talentElem, derived } from './growth.js';
+import { expFromKill } from './realm.js';
 
 /* 装备词缀与天赋用同一套键名，战斗里永远查这两个合并后的函数。 */
 function eqBonus(unit, key) { return equipBonus(unit, key) + talentBonus(unit, key); }
@@ -407,12 +408,21 @@ export function computeDamage(B, atkUnit, defUnit, power, opt = {}) {
   // 「贯穿」词缀与技能自带的破防叠加
   const pierce = clamp((opt.pierceDef || 0) + eqBonus(atkUnit, 'pierce'), 0, 0.85);
   if (pierce) defv = Math.floor(defv * (1 - pierce));
-  /* 平衡公式：普攻（power=1）约造成 (1.05×攻击 − 0.95×防御) 的伤害
-     —— 保证一场战斗 3~6 回合，且高防敌人仍有明显减伤
-     防御按段数摊薄：多段技此前每一段都要扣满一次防御，段数越多越吃亏
-     （凯的 5 段奥义被扣 5 次，伤害只有璃单段奥义的三分之一）。 */
+  /* 伤害 = 物理攻击力 − 目标物理防御力。照抄原文，不做「平衡」。
+
+     原文给了两组可以互相验算的伤害数字：
+       · 第9章 物攻 23（0级 + 新手短剑+3）打 5 级野狼 → -15、-13、-12、-14、MISS
+       · 第12章 物攻 ≈94（拿到永恒命运之刻后「差点破百」）打同样的野狼
+         → -85、-87、-85
+     两组同时满足「攻击 − 防御」，反解出野狼物防 ≈ 8。
+
+     ⚠ 此前这里是 atk*1.02 − def*0.9 + 44*power。那个 +44 是为了
+     「保证一场战斗 3~6 回合」编出来的常数，会让 23 点攻击打出 85 点伤害
+     ——和原文差了整整一个数量级，也是野狼两刀就死的原因。
+
+     防御按段数摊薄保留：多段技此前每一段都扣满一次防御，段数越多越吃亏。 */
   const hits = Math.max(1, opt.hits || 1);
-  const base = (atk * power * 1.02) - (defv * 0.9) / hits + 44 * power;
+  const base = Math.max(1, atk - defv / hits) * power;
   const lvl = atkUnit.level || 1;
   const dlv = defUnit.level || 1;
   const lvK = 1 + (lvl - dlv) * 0.02;
@@ -555,7 +565,10 @@ function runSkill(B, atkUnit, skillId, targets, opt = {}) {
         const d = derived(tg);
         const evaFromAgi = Math.min(0.25, (tg.eva || 0) * 0.01);
         const acc = atkUnit.isEnemy ? 0 : derived(atkUnit).accuracy;
-        const evade = clamp(d.evade + evaFromAgi + (tg.evadeBonus || 0) - acc, 0, 0.75);
+        /* 上限 0.92：留一条「再强也会被打到」的缝（原文里他确实挨过狼爪），
+           但必须高于 0.75——否则反应力 72 也会被三只狼稳定打死，
+           原文第9章那一场就不可能发生。⚠ 具体数值原文未考证。 */
+        const evade = clamp(d.evade + evaFromAgi + (tg.evadeBonus || 0) - acc, 0, 0.92);
         if (chance(evade)) {
           guardMul = 0; guardKind = 'dodge'; dodged = true;
           // 记下「刚闪过」，【擦身反手】一类技能会吃这个加成
@@ -1333,7 +1346,13 @@ export function checkBattleEnd(B) {
 }
 
 function onWin(B) {
-  const exp = B.enemies.reduce((s, e) => s + e.exp, 0);
+  /* 经验按原文的等级压制现算，不再直接用敌人身上那个静态 exp 字段。
+     realm.js 的 expFromKill 是用原文两个数字反解出来的
+     （5级野狼对0级玩家=12；5级三星BOSS对1级玩家=400）。
+     敌人可以用 star: 1/2/3 标星级，boss: true 等价于三星。 */
+  const pLv = Math.max(0, ...B.party.map(m => m.level || 0));
+  const exp = B.enemies.reduce((s, e) => s + expFromKill(
+    e.level || 1, pLv, { star: e.def?.star || (e.boss ? 3 : 0) }), 0);
   const gold = B.enemies.reduce((s, e) => s + e.gold, 0);
   addLog(B, `<span class="hl">※ 获得 ${exp} 点经验、${gold} 金币。</span>`);
   B.game.onBattleWin(B, exp, gold);
