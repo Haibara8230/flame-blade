@@ -753,9 +753,19 @@ const PID_MAP = (() => {
   const m = {};
   const put = (n, pid) => { if (n) m[n] = pid; };
   for (const a of Object.values(ACTORS)) { put(a.name, a.portrait); put(a.realName, a.portrait); }
-  /* ⚠ 此前这里映射了小铃 / 健次郎 / 魔王阿斯特 / 魔将古兰 / 铁匠 / 船长 …
-     一整套《炎之刃》的说话人，原著中一个都不存在，已删除。
-     原文里的说话人随剧情推进逐个补。 */
+  /* 原文里的说话人。立绘按原文的外貌描写画，见 portraits.js 每条的注释。
+     ⚠ 此前这里映射了小铃 / 健次郎 / 魔王阿斯特 / 魔将古兰 / 铁匠 / 船长 …
+     一整套《炎之刃》的说话人，原著中一个都不存在，已删除。 */
+  put('叶天邪', 'kaito'); put('邪天', 'kaito');
+  put('刘桦', 'liuhua');
+  put('接待小姐', 'clerk');
+  put('普洛斯', 'prolos');
+  put('被封印的老人', 'sealed');
+  put('？？？', 'guoguo'); put('???', 'guoguo'); put('果果', 'guoguo');
+  /* ⚠ 以下几位原文没有写外貌，暂不给立绘，宁可没有也不要编：
+       少女（蓝白格子裙）、保镖（黑西装）、记者、路人玩家、眼镜学长。
+     承泽湖的谪仙女子（lake）与大胖子（fatman）原文有细写，立绘已备好，
+     等剧情把她们的台词补上就能挂。 */
   return m;
 })();
 
