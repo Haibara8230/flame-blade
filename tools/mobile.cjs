@@ -24,6 +24,13 @@ const DEVICES = [
   { name: 'iPad-横屏', w: 1024, h: 768, mobile: true, dpr: 2 },
 ];
 
+/* 用来验证「真实点击能读完台词并弹出抉择按钮」的场景。
+   必须是当前流程里真实存在的抉择场景——此前写的是 c1_choice1，
+   剧情按原文重写时该场景被删除，__setScene 静默失败、画面停在 prologue，
+   于是这一项在 6 个视口上长期假失败，真正的输入层回归反而没人防。
+   下面会断言场景真的切过去了，改名或删除会立刻报出来。 */
+const CHOICE_SCENE = 'd_street';
+
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function getJSON(url, timeout = 3000) {
   return new Promise((res, rej) => {
@@ -113,8 +120,15 @@ let problems = [];
     const g = parseOr(geo, { x: 0, y: 0, w: 0, h: 0, vw: d.w, vh: d.h, touchUI: null }, d.name + ' stage几何');
 
     // 3) 开局 → 战斗，检查指令栏在触屏下可点（战斗已不再需要悬浮按键）
+    /* 此前是 __newGame(20,四人队) + __advance(70) 盲推进战斗。
+       剧情一改，第 70 行就不再落在战斗里，这一项会静默退化成
+       「没能进入战斗」——测的是推进距离，不是战斗 UI。
+       改成直接起一场当前真实存在的战斗，与剧情长度解耦。 */
     const flow = await evalx(`
-      if (window.__newGame) { window.__newGame(20,['kaito','cang','lei','ryze']); window.__advance(70); }
+      if (!window.__newGame) return 'no-debug';
+      window.__newGame(6, ['kaito']);
+      window.__startBattle({ id:'ui-probe', bg:'forest', next:'prologue', escape:false,
+        enemies:[{ref:'wild_wolf',level:5},{ref:'wild_wolf',level:5}] });
       return window.__G ? window.__G.mode : 'no-debug';
     `);
     await sleep(1600);
@@ -167,9 +181,23 @@ let problems = [];
        「场景是否有 choices」而不是「按钮是否已弹出」，玩家从进入场景那一刻起
        就再也点不动，按钮永远不会出现——三个分支点全成死路。
        现有的 __advance / __autoRun 都是直接调内部函数，绕过了输入层，测不出这个。 */
-    await evalx(`window.__setScene('c1_choice1'); return 'ok';`);
+    await evalx(`window.__setScene('${CHOICE_SCENE}'); return 'ok';`);
     await sleep(900);
-    for (let i = 0; i < 6; i++) { await evalx(TAP_EXPR); await sleep(300); }
+    /* 点击次数按场景实际台词行数推导，不再写死。
+       写死 6 次的老写法在场景改长之后会假失败，改短之后会假通过。
+       多点两次：最后一行读完还需要一次点击才让抉择按钮弹出。 */
+    const chLines = await evalx(`return (window.__G.scene && window.__G.scene.lines || []).length`);
+    /* 台词有打字机效果。实测一行要 3 次点击左右：点击间隔短于打字时间，
+       于是一次补完打字、一次翻页，中间还会浪费一次。写死次数必然算不准，
+       所以点到抉择按钮弹出为止，上限按行数给足余量（只有真失败才会跑满）。 */
+    const tapCap = ((typeof chLines === 'number' && chLines > 0 ? chLines : 9) + 2) * 4;
+    let taps = 0;
+    for (; taps < tapCap; taps++) {
+      await evalx(TAP_EXPR);
+      await sleep(240);
+      const popped = await evalx(`return !document.getElementById('choices').classList.contains('hidden')`);
+      if (popped === true) { taps++; break; }
+    }
     const chRaw = await evalx(`return JSON.stringify({
       line: window.__G.lineIdx,
       lines: (window.__G.scene && window.__G.scene.lines || []).length,
@@ -182,9 +210,9 @@ let problems = [];
        此前攻击/道具永远打第一个敌人、治疗与复活永远作用在 party[0]，
        也就是没法集火、没法治疗或复活除队首以外的任何人。 */
     await evalx(`
-      window.__newGame(15, ['kaito','cang','lei','ryze']);
-      window.__startBattle({ id:'tgt', bg:'snow', next:'prologue',
-        enemies:[{ref:'ice_hound',level:12},{ref:'ice_hound',level:12},{ref:'demon_soldier',level:12}] });
+      window.__newGame(6, ['kaito']);
+      window.__startBattle({ id:'tgt', bg:'forest', next:'prologue', escape:false,
+        enemies:[{ref:'wild_wolf',level:5},{ref:'wild_wolf',level:5},{ref:'wild_wolf',level:5}] });
       return 'ok';
     `);
     await sleep(1500);
@@ -213,7 +241,7 @@ let problems = [];
     console.log(`  模式=${t.mode} 战斗中=${t.inBattle} 出手者=${t.actor}  指令栏=${t.cmdMenuVisible ? '显示' : '隐藏'} 按钮=${t.cmdBtns}个 ${t.cmdBtnSize} 在视口内=${t.cmdInView}`);
     console.log(`  旋转提示=${rotateShown === true ? '显示' : '隐藏'}`);
     console.log(`  触摸点击=${tapRes}  剧情推进=${advanced ? '✔' : '✗'} (${b0.mode}|${b0.scene} → ${a0.mode}|${a0.scene})`);
-    console.log(`  抉择场景：真实点击 6 次后 台词 ${ch.line}/${ch.lines} 行、按钮 ${ch.btns} 个、已弹出=${!ch.choHidden}`);
+    console.log(`  抉择场景[${ch.scene}]：真实点击 ${taps} 次后 台词 ${ch.line}/${ch.lines} 行、按钮 ${ch.btns} 个、已弹出=${!ch.choHidden}`);
     console.log(`  战斗选目标：点「攻击」后目标列表已弹出=${tg.open}，列出 ${tg.rows} 个目标（场上 ${tg.enemies} 个敌人）`);
 
     if (d.mobile && !portrait && g.w < 200) problems.push(`${d.name}: 舞台宽度异常 ${g.w}`);
@@ -227,7 +255,8 @@ let problems = [];
       if (g.w > g.vw + 1) problems.push(`${d.name}: 舞台横向溢出 ${g.w}>${g.vw}`);
     }
     if (d.mobile && !advanced) problems.push(`${d.name}: 触摸点击未推进剧情`);
-    if (ch.choHidden) problems.push(`${d.name}: 抉择场景点不动——连点 6 次后按钮仍未弹出（台词停在 ${ch.line}/${ch.lines}）`);
+    if (ch.scene !== CHOICE_SCENE) problems.push(`${d.name}: 抉择场景 ${CHOICE_SCENE} 不存在或切换失败（停在 ${ch.scene}）——测试用例已过期，需换成当前流程里的抉择场景`);
+    else if (ch.choHidden) problems.push(`${d.name}: 抉择场景点不动——连点 ${taps} 次后按钮仍未弹出（台词停在 ${ch.line}/${ch.lines}）`);
     else if (ch.btns < 2) problems.push(`${d.name}: 抉择按钮只渲染了 ${ch.btns} 个`);
     if (!tg.open) problems.push(`${d.name}: 点「攻击」没有弹出目标选择列表`);
     else if (tg.rows !== tg.enemies) problems.push(`${d.name}: 目标列表 ${tg.rows} 项，与场上 ${tg.enemies} 个敌人不符`);
@@ -257,7 +286,7 @@ let problems = [];
   try { ws.close(); } catch (e) { }
   done(problems.length || errs.length ? 1 : 0);
 })().catch(e => { console.error('FATAL', e && e.message); done(1); });
-setTimeout(() => { console.error('GLOBAL TIMEOUT'); done(2); }, 280000);
+setTimeout(() => { console.error('GLOBAL TIMEOUT'); done(2); }, 420000);
 
 
 
