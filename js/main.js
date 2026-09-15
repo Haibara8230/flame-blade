@@ -4,7 +4,7 @@
    ============================================================ */
 import { ACTORS, SKILLS, COMBOS, ITEMS, EQUIPS, SHOPS, STATUS, ELEM, statsAt, expToNext, ENEMIES, MAX_LEVEL, equipFreeBonus, equipFixedBonus, applyAtkPct } from './characters.js';
 import { SCENES, ENDINGS } from './story.js';
-import { portraitURL, hasPortrait } from './portraits.js';
+import { portraitURL, hasPortrait, loadArtManifest } from './portraits.js';
 import { rollDrops, rollShopStock, restoreLoot, collectLoot, setLootContext } from './loot.js';
 import * as GR from './growth.js';
 import * as PW from './power.js';
@@ -1923,6 +1923,8 @@ $('btn-again').onclick = e => {
   }
   gotoTitle();
 };
+/* 有图片立绘就用图片，没有就继续用代码画的。读不到清单完全静默。 */
+loadArtManifest().then(ok => { if (ok) console.info('[立绘] 已加载图片清单'); });
 document.addEventListener('pointerdown', () => ac(), { once: true });
 
 /* ============================================================

@@ -257,6 +257,20 @@ node tools/serve.cjs 8123
 
 对照图：`screenshots/portraits-canon.png`。
 
+### 想换成图片立绘
+
+程序化 SVG 到头也就是个几何拼脸。要更好看，把图片丢进 `art/portraits/`：
+
+```
+art/portraits/kaito.png          ← 默认立绘
+art/portraits/kaito-angry.png    ← 可选，某个表情专用
+node tools/gen-art.mjs           ← 加删图片后必须跑
+```
+
+游戏会自动改用图片，**没有图片的角色继续用代码画的**，不需要改任何代码。
+`art/portraits/README.md` 里按原文写好了每个角色的生成提示词
+（方括号内是原文原话，直接可用）。
+
 ## 📱 手机上玩
 
 横屏 16:9，已做手机适配：触屏一次触摸只算一次确认、对话框 / 指令栏按屏宽重排、
@@ -300,6 +314,7 @@ node tools/reach.mjs           # 可达性：定义了但玩家永远碰不到�
 node tools/battlesim.mjs       # 无浏览器：把每场战斗真的打完 + 技能机制回归
 node tools/balance.mjs         # 数值配平：每场战斗的长度与生存预估
 node tools/gen-equipment.mjs   # 改完 equipment-catalog.json 后必须跑
+node tools/gen-art.mjs         # 往 art/portraits/ 加删图片后必须跑
 node tools/serve.cjs 8123      # 起服务器，下面两个需要它
 node tools/playthrough.cjs     # 无头浏览器全流程通关
 node tools/mobile.cjs          # 6 种视口的布局与真实输入链路

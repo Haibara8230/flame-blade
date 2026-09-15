@@ -101,6 +101,7 @@ node tools/mobile.cjs          # 6 种视口的布局与真实输入链路
 
 改了 `equipment-catalog.json` 必须跑 `node tools/gen-equipment.mjs`，
 否则掉落池会静默停在旧数据上，不报任何错。
+往 `art/portraits/` 加删图片必须跑 `node tools/gen-art.mjs`，否则游戏读不到。
 
 **测试脚本本身也会过期。** 这个项目已经出现过三次「测试通过但测的是已删除的内容」
 （见 TODO.md 的 A7 / A8 / A10）。改剧情后要确认测试断言指向的还是真实存在的东西。

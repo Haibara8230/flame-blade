@@ -349,10 +349,43 @@ for (const key of Object.keys(RECIPES)) {
   PORTRAITS[key] = VARIANTS[key].normal;   // 兼容旧的 PORTRAITS[id] 用法
 }
 
+/* ---------------- 图片立绘（可选，优先于代码画的） ----------------
+
+   程序化 SVG 画到头也就是个几何拼脸，真要好看还得上图。
+   所以留一条通道：把图片丢进 `art/portraits/`，游戏自动改用图片，
+   没有的角色继续用代码画的那张，不需要改任何代码。
+
+   命名（放在 art/portraits/ 下）：
+     kaito.png            该角色的默认立绘，所有表情都用它
+     kaito-angry.png      可选，某个表情的专用图；没有就退回默认立绘
+   表情名见 EXPRESSIONS：normal / angry / hurt / cry / shout / smile
+   支持 .png / .webp / .jpg。
+
+   清单由 `node tools/gen-art.mjs` 扫描目录生成（和装备图鉴一个套路），
+   这样浏览器不用去猜文件在不在、也不会满控制台 404。 */
+let ART = {};
+export function setArtManifest(m) { ART = m || {}; }
+/* 启动时异步读一次清单；读不到就当没有图片，静默退回程序化立绘。 */
+export async function loadArtManifest(base = 'art/portraits/manifest.json') {
+  try {
+    const r = await fetch(base, { cache: 'no-cache' });
+    if (!r.ok) return false;
+    ART = await r.json();
+    return true;
+  } catch (e) { return false; }
+}
+
 export function portraitURL(id, expr) {
+  const a = ART[id];
+  if (a) {
+    if (expr && a[expr]) return a[expr];
+    if (a.normal) return a.normal;
+  }
   const v = VARIANTS[id] || VARIANTS.kaito;
   return v[expr] || v.normal;
 }
+/* 这张立绘现在用的是图片还是代码画的——面板与校验脚本要用 */
+export function portraitIsArt(id) { return !!(ART[id] && ART[id].normal); }
 export function hasPortrait(id) { return !!VARIANTS[id]; }
 
 export default PORTRAITS;
