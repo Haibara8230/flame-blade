@@ -212,6 +212,8 @@ game/
 ```powershell
 node tools/validate.mjs        # 剧情图 + 数据一致性校验
 node tools/reach.mjs           # 可达性：定义了但玩家永远碰不到的内容
+node tools/battlesim.mjs       # 无浏览器：把每场战斗真的打完 + 技能机制回归
+node tools/balance.mjs         # 数值配平：每场战斗的长度与生存预估
 node tools/gen-equipment.mjs   # 改完 equipment-catalog.json 后必须跑
 node tools/serve.cjs 8123      # 起服务器，下面两个需要它
 node tools/playthrough.cjs     # 无头浏览器全流程通关
@@ -230,7 +232,7 @@ node tools/mobile.cjs          # 6 种视口的布局与真实输入链路
 | `reach.mjs` | ✔ 通过 |
 | `playthrough.cjs` | ✔ **真实路径（邪天单人）**通关，Lv7 收尾，控制台零报错 |
 | `mobile.cjs` | ✔ 7 个视口全部通过（布局 / 触屏推进 / 抉择按钮 / 战斗选目标） |
-| `battlesim.mjs` | ✗ 启动即崩溃（见 TODO A8） |
-| `balance.mjs` | ⚠ 能跑，但队伍预设全是退役内容，结论无效（见 TODO A9） |
+| `battlesim.mjs` | ✔ 4 场战斗全部正常结束 + 4 项技能机制全绿 |
+| `balance.mjs` | ✔ 预设已对齐真实路径；点名 `d_fight2`（四狼）偏难，与实战一致 |
 
 已知问题与待办见 **[TODO.md](TODO.md)**。

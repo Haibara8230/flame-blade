@@ -1129,6 +1129,14 @@ function execBuff(B, m, sk) {
         m.evadeBonus = sk.evadeUp;
         addFloat(B, `回避 +${Math.round(sk.evadeUp * 100)}%`, m.x, m.y - 150, '#8fe6ff', 22);
       }
+      /* selfHeal 原本只写在伤害循环里（见 runSkill 的命中分支），
+         于是 type:'buff' 的技能永远走不到那一段——【凝神】描述里写着
+         「回复少量生命」，实际一点血都不回。又一个死键，2026-09-15 补上。 */
+      if (sk.selfHeal && !m.dead) {
+        const hs = Math.floor(m.maxHp * sk.selfHeal);
+        m.hp = Math.min(m.maxHp, m.hp + hs);
+        addFloat(B, `+${hs}`, m.x, m.y - 130, '#7dffa8', 30);
+      }
       flash(B, 0.35);
       shake(B, 8);
       gainRage(B, m, sk.rage || 12);

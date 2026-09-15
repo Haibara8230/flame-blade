@@ -2,7 +2,6 @@
    行动条改版后「回合」不再是所有人各打一次，而是按 spd 分配出手机会——
    模型改为：算出全场每「轮」（= 全体 gauge 各涨满一次的时间）里各单位的出手次数期望。 */
 import { ACTORS, ENEMIES, ENEMY_SKILLS, SKILLS, EQUIPS, statsAt, enemyStatsAt } from '../js/characters.js';
-import { rollEquip } from '../js/loot.js';
 import { combatPower, enemyPower } from '../js/power.js';
 import { SCENES } from '../js/story.js';
 import { obtainable } from './reach.mjs';
@@ -38,32 +37,29 @@ function mkHero(id, lv, equips, gear) {
     skills: ACTORS[id].skills.filter(x => x.lv <= lv).map(x => x.id),
   };
 }
+/* 「打到这场时玩家大概什么水平」——模拟器唯一的假设，所以必须写实。
+
+   2026-09-15 重建。此前这里是五档四人队，配的是 holy_sword / demon_mail /
+   blue_staff 一类《炎之刃》时代的装备，脚本自己都会报「预设里用了玩家拿不到的装备」
+   共 10 条。按那套预设算出来的是 1238 HP 的四人队，于是四场狼战全被判成
+   「太简单 / 战力碾压」——而真实路径是邪天单人 340 HP，自动战斗中途死了 3 次。
+   结论整个是反的。
+
+   现在的等级取自 playthrough.cjs 的真实通关记录（邪天单人 Lv1 起步，Lv7 收尾）；
+   装备按「会去杂货摊花钱的玩家」估：d_oldwoman 给 200 金，够买铁之长剑（180）；
+   d_resupply 再给 260，够补一件皮甲（150）。 */
 const PARTY = {
-  early: [['kaito', 3, ['mu_sword', 'cloth']], ['cang', 5, ['wood_staff', 'cloth']]],
-  forest: [['kaito', 6, ['iron_sword', 'leather']], ['cang', 6, ['wood_staff', 'leather']], ['lei', 6, ['hunter_spear', 'leather']]],
-  mid: [['kaito', 10, ['flame_sword', 'chain']], ['cang', 10, ['blue_staff', 'chain']], ['lei', 10, ['hunter_spear', 'chain']], ['ryze', 10, ['snow_staff', 'holy_cloak']]],
-  late: [['kaito', 15, ['holy_sword', 'demon_mail']], ['cang', 15, ['blue_staff', 'holy_cloak']], ['lei', 15, ['storm_spear', 'chain']], ['ryze', 15, ['snow_staff', 'holy_cloak']]],
-  final: [['kaito', 18, ['holy_sword', 'demon_mail']], ['cang', 18, ['blue_staff', 'holy_cloak']], ['lei', 18, ['storm_spear', 'chain']], ['ryze', 18, ['snow_staff', 'holy_cloak']]],
+  solo_open:  [['kaito', 1, ['mu_sword', 'cloth']]],       // 头两场：还没来得及买东西
+  solo_pack:  [['kaito', 3, ['iron_sword', 'cloth']]],     // 狼群：换了剑
+  solo_alpha: [['kaito', 5, ['iron_sword', 'leather']]],   // 头狼：补上皮甲
 };
 
-/* 第二部的装备是掉落生成的，没有固定 id。
-   这里按该档位的典型等级采样若干件，取均值当作「玩家大概会穿成什么样」。 */
-function sampleGear(level, n = 40) {
-  const acc = { atk: 0, def: 0, hp: 0, mp: 0, spd: 0, cri: 0, blk: 0, par: 0 };
-  for (let i = 0; i < n; i++) {
-    for (const slot of ['weapon', 'armor', 'acc']) {
-      const e = rollEquip({ level, slot, register: false });
-      for (const k of Object.keys(acc)) acc[k] += e[k] || 0;
-    }
-  }
-  for (const k of Object.keys(acc)) acc[k] /= n;
-  return acc;
-}
-const P2_LEVELS = { spirit: 24, edge: 31, divine: 37, last: 46 };
-for (const [key, lv] of Object.entries(P2_LEVELS)) {
-  PARTY[key] = [['kaito', lv], ['cang', lv], ['lei', lv], ['ryze', lv]];
-  PARTY[key].gear = sampleGear(lv);
-}
+/* 哪一场用哪一档。按敌人等级自动选在这里行不通——
+   四场狼战的敌人全是 5 级，等级区分不出「第几场」，只有剧本顺序能。 */
+const STAGE_TIER = {
+  d_fight1: 'solo_open', d_fight1b: 'solo_open',
+  d_fight2: 'solo_pack', d_fight3: 'solo_alpha',
+};
 
 const ASSUMED_ROUNDS = 6;    // 续航折算用的典型战斗长度（单位：轮）
 const HEALER_OUTPUT = 0.5;   // 治愈角色实际用于输出的出手占比
@@ -93,16 +89,13 @@ checkGear();
    此前这里是一张手抄的 STAGE_PARTY，剧情拆分重构之后就对不上了：
    10 场战斗被跳过，还误报四个敌人「未被任何战斗使用」。
    现在档位按该场敌人的等级自动选，新增章节不用改这个文件。 */
-function tierFor(lv) {
-  if (lv <= 4) return 'early';
-  if (lv <= 8) return 'forest';
-  if (lv <= 12) return 'mid';
-  if (lv <= 16) return 'late';
-  if (lv <= 19) return 'final';
-  if (lv <= 26) return 'spirit';
-  if (lv <= 33) return 'edge';
-  if (lv <= 40) return 'divine';
-  return 'last';
+function tierFor(lv, sid) {
+  if (STAGE_TIER[sid]) return STAGE_TIER[sid];
+  /* 剧本新增了战斗而这里还没配档位：按敌人等级现编一个单人档，
+     保证不漏跑，但结论只能当参考——真实等级要等 playthrough 跑一遍才知道。 */
+  const key = 'auto' + lv;
+  if (!PARTY[key]) PARTY[key] = [['kaito', Math.max(1, lv - 2), ['iron_sword', 'leather']]];
+  return key;
 }
 
 /* 战斗场景在剧本里的先后顺序，用来给场次编号 */
@@ -113,14 +106,20 @@ for (const [sid, sc] of Object.entries(SCENES)) {
   const label = `${(sc.chapter || '').replace(/^第|章.*$/g, '').slice(0, 8) || '?'} ${sc.enemies.map(e => ENEMIES[e.ref].name).join('+')}`.slice(0, 26);
   // 教学战（练习木桩）本来就该秒杀，不参与平衡结论
   const tutorial = sc.enemies.every(e => e.ref === 'training_dummy');
-  STAGES.push([label + (sc.boss ? '(BOSS)' : ''), tierFor(lv), sc.enemies.map(e => [e.ref, e.level]), sid, tutorial]);
+  STAGES.push([label + (sc.boss ? '(BOSS)' : ''), tierFor(lv, sid), sc.enemies.map(e => [e.ref, e.level]), sid, tutorial]);
 }
 
 /* 从未出现在任何战斗里的敌人（做了数据和立绘却没人用） */
 {
   const used = new Set(STAGES.flatMap(([, , foes]) => foes.map(f => f[0])));
   const idle = Object.keys(ENEMIES).filter(k => !used.has(k));
-  if (idle.length) console.log('! 未被任何战斗使用的敌人:', idle.map(k => ENEMIES[k].name).join('、'));
+  /* 剧情按原文重写后，《炎之刃》整套敌人（四天王 / 魔王 / 诸神…）连同它们的
+     章节一起退役了，全数落在这张表里。逐个列名字会刷掉 40 行，把真问题淹掉，
+     所以只报数量 + 前几个；要看全名跑 reach.mjs。 */
+  if (idle.length) {
+    const head = idle.slice(0, 5).map(k => ENEMIES[k].name).join('、');
+    console.log(`! 未被任何战斗使用的敌人 ${idle.length} 种（多数属已退役章节）：${head}${idle.length > 5 ? ' …' : ''}`);
+  }
 }
 
 console.log('=== 战斗平衡模拟（期望值） ===');
