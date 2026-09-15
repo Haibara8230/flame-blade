@@ -10,7 +10,8 @@ import { SCENES } from '../js/story.js';
 import { SHOPS } from '../js/characters.js';
 
 /* main.js 的 defaultEquip() 给的初始装备。那是 UI 层的数据，这里按实际值列出。 */
-export const START_EQUIP = ['mu_sword', 'cloth', 'wood_staff', 'hunter_spear', 'snow_staff', 'holy_cloak'];
+/* 原文第7章的初始装备：新手短剑 + 新手布衣 / 新手长裤 / 新手布鞋。 */
+export const START_EQUIP = ['mu_sword', 'novice_robe', 'novice_pants', 'novice_shoes'];
 
 /* 从剧情入口出发，能走到的场景集合。
    三个入口分别是：正常开局、战斗失败线、隐藏线（后两者由运行时代码触发）。 */

@@ -6,9 +6,7 @@ import { ACTORS, SKILLS, COMBOS, ITEMS, EQUIPS, SHOPS, STATUS, ELEM, statsAt, ex
 import { SCENES, ENDINGS } from './story.js';
 import { portraitURL, hasPortrait } from './portraits.js';
 import { rollDrops, rollShopStock, restoreLoot, collectLoot, setLootContext } from './loot.js';
-import { RELICS, relicBonus, syncRelics } from './relics.js';
 import * as GR from './growth.js';
-import * as BD from './bonds.js';
 import * as PW from './power.js';
 import * as SP from './sprites.js';
 import * as BT from './battle.js';
@@ -477,15 +475,23 @@ const G = {
   autoBattle: false, lastDrops: null, campShownFor: null,
 };
 /* 战斗模块通过这两个钩子查询羁绊与天赋，避免 battle.js 反向依赖存档结构 */
-G.bondLevel = id => BD.bondLevel(G, id);
 G.onBattleMusic = mode => battleMusic(mode);
 G.talentBonus = (m, key) => GR.talentBonus(m, key);
+
+/* 装备槽位。按原文第7章的初始装备扩成五格：
+   新手短剑（武器）+ 新手布衣 / 新手长裤 / 新手布鞋（上衣 / 下装 / 鞋）+ 饰品。 */
+export const SLOTS = ['weapon', 'body', 'legs', 'feet', 'acc'];
+const SLOT_CN = { weapon: '武器', body: '上衣', legs: '下装', feet: '鞋', acc: '饰品' };
 
 /* 队伍构造 */
 function makeMember(id, level = null) {
   const def = ACTORS[id];
   const lv = level ?? def.joinLevel;
-  const equips = ['weapon', 'armor', 'acc'].map(slot => defaultEquip(id, slot)).filter(Boolean);
+  /* 定长数组，空位保留 null。此前是 .filter(Boolean) 压缩过的，
+     之后又按下标 0/1/2 当作武器/护甲/饰品用——只是碰巧对得上（TODO A3）。
+     槽位同时按原文扩成五格：原文第7章的初始装备是
+     新手布衣 / 新手长裤 / 新手布鞋 三件，旧的三槽位装不下。 */
+  const equips = SLOTS.map(slot => defaultEquip(id, slot) || null);
   const st = statsAt(def, lv, equips);
   const res = def.resource || 'mp';
   return {
@@ -530,12 +536,10 @@ function tickHunger(amount = 1) {
     }
   }
 }
+/* 原文第7章：背包里孤零零一把新手短剑，身上是新手布衣 + 长裤 + 布鞋。 */
 function defaultEquip(id, slot) {
   const map = {
-    kaito: { weapon: 'mu_sword', armor: 'cloth', acc: null },
-    cang: { weapon: 'wood_staff', armor: 'cloth', acc: null },
-    lei: { weapon: 'hunter_spear', armor: 'cloth', acc: null },
-    ryze: { weapon: 'snow_staff', armor: 'holy_cloak', acc: null },
+    kaito: { weapon: 'mu_sword', body: 'novice_robe', legs: 'novice_pants', feet: 'novice_shoes', acc: null },
   };
   return map[id] ? map[id][slot] : null;
 }
@@ -554,12 +558,6 @@ function recalc(m) {
   GR.applyStatPoints(st, alloc);        // 玩家分配的属性点 + 装备附带的基本属性
   applyAtkPct(st, m.equips);            // 攻击% 必须在属性换算之后
   GR.applyTalentStats(st, m);           // 天赋树的直接属性
-  // 遗物是全队共享的被动加成
-  st.atk += relicBonus(G, 'atk');
-  st.def += relicBonus(G, 'def');
-  st.hp += relicBonus(G, 'hp');
-  st.cri += relicBonus(G, 'cri');
-  st.par += relicBonus(G, 'par');
   st.blk = Math.min(st.blk, 0.60);
   st.par = Math.min(st.par, 0.30);
   const hpR = m.maxHp ? m.hp / m.maxHp : 1, mpR = m.maxMp ? m.mp / m.maxMp : 1;
@@ -635,16 +633,6 @@ function showLevelUps(ups) {
 /* ============================================================
    场景推进
    ============================================================ */
-/* 旗标点亮后登记新遗物 */
-function checkRelics() {
-  const got = syncRelics(G);
-  for (const r of got) {
-    toast(`◇ 获得遗物【${r.name}】`, 2600);
-    if (r.bond) BD.addBond(G, r.bond, 'relic');
-  }
-  if (got.length) for (const m of G.party) recalc(m);
-}
-
 function gotoScene(id) {
   const sc = SCENES[id];
   if (!sc) { console.warn('missing scene', id); return; }
@@ -659,7 +647,6 @@ function gotoScene(id) {
     visited[id] = true;
     for (const a of sc.pre) runAction(a);
   }
-  checkRelics();
   autoSave();
   if (sc.loading) { showLoading(sc.loadingTitle || sc.chapter, sc.loadingText || ''); G.loadTarget = id; return; }
   $('dialogue').classList.remove('hidden');
@@ -669,17 +656,14 @@ function gotoScene(id) {
 }
 
 /* 遗物的战斗特效走和装备词缀同一套键名 */
-G.relicBonus = key => relicBonus(G, key);
 
 function runAction(a) {
-  if (a.bond) { const r = BD.addBond(G, a.bond.id, a.bond.src || 'talk'); if (r.leveled) toast(`※ 与 ${ACTORS[a.bond.id]?.name || a.bond.id} 的羁绊提升到 Lv.${r.to}`); }
   if (!a || typeof a !== 'object') return;
   if (a.set) Object.assign(G.flags, a.set);
   if (a.objective) G.flags.currentObjective = a.objective;
-  if (a.evaluateAid) G.flags.allAid = !!(G.flags.forestAid && G.flags.harborAid && G.flags.northAid);
   if (typeof a.join === 'string' && ACTORS[a.join]) { addMember(a.join); toast(`※ ${ACTORS[a.join].name} 加入了队伍！`); }
   if (typeof a.item === 'string') { G.bag[a.item] = (G.bag[a.item] || 0) + 1; toast(`获得【${EQUIPS[a.item]?.name || ITEMS[a.item]?.name || a.item}】`); }
-  if (typeof a.equip === 'string') { const owner = G.party.find(m => ACTORS[m.id]) || G.party[0]; if (owner) { const slotIdx = ['weapon', 'armor', 'acc'].indexOf(EQUIPS[a.equip]?.slot); if (slotIdx >= 0) owner.equips[slotIdx] = a.equip; } }
+  if (typeof a.equip === 'string') { const owner = G.party.find(m => ACTORS[m.id]) || G.party[0]; if (owner) { const slotIdx = SLOTS.indexOf(EQUIPS[a.equip]?.slot); if (slotIdx >= 0) owner.equips[slotIdx] = a.equip; } }
   if (a.gold) { G.gold += a.gold; }
   /* 创号分配：把玩家在剧情里选的自由属性 / 固定属性真正写到角色身上。
      原文的角色创建是一次性、不可更改的（没有删号重练），所以这里
@@ -729,7 +713,6 @@ function advanceScene() {
     if (bs) { launchBattle(bs); return; }
   }
   // 营地：休整、聊天涨羁绊、调整养成，然后再继续
-  if (tryOpenCamp(sc)) return;
   if (sc.shop) { openShop(sc.shop); return; }
   if (sc.enemies) { startBattleFromScene(sc); return; }
   // 第一部的结局：放完结局画面再进第二部
@@ -754,25 +737,9 @@ function nextLine() {
   G.lineIdx++;
   showLine(name, text, expr);
 }
-/* 营地要按「哪一幕」记，不能用一个全局布尔。
-   此前 campDone 只在「营地后面直接接 next」这条路上被复位，而营地场景
-   通常接的是 shop 或 choices——于是第一处营地开过之后，后面全都不再打开。
-
-   而且这个判断必须放在 finishLines 里、在 choices 之前：
-   台词放完时 finishLines 会直接把选项弹出来，根本走不到 advanceScene。
-   「营地 + 二选一」的那三处（林中夜营、雪夜、遗迹出口）就是这样被跳过的。 */
-function tryOpenCamp(sc) {
-  if (!sc || !sc.camp || G.campShownFor === G.sceneId) return false;
-  G.campShownFor = G.sceneId;
-  $('dialogue').classList.add('hidden');
-  openCamp(sc);
-  return true;
-}
-
 function finishLines() {
   const sc = G.scene;
   $('dialogue').classList.add('hidden');
-  if (tryOpenCamp(sc)) return;
   if (sc.choices) { showChoices(sc.choices); return; }
   if (sc.branch) {
     const v = G.flags[sc.branch.branch];
@@ -785,25 +752,10 @@ function finishLines() {
 const PID_MAP = (() => {
   const m = {};
   const put = (n, pid) => { if (n) m[n] = pid; };
-  for (const a of Object.values(ACTORS)) { put(a.name, a.portrait); put(a.name + '·' + a.id, a.portrait); }
-  /* 此前 25 个说话人里只有 6 个有立绘，约一半台词显示的是「变暗的凯」，
-     其中小铃 22 句、健次郎 22 句，魔王阿斯特还借用了泽恩的脸。 */
-  put('妹妹·小铃', 'suzu'); put('小铃', 'suzu');
-  put('健次郎', 'kenjiro');
-  put('魔王·阿斯特', 'aster'); put('终焉魔王·阿斯特·真', 'aster'); put('阿斯特', 'aster');
-  put('魔将·古兰', 'grang'); put('古兰', 'grang');
-  put('铁匠', 'smith'); put('药屋学徒', 'smith');
-  put('船长', 'captain'); put('港口护卫', 'captain'); put('护卫', 'captain');
-  put('居民', 'villager'); put('药师', 'villager'); put('孩子', 'villager');
-  put('车夫', 'villager'); put('伤员', 'villager'); put('守钟老人', 'villager');
-  put('村长', 'villager'); put('森之守卫', 'villager');
-  put('冰之魔女·丝薇雅', 'baixue'); put('丝薇雅', 'baixue');
-  put('冰之四天王·白雪', 'baixue'); put('白雪', 'baixue');
-  put('暗影四天王·泽恩', 'zain'); put('泽恩', 'zain');
-  put('凯', 'kaito');
-  // 第二部
-  put('白泽', 'baize'); put('九尾', 'baize'); put('青鸾', 'baize');
-  put('玄鹿', 'baize'); put('守约之神', 'baize');
+  for (const a of Object.values(ACTORS)) { put(a.name, a.portrait); put(a.realName, a.portrait); }
+  /* ⚠ 此前这里映射了小铃 / 健次郎 / 魔王阿斯特 / 魔将古兰 / 铁匠 / 船长 …
+     一整套《炎之刃》的说话人，原著中一个都不存在，已删除。
+     原文里的说话人随剧情推进逐个补。 */
   return m;
 })();
 
@@ -1080,11 +1032,7 @@ function buildCommandUI() {
   mk('技能', '术式/奥义', () => openSkills(m));
   mk('道具', `剩余${Object.values(G.bag).reduce((a, b2) => a + b2, 0)}`, () => openBagInBattle(m));
   mk('格挡', '预判弹反 · 免伤并反击', () => doCmd(m, { type: 'guard' }));
-  // 连携：行动条相邻 + 羁绊达标才亮
-  const combos = BT.availableCombos(b, m);
-  if (combos.length) {
-    mk('连携', combos.map(c => c.name).join('/'), () => openCombos(m, combos), false, 'combo');
-  }
+  /* ⚠ 连携（COMBOS）与羁绊是《炎之刃》时期的系统，原著中没有，已删除。 */
   if (b.objective) {
     const label = b.objective.type === 'purify' ? '净化' : '封门';
     if (b.objective.type !== 'rescue') mk(label, BT.objectiveText(b), () => doCmd(m, { type: 'objective' }), !BT.canObjective(b, m));
@@ -1142,33 +1090,6 @@ function autoTakeTurn() {
   }, 220);
 }
 
-/* 连携选择 */
-function openCombos(m, combos) {
-  const b = G.battle;
-  hideSubmenu();
-  let el = $('skilllist');
-  if (!el) { el = document.createElement('div'); el.id = 'skilllist'; $('cmdmenu').appendChild(el); }
-  el.innerHTML = `<div class="sk-head"><span>${m.name} 的连携</span><span style="color:#ffb98a">发动后参与者本回合一起消耗</span></div>
-    <div class="sk-grid">${combos.map(c => `<button class="sk" data-c="${c.id}">
-      <span class="c" style="color:#ffd76a">Lv${c.bond}</span>
-      <div class="n">${c.name}</div>
-      <div class="d">${c.members.map(id => ACTORS[id].name).join(' + ')}　${c.desc}</div>
-    </button>`).join('')}
-      <button class="sk" data-c="__cancel"><div class="n">← 返回</div></button>
-    </div>`;
-  el.classList.remove('hidden');
-  el.querySelectorAll('.sk').forEach(btn => {
-    btn.onclick = e => {
-      e.stopPropagation(); sfx('ui');
-      const id = btn.dataset.c;
-      if (id === '__cancel') { hideSubmenu(); buildCommandUI(); return; }
-      const c = COMBOS[id];
-      hideSubmenu();
-      if (c.target === 'one') chooseTarget(m, 'enemy', i => doCmd(m, { type: 'combo', combo: id, target: i }));
-      else doCmd(m, { type: 'combo', combo: id });
-    };
-  });
-}
 /* 目标选择界面。
    此前攻击和敌方道具永远打「第一个活着的敌人」，单体治疗和友方道具永远作用在
    party[0]（凯）——意味着没法集火、没法挑弱点，也没法治疗或复活除凯以外的任何人。
@@ -1448,8 +1369,7 @@ function openEquipScreen(memberId, back) {
   const nowCP = PW.combatPower(m);
   $('panel-title').textContent = `◈ ${m.name} 的装备　战力 ${nowCP}`;
 
-  const SLOTS = ['weapon', 'armor', 'acc'];
-  const SLOT_CN = { weapon: '武器', armor: '护甲', acc: '饰品' };
+
   /* 只列这个角色用得上的：武器按类别限定（刀剑给凯、长枪弓弩给雷、法杖给苍与璃），
      护甲饰品人人可用。此前所有人共用一张清单，璃的栏里堆满了自己拿不动的大剑。 */
   const owned = Object.keys(G.bag)
@@ -1503,7 +1423,7 @@ function openEquipScreen(memberId, back) {
     const k = b.dataset.wear;
     const e2 = EQUIPS[k];
     if (!PW.canEquip(m.id, e2)) { toast(`${m.name} 用不了${PW.equipType(e2) || '这件装备'}`); return; }
-    const slotIdx = ['weapon', 'armor', 'acc'].indexOf(e2.slot);
+    const slotIdx = SLOTS.indexOf(e2.slot);
     const old = m.equips[slotIdx];
     if (old) G.bag[old] = (G.bag[old] || 0) + 1;
     G.bag[k]--;
@@ -1572,7 +1492,6 @@ function openPartyPanel() {
   $('panel-title').textContent = `◈ 队伍状态　战力 ${teamCP}　持有 ${GR.formatCoin(G.gold)}${unspent ? `　· 有 ${unspent} 点未分配` : ''}`;
   const body = $('panel-body');
   body.innerHTML = G.party.map(m => {
-    const bp = BD.bondProgress(G, m.id);
     const pend = (m.points || 0) + (m.sp || 0);
     return `<div class="pcard">
       <img src="${portraitURL(m.portrait)}" alt="">
@@ -1585,7 +1504,6 @@ function openPartyPanel() {
         <div class="bar mp"><i style="width:${(m.mp / m.maxMp * 100).toFixed(1)}%"></i></div>
         <div class="pv">${(ACTORS[m.id] && ACTORS[m.id].resourceName) || '术力'} ${Math.ceil(m.mp)} / ${m.maxMp}　攻击 ${m.atk}　防御 ${m.def}　速度 ${m.spd}</div>
         <div class="pv">会心${Math.round((m.cri || 0) * 100)}%　格挡${Math.round((m.blk || 0) * 100)}%　弹反${Math.round((m.par || 0) * 100)}%　EXP ${m.exp}/${expToNext(m.level)}</div>
-        <div class="pv">羁绊 Lv.${bp.lv}${bp.full ? '（满）' : `　${bp.cur}/${bp.need}`}</div>
         <div class="pv">饥饿度 ${m.hunger || 0} / ${GR.hungerCap((m.alloc && m.alloc.str) || 0)}　（到顶后每秒掉 1% 生命）</div>
         <div class="pv">抗性　${GR.RESISTS.map(r => `${r.name}${Math.round(((m.resist || {})[r.id] || 0) * 100)}%`).join('　')}</div>
         <div>${m.skills.map(sk => `<span class="tag">${SKILLS[sk]?.name || sk}</span>`).join('')}</div>
@@ -1602,79 +1520,12 @@ function openPartyPanel() {
     </div>`;
   }).join('') + `<div style="grid-column:1/-1;font-size:12px;color:#bbb2dd;margin-top:6px">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-        <button class="mini" id="go-relics">◇ 遗物 ${Object.keys(G.relics || {}).length}/${RELICS.length}</button>
-        <button class="mini" id="go-bonds">◈ 羁绊</button>
-        <button class="mini" id="go-codex">✦ 图鉴</button>
       </div>
-      <p>当前目标：${G.flags.currentObjective || '陪小铃完成村里的事情。'}</p>
-      <p>旅程支援：${[['forestAid', '森林根系'], ['harborAid', '港町船队'], ['northAid', '北境灯塔']].map(([key, label]) => `${G.flags[key] ? '✓' : '○'} ${label}`).join('　')}</p>
-      <p>封门准备：${G.flags.sealKnowledge ? '✓ 已掌握完整封门法' : '○ 尚未读完完整术式'}；三地支援齐全可解除共同封门的代价。</p>
       道具：${Object.keys(G.bag).filter(k => G.bag[k] > 0 && !EQUIPS[k]).map(k => `${ITEMS[k]?.name || k}×${G.bag[k]}`).join('、') || '无'}
     </div>`;
   body.querySelectorAll('[data-grow]').forEach(b => b.onclick = e => { e.stopPropagation(); sfx('ui'); openGrowth(b.dataset.grow); });
   body.querySelectorAll('[data-equip]').forEach(b => b.onclick = e => { e.stopPropagation(); sfx('ui'); openEquipScreen(b.dataset.equip, openPartyPanel); });
-  $('go-relics').onclick = e => { e.stopPropagation(); sfx('ui'); openRelics(); };
-  $('go-bonds').onclick = e => { e.stopPropagation(); sfx('ui'); openBonds(); };
-  $('go-codex').onclick = e => { e.stopPropagation(); sfx('ui'); openCodex(); };
   $('panel').classList.remove('hidden');
-}
-
-/* ============================================================
-   营地
-   ============================================================
-   每章之间的据点。把此前散落在各处的东西收到一个地方：
-   休整、同伴对话（涨羁绊）、养成调整、补给。 */
-function openCamp(sceneDef) {
-  const talked = G.flags.campTalk || (G.flags.campTalk = {});
-  const key = G.sceneId;
-  const rows = G.party.filter(m => m.id !== 'kaito').map(m => {
-    const done = talked[`${key}_${m.id}`];
-    const bp = BD.bondProgress(G, m.id);
-    return `<div class="shop-row">
-      <div><b>${m.name}</b>　<span style="color:#ffd76a;font-size:12px">羁绊 Lv.${bp.lv}</span>
-        <div style="font-size:11.5px;color:#bbb2dd;margin-top:2px">${done ? '这一站已经聊过了。' : CAMP_TALK[m.id] || '想说点什么吗？'}</div></div>
-      <button class="mini" data-talk="${m.id}" ${done ? 'disabled' : ''}>${done ? '已聊' : '聊聊'}</button>
-    </div>`;
-  }).join('');
-
-  const restCost = 30 + G.party[0].level * 8;
-  G.campScene = sceneDef;
-  openPanel('△ 营地', `<div style="grid-column:1/-1">
-    <div style="font-size:12px;color:#bbb2dd;margin-bottom:10px">战斗后只回复两成生命。要走远路，得先在这里把状态补回来。</div>
-    <div class="shop-row">
-      <div><b>休整</b><div style="font-size:11.5px;color:#bbb2dd;margin-top:2px">全队回复至满，并解除倒下状态。</div></div>
-      <button class="mini" id="camp-rest" ${G.gold < restCost ? 'disabled' : ''}>${GR.formatCoin(restCost)}</button>
-    </div>
-    <div style="color:#ffd76a;font-weight:700;margin:14px 0 6px">同伴</div>
-    ${rows || '<div style="color:#8a7d8c;font-size:12px">暂时只有你一个人。</div>'}
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
-      <button class="mini" id="camp-party">◈ 队伍 / 养成</button>
-      ${sceneDef.shop ? '<button class="mini" id="camp-shop">◆ 补给</button>' : ''}
-      <button class="mini g" id="camp-go">继续前进 →</button>
-    </div>
-  </div>`, 'camp');
-
-  $('camp-rest').onclick = e => {
-    e.stopPropagation();
-    if (G.gold < restCost) return;
-    G.gold -= restCost;
-    for (const m of G.party) { m.dead = false; m.hp = m.maxHp; if (m.resource !== 'rage') m.mp = m.maxMp; }
-    sfx('heal'); toast('※ 全队恢复了');
-    openCamp(sceneDef);
-  };
-  document.querySelectorAll('[data-talk]').forEach(b => b.onclick = e => {
-    e.stopPropagation();
-    const id = b.dataset.talk;
-    talked[`${key}_${id}`] = true;
-    const r = BD.addBond(G, id, 'talk');
-    sfx('ui');
-    toast(r.leveled ? `※ 与 ${ACTORS[id].name} 的羁绊提升到 Lv.${r.to}！` : `※ 与 ${ACTORS[id].name} 的羁绊加深了`);
-    openCamp(sceneDef);
-  });
-  $('camp-party').onclick = e => { e.stopPropagation(); openPartyPanel(); };
-  const cs = $('camp-shop');
-  if (cs) cs.onclick = e => { e.stopPropagation(); closePanel(); openShop(sceneDef.shop); };
-  $('camp-go').onclick = e => { e.stopPropagation(); closePanel(); };
 }
 
 /* 离开营地后继续推进本场景。
@@ -1776,82 +1627,6 @@ function openGrowth(memberId) {
 }
 
 /* ============================================================
-   羁绊
-   ============================================================ */
-function openBonds() {
-  const rows = G.party.map(m => {
-    const bp = BD.bondProgress(G, m.id);
-    const unlocked = Object.values(COMBOS).filter(c => c.members.includes(m.id) && bp.lv >= c.bond);
-    const locked = Object.values(COMBOS).filter(c => c.members.includes(m.id) && bp.lv < c.bond);
-    return `<div class="shop-row" style="align-items:flex-start">
-      <div style="flex:1">
-        <b>${m.name}</b>　<span style="color:#ffd76a">羁绊 Lv.${bp.lv}</span>
-        <div class="bar ht" style="margin:5px 0"><i style="width:${bp.full ? 100 : Math.round(bp.cur / bp.need * 100)}%"></i></div>
-        <div style="font-size:11.5px;color:#bbb2dd">${bp.full ? '已达上限' : `再积累 ${bp.need - bp.cur} 点升到 Lv.${bp.lv + 1}`}</div>
-        <div style="margin-top:5px">${unlocked.map(c => `<span class="tag eq">${c.name}</span>`).join('')}${locked.map(c => `<span class="tag" style="opacity:.45">${c.name}（Lv${c.bond}）</span>`).join('')}</div>
-      </div>
-    </div>`;
-  }).join('');
-  openPanel('◈ 羁绊', `<div style="grid-column:1/-1">
-    ${rows}
-    <div style="font-size:12px;color:#bbb2dd;margin-top:10px">
-      <p>积累方式：${Object.values(BD.BOND_SOURCES).map(x => `${x.name} +${x.v}`).join('　')}</p>
-      <p>连携技需要两人在【出手顺序】上相邻才会在战斗中亮起；四人连携只要全员存活。</p>
-    </div>
-    <button class="mini g" id="bond-back" style="margin-top:12px">← 返回队伍</button>
-  </div>`);
-  $('bond-back').onclick = e => { e.stopPropagation(); openPartyPanel(); };
-}
-
-/* ============================================================
-   遗物
-   ============================================================ */
-function openRelics() {
-  const got = G.relics || {};
-  const rows = RELICS.map(r => {
-    const have = !!got[r.id];
-    return `<div class="shop-row" style="align-items:flex-start;${have ? '' : 'opacity:.5'}">
-      <div style="flex:1">
-        <b style="color:${have ? '#ffd76a' : '#8a7d8c'}">${have ? r.name : '？？？'}</b>
-        <div style="font-size:11.5px;color:#8fe6ff;margin-top:2px">${have ? r.bonusText : '尚未找到'}</div>
-        ${have ? `<div style="font-size:12px;color:#bbb2dd;margin-top:4px;line-height:1.7">${r.memory}</div>` : `<div style="font-size:11.5px;color:#6b6072;margin-top:4px">${r.hint}</div>`}
-      </div>
-    </div>`;
-  }).join('');
-  openPanel(`◇ 遗物　${Object.keys(got).length}/${RELICS.length}`, `<div style="grid-column:1/-1">
-    <div style="font-size:12px;color:#bbb2dd;margin-bottom:8px">路上捡到的东西。每一件都记得一段事，也都在战斗里留下一点影响。</div>
-    ${rows}
-    <button class="mini g" id="relic-back" style="margin-top:12px">← 返回队伍</button>
-  </div>`);
-  $('relic-back').onclick = e => { e.stopPropagation(); openPartyPanel(); };
-}
-
-/* ============================================================
-   图鉴
-   ============================================================ */
-function openCodex() {
-  const seen = G.codex || {};
-  const list = Object.values(ENEMIES).filter(e => e.id !== 'training_dummy');
-  const rows = list.map(e => {
-    const n = seen[e.id] || 0;
-    if (!n) return `<div class="shop-row" style="opacity:.4"><div><b>？？？</b><div style="font-size:11.5px;color:#8a7d8c">尚未遭遇</div></div></div>`;
-    return `<div class="shop-row" style="align-items:flex-start">
-      <div style="flex:1">
-        <b style="color:${e.boss ? '#ffd76a' : '#e8e0f0'}">${e.name}</b>　<span style="font-size:11px;color:#8a7d8c">击破 ${n}</span>
-        <div style="font-size:11.5px;color:#8fe6ff;margin-top:2px">弱点：${(e.weak || []).map(w => ELEM[w]?.name || w).join('/') || '无'}　HP ${e.hp}　攻 ${e.atk}　防 ${e.def}　速 ${e.spd}</div>
-        ${e.quote ? `<div style="font-size:12px;color:#bbb2dd;margin-top:3px">「${e.quote}」</div>` : ''}
-      </div>
-    </div>`;
-  }).join('');
-  const found = list.filter(e => seen[e.id]).length;
-  openPanel(`✦ 魔物图鉴　${found}/${list.length}`, `<div style="grid-column:1/-1">
-    ${rows}
-    <button class="mini g" id="codex-back" style="margin-top:12px">← 返回队伍</button>
-  </div>`);
-  $('codex-back').onclick = e => { e.stopPropagation(); openPartyPanel(); };
-}
-
-/* ============================================================
    标题 / 载入 / 结局
    ============================================================ */
 function gotoTitle() {
@@ -1903,82 +1678,6 @@ function openSlots(mode) {
       if (mode === 'save') saveGame(i); else loadGame(i);
     };
   });
-}
-
-/* ============================================================
-   结算板 + 二周目
-   ============================================================
-   四个结局此前靠旗标判定，玩家通关后完全不知道自己差在哪，
-   也就没有再打一遍的理由。这里把走过的路摊开给玩家看。 */
-function openResultBoard() {
-  const lv = G.party[0]?.level || 1;
-  const relicN = Object.keys(G.relics || {}).length;
-  const codexN = Object.keys(G.codex || {}).length;
-  const aids = [['forestAid', '森林根系'], ['harborAid', '港町船队'], ['northAid', '北境灯塔']];
-  const bondRows = G.party.map(m => {
-    const bp = BD.bondProgress(G, m.id);
-    return `<span class="tag ${bp.lv >= 4 ? 'eq' : ''}">${m.name} Lv.${bp.lv}</span>`;
-  }).join('');
-  const missed = [];
-  if (!G.flags.allAid) missed.push('三地支援没有集齐 —— SECRET END 的条件');
-  if (relicN < RELICS.length) missed.push(`还有 ${RELICS.length - relicN} 件遗物没找到`);
-  if (!G.flags.part2) missed.push('没有走进门的另一边（需要 TRUE / SECRET 结局）');
-  if (!G.flags.innerLock) missed.push('没有解开门的内锁');
-  if (G.party.some(m => BD.bondLevel(G, m.id) < 4)) missed.push('有同伴的羁绊没到 Lv.4 —— 四人连携【不熄之约】');
-
-  const ng = (G.flags.ngPlus || 0) + 1;
-  openPanel('◆ 旅程结算', `<div style="grid-column:1/-1">
-    <div style="font-size:13px;line-height:2">
-      <div>抵达结局：<b style="color:#ffd76a">${ENDINGS[G.lastEnding]?.label || '—'}　${ENDINGS[G.lastEnding]?.title || ''}</b></div>
-      ${G.flags.part1Ending ? `<div>第一部结局：<b>${ENDINGS[G.flags.part1Ending]?.label}</b></div>` : ''}
-      <div>队伍等级：<b>Lv.${lv}</b>　持有金币 ${G.gold}</div>
-      <div>遗物：<b>${relicN}/${RELICS.length}</b>　图鉴：<b>${codexN}</b> 种</div>
-      <div>旅程支援：${aids.map(([k, n]) => `${G.flags[k] ? '✓' : '○'} ${n}`).join('　')}</div>
-      <div>羁绊：${bondRows}</div>
-    </div>
-    ${missed.length ? `<div style="margin-top:14px">
-      <div style="color:#ffd76a;font-weight:700;margin-bottom:6px">你错过的</div>
-      <div style="font-size:12.5px;color:#bbb2dd;line-height:1.9">${missed.map(x => '· ' + x).join('<br>')}</div>
-    </div>` : '<div style="margin-top:14px;color:#ffd76a">这一趟，一样都没落下。</div>'}
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px">
-      <button class="mini" id="res-ng">开始第 ${ng} 周目（继承等级 / 遗物 / 羁绊 / 装备）</button>
-      <button class="mini g" id="res-title">回到标题</button>
-    </div>
-  </div>`);
-  $('res-ng').onclick = e => { e.stopPropagation(); startNewGamePlus(); };
-  $('res-title').onclick = e => { e.stopPropagation(); closePanel(); gotoTitle(); };
-}
-
-/* 二周目：继承养成与收藏，重走剧情。
-   这个剧本天然适合——主题就是门与重复的历史。 */
-function startNewGamePlus() {
-  const ng = (G.flags.ngPlus || 0) + 1;
-  const keepRelics = G.relics, keepBonds = G.bonds, keepCodex = G.codex;
-  const keepParty = G.party.map(m => ({
-    id: m.id, level: m.level, equips: m.equips, alloc: m.alloc,
-    points: m.points, sp: m.sp, talents: m.talents, bonus: m.bonus,
-  }));
-  const keepBag = {};
-  for (const [k, v] of Object.entries(G.bag)) if (EQUIPS[k]) keepBag[k] = v;
-
-  G.flags = { ngPlus: ng, sceneRewards: {} };
-  G.relics = keepRelics; G.bonds = keepBonds; G.codex = keepCodex;
-  G.gold = Math.floor(G.gold * 0.4);
-  G.bag = { ...keepBag, potion: 5, potion_hi: 3 };
-  G.party = keepParty.map(p => {
-    const m = makeMember(p.id, p.level);
-    m.equips = p.equips; m.alloc = p.alloc; m.points = p.points;
-    m.sp = p.sp; m.talents = p.talents; m.bonus = p.bonus;
-    recalc(m);
-    m.hp = m.maxHp; m.mp = m.resource === 'rage' ? 0 : m.maxMp;
-    return m;
-  });
-  closePanel();
-  $('ending').classList.add('hidden');
-  $('hud').classList.remove('hidden');
-  G.mode = 'scene'; G.campShownFor = null;
-  toast(`※ 第 ${ng + 1} 周目开始：敌人更强，掉落品质更高`, 3000);
-  gotoScene('prologue');
 }
 
 function showLoading(title, text) {
@@ -2116,7 +1815,6 @@ function openGallery() {
         · <kbd>空格</kbd> / <kbd>Z</kbd> = 推进对话；战斗点击指令和目标，不需要时机操作<br>
         · 【格挡】提升本次防御概率并积攒怒气；顶部显示未来行动顺序<br>
         · 学会奥义且怒气或术力足够时，可在【技能】中发动<br>
-        · 【净化】和【封门】只在目标满足、指定角色行动时可用；蓄力预警表示敌人的下次行动<br>
         · 【◈ 队伍】底部查看目标和支援；战败后可恢复战前状态重试<br>
         · 敌人有 <b style="color:#8fe6ff">弱点属性</b>，用对应属性攻击可打出 1.5 倍伤害
       </div>
@@ -2179,7 +1877,7 @@ $('btn-again').onclick = e => {
     gotoScene(nx);
     return;
   }
-  openResultBoard();
+  gotoTitle();
 };
 document.addEventListener('pointerdown', () => ac(), { once: true });
 

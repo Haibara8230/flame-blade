@@ -15,8 +15,7 @@ import { applyStatPoints, applyTalentStats } from '../js/growth.js';
 
 /* main.js 的 defaultEquip()。那是 UI 层的数据，这里按实际值列出。 */
 const DEFAULT_EQUIP = {
-  kaito: ['mu_sword', 'cloth'], cang: ['wood_staff', 'cloth'],
-  lei: ['hunter_spear', 'cloth'], ryze: ['snow_staff', 'holy_cloak'],
+  kaito: ['mu_sword', 'novice_robe', 'novice_pants', 'novice_shoes'],
 };
 
 /* 与 main.js 的 makeMember + recalc 保持一致。
@@ -172,9 +171,9 @@ console.log('=== 原文数值回归 ===');
 
 check('初始面板与原文第7章逐项一致', () => {
   const d = ACTORS.kaito;
-  const st = statsAt(d, 0, ['mu_sword', 'cloth']);
+  const st = statsAt(d, 0, DEFAULT_EQUIP.kaito);
   applyStatPoints(st, d.alloc);
-  applyAtkPct(st, ['mu_sword', 'cloth']);
+  applyAtkPct(st, DEFAULT_EQUIP.kaito);
   const want = { hp: 70, mp: 40, atk: 23, def: 11, matk: 8, acc: 4, eva: 4, spd: 100 };
   const bad = Object.entries(want).filter(([k, v]) => (st[k] || 0) !== v);
   return {
@@ -248,7 +247,7 @@ check('探知术：消耗魔法值 1 点（原文第7章）', () => {
 
 check('永恒命运之刻：物攻「差点破百」（原文第11~12章）', () => {
   const d = ACTORS.kaito;
-  const eq = ['fate_moment', 'cloth'];
+  const eq = ['fate_moment', 'novice_robe', 'novice_pants', 'novice_shoes'];
   const st = statsAt(d, 0, eq);
   applyStatPoints(st, Object.fromEntries(Object.entries(d.alloc).map(([k, v]) => [k, v + equipFreeBonus(eq)])));
   applyAtkPct(st, eq);

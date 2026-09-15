@@ -1,6 +1,0 @@
-[
-  { "name": "01-setup", "eval": "document.getElementById('btn-new').click(); window.__advance(70); 'in '+window.__G.mode", "wait": 2000 },
-  { "name": "02-menu", "eval": "JSON.stringify({skills:window.__G.battle.party[0].skills, hot:window.__G.battle.party[0].hot, hasList:!!document.getElementById('skilllist'), buttons:[...document.querySelectorAll('.cbtn')].map(b=>b.textContent.slice(0,6))})", "wait": 200 },
-  { "name": "03-open", "eval": "const btn=[...document.querySelectorAll('.cbtn')].find(x=>x.textContent.includes('技能')); btn.click(); JSON.stringify({hasList:!!document.getElementById('skilllist'), hidden:document.getElementById('skilllist')?document.getElementById('skilllist').classList.contains('hidden'):null, skCount:document.querySelectorAll('.sk').length, skText:[...document.querySelectorAll('.sk')].map(s=>s.textContent.replace(/\\s+/g,' ').trim().slice(0,20))})", "wait": 600 },
-  { "name": "04-list", "eval": "JSON.stringify({skCount:document.querySelectorAll('.sk').length, skText:[...document.querySelectorAll('.sk')].map(s=>s.textContent.replace(/\\s+/g,' ').trim().slice(0,24))})", "wait": 200 }
-]

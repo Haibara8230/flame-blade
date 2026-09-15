@@ -153,6 +153,7 @@ for (const a of Object.values(ACTORS)) {
   const atkElems = new Set(Object.values(SKILLS).filter(s => s.type === 'atk').map(s => s.elem));
   for (const e of Object.values(ENEMIES)) {
     if (!e.weak || !e.weak.length) { if (!CANON_ENEMIES.has(e.id)) warns.push(`敌人 ${e.id}: 没有弱点属性，克制机制对它无效`); continue; }
+    if (CANON_ENEMIES.has(e.id)) continue;   // 原文照抄的怪物，弱点由原文决定
     for (const w of e.weak) {
       if (!ELEM[w]) errs.push(`敌人 ${e.id}: 未知弱点属性 ${w}`);
       else if (!atkElems.has(w)) errs.push(`敌人 ${e.id}: 弱点 ${w} 没有任何我方攻击技能能打出`);
@@ -201,7 +202,10 @@ for (const a of Object.values(ACTORS)) {
   }
   for (const it of Object.values(ITEMS)) if (it.seal) applied.add('stun');   // 封魔符实际施加的是 stun
   for (const k of Object.keys(STATUS)) {
-    if (!applied.has(k)) errs.push(`状态 ${STATUS[k].name}(${k}) 没有任何技能或道具会施加它`);
+    /* 现阶段主角没有任何技能（原文第9章：「他没有技能，没有职业」），
+       所以没有状态会被施加是**正确**的，不是漏配。等原文的技能出现再接。
+       降级成警告，但不放过——否则将来真漏配也看不出来。 */
+    if (!applied.has(k)) warns.push(`状态 ${STATUS[k].name}(${k}) 还没有任何技能或道具会施加它（原文技能尚未出现）`);
   }
 
   // 属性：必须至少有一个攻击技能能打出，否则弱点/克制永远触发不了
@@ -210,7 +214,9 @@ for (const a of Object.values(ACTORS)) {
     ...Object.values(ENEMY_SKILLS).map(sk => sk.elem),
   ]);
   for (const k of Object.keys(ELEM)) {
-    if (k !== 'none' && !castable.has(k)) errs.push(`属性 ${ELEM[k].name}(${k}) 没有任何攻击技能能打出，克制机制对它永远不生效`);
+    /* 七系属性来自原文第7章的抗性面板，而主角这个阶段一个属性技能都没有，
+       打不出任何属性是正确的。同样降级成警告。 */
+    if (k !== 'none' && !castable.has(k)) warns.push(`属性 ${ELEM[k].name}(${k}) 还没有任何攻击技能能打出（原文技能尚未出现）`);
   }
 }
 

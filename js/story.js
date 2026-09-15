@@ -4,10 +4,10 @@
    （序章 ~ 第八章「杀狼！」）。事件顺序、人物、设定数值按原文，
    台词与场景文字为重写。详见该文件头部说明。
 
-   已退役的文件（保留在仓库，未挂进流程）：
-     · chapter-rebirth.js —— 上一版开场。天阙公会战、执圭、逆骨之守、
-       苍梧区服等内容为原创虚构，与原著不符，已整体停用。
-     · chapter-one / journey / finale / beyond —— 改造前《炎之刃》的剧情。 */
+   2026-09-15：《炎之刃》与上一版原创虚构的剧情文件
+   （chapter-one / journey / finale / beyond / rebirth）已从仓库删除，
+   连同羁绊（bonds.js）、遗物（relics.js）、连携、营地补给、商店、
+   三地支援、旅程结算与二周目——这些系统原著中都不存在。 */
 import { DESTINY, DESTINY_ENDINGS } from './chapter-destiny.js';
 
 export const ENDINGS = { ...DESTINY_ENDINGS };

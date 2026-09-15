@@ -1,8 +1,0 @@
-[
-  { "name": "01", "eval": "window.__newGame(20, ['kaito','cang','lei','ryze']); window.__advance(70); 'ready in '+window.__G.mode", "wait": 1800 },
-  { "name": "02", "eval": "window.__giveUlt(); window.__cmd(0,'skill','miehun',0)", "wait": 300 },
-  { "name": "03", "eval": "window.__fillTurn()", "wait": 800 },
-  { "name": "04-cutin", "eval": "JSON.stringify({cutin:!document.getElementById('cutin').classList.contains('hidden'), name:document.getElementById('cutin-name').textContent, hot:window.__G.battle.party.map(m=>Math.ceil(m.hot)), q:window.__G.battle.ui.queue.length})", "wait": 2200 },
-  { "name": "05-hit", "eval": "JSON.stringify({ehp:window.__G.battle.enemies.map(e=>e.hp), log:window.__G.battle.log.map(l=>l.txt.replace(/<[^>]+>/g,''))})", "wait": 4000 },
-  { "name": "06-end", "eval": "JSON.stringify({ehp:window.__G.battle.enemies.map(e=>e.hp), log:window.__G.battle.log.map(l=>l.txt.replace(/<[^>]+>/g,'')), hot:window.__G.battle.party.map(m=>Math.ceil(m.hot))})", "wait": 6000 }
-]

@@ -61,9 +61,9 @@ function mkHero(id, lv, equips, gear) {
 const PARTY = {
   /* 原文：整个杀狼段他都是 **0 级**，直到第12章才升到 1 级。
      装备也照原文——他全程「一身新手衣」，没换过。 */
-  solo_open:  [['kaito', 0, ['mu_sword', 'cloth']]],
-  solo_pack:  [['kaito', 0, ['mu_sword', 'cloth']]],
-  solo_alpha: [['kaito', 1, ['mu_sword', 'cloth']]],
+  solo_open:  [['kaito', 0, ['mu_sword', 'novice_robe', 'novice_pants', 'novice_shoes']]],
+  solo_pack:  [['kaito', 0, ['mu_sword', 'novice_robe', 'novice_pants', 'novice_shoes']]],
+  solo_alpha: [['kaito', 0, ['mu_sword', 'novice_robe', 'novice_pants', 'novice_shoes']]],
 };
 
 /* 哪一场用哪一档。按敌人等级自动选在这里行不通——
@@ -106,7 +106,7 @@ function tierFor(lv, sid) {
   /* 剧本新增了战斗而这里还没配档位：按敌人等级现编一个单人档，
      保证不漏跑，但结论只能当参考——真实等级要等 playthrough 跑一遍才知道。 */
   const key = 'auto' + lv;
-  if (!PARTY[key]) PARTY[key] = [['kaito', Math.max(1, lv - 2), ['iron_sword', 'leather']]];
+  if (!PARTY[key]) PARTY[key] = [['kaito', Math.max(0, lv - 2), ['mu_sword', 'novice_robe', 'novice_pants', 'novice_shoes']]];
   return key;
 }
 

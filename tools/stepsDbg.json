@@ -1,3 +1,0 @@
-[
-  { "name": "00-nodebug", "eval": "typeof window.__advance", "wait": 200 }
-]

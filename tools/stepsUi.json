@@ -1,6 +1,0 @@
-[
-  { "name": "01", "eval": "document.getElementById('btn-new').click(); 'started'", "wait": 1200 },
-  { "name": "02", "eval": "JSON.stringify({mode:window.__G.mode, scene:window.__G.sceneId, line:window.__G.lineIdx})", "wait": 200 },
-  { "name": "03", "eval": "(function(){ let n=0; const step=()=>{ window.dispatchEvent(new KeyboardEvent('keydown',{key:'z'})); window.dispatchEvent(new KeyboardEvent('keyup',{key:'z'})); n++; if(!document.getElementById('cmdmenu').classList.contains('hidden')) return 'BATTLE at press '+n; if(n>400) return 'story-still line='+window.__G.lineIdx; requestAnimationFrame(()=>requestAnimationFrame(step)); }; step(); return 'walking(non-blocking)'; })()", "wait": 12000 },
-  { "name": "04", "eval": "JSON.stringify({mode:window.__G.mode, scene:window.__G.sceneId, btns:document.getElementById('cmd-buttons').children.length, log:document.getElementById('battle-log').textContent.replace(/\\s+/g,' ').slice(0,80)})", "wait": 400 }
-]
