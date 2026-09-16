@@ -672,7 +672,13 @@ function runAction(a) {
   if (a.set) Object.assign(G.flags, a.set);
   if (a.objective) G.flags.currentObjective = a.objective;
   if (typeof a.join === 'string' && ACTORS[a.join]) { addMember(a.join); toast(`※ ${ACTORS[a.join].name} 加入了队伍！`); }
-  if (typeof a.item === 'string') { G.bag[a.item] = (G.bag[a.item] || 0) + 1; toast(`获得【${EQUIPS[a.item]?.name || ITEMS[a.item]?.name || a.item}】`); }
+  /* count 可选，默认 1。原文第14章村长一次给的是「小恢复药水10瓶，苹果5个，馒头5个」，
+     不带 count 的话要在剧本里写二十条重复动作。 */
+  if (typeof a.item === 'string') {
+    const n = Math.max(1, a.count | 0 || 1);
+    G.bag[a.item] = (G.bag[a.item] || 0) + n;
+    toast(`获得【${EQUIPS[a.item]?.name || ITEMS[a.item]?.name || a.item}】${n > 1 ? ' ×' + n : ''}`);
+  }
   if (typeof a.equip === 'string') {
     const owner = G.party.find(m => ACTORS[m.id]) || G.party[0];
     const eq = EQUIPS[a.equip];

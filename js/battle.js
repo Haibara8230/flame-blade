@@ -7,6 +7,13 @@ import { eqBonus as equipBonus, eqElemBonus as equipElem } from './loot.js';
 import { talentBonus, talentElem, derived } from './growth.js';
 import { expFromKill } from './realm.js';
 
+/* 武器是否自带「普通攻击打全场」。装备槽的第一格是武器
+   （characters.js 的 SLOTS = ['weapon','body','legs','feet','acc']）。 */
+function hasCleave(unit) {
+  const w = unit && unit.equips && unit.equips[0];
+  return !!(w && EQUIPS[w] && EQUIPS[w].cleave);
+}
+
 /* 装备词缀与天赋用同一套键名，战斗里永远查这两个合并后的函数。 */
 function eqBonus(unit, key) { return equipBonus(unit, key) + talentBonus(unit, key); }
 function eqElemBonus(unit, elem) { return equipElem(unit, elem) + talentElem(unit, elem); }
@@ -951,7 +958,15 @@ function resolvePlayerCmd(B, m, cmd) {
     case 'attack': {
       const ws = (ACTORS[m.id] && ACTORS[m.id].weaponSkill) || ['xinzhan'];
       const sk = SKILLS[ws[0]] || SKILLS.xinzhan || SKILLS.liaoshang;
-      if (sk) execSkill(B, m, sk.id, [pickEnemy(B, cmd.target)].filter(Boolean));
+      /* 原文第11章的装备说明：永恒命运之刻
+         「普通攻击时将对攻击范围内的所有目标同时造成伤害」。
+         所以带 cleave 的武器，普攻打的是全场而不是单体——
+         第12章他一刀扫中最前面的三只野狼（-85，-87，-85）就是这一条。
+         ⚠ 这个标记此前只写在 characters.js 的数据里，引擎从来没读过它。 */
+      const targets = hasCleave(m)
+        ? B.enemies.filter(e => !e.dead)
+        : [pickEnemy(B, cmd.target)].filter(Boolean);
+      if (sk) execSkill(B, m, sk.id, targets);
       break;
     }
     case 'skill': {
