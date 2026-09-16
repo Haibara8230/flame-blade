@@ -108,7 +108,10 @@ export function createBattle(game, def, stage) {
     const maxHp = st.maxHp;
     return {
       i, ref: d.id, def: d, name: d.name, shape: d.shape, palette: d.palette,
-      level: lv, maxHp, hp: maxHp,
+      /* hp 可以在场景里单独给——用于「加入一场已经打了一半的战斗」。
+         原文第17章他出手时，巨型凶狼「仅剩200的生命」，
+         不写的话会按满血 1300 开打，和原文完全不是一回事。 */
+      level: lv, maxHp, hp: Math.min(maxHp, e.hp != null ? e.hp : maxHp),
       atk: st.atk, defv: st.defv,
       spd: st.spd, exp: st.exp, gold: st.gold,
       boss: !!d.boss, skills: d.skills, quote: d.quote, weak: d.weak || null,

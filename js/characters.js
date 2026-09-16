@@ -209,6 +209,37 @@ export const EQUIPS = {
   novice_shoes: { id: 'novice_shoes', name: '新手布鞋', slot: 'feet', def: 1, tier: 1,
     desc: '装备要求：无。品级：苍白。', price: 0 },
 
+  /* ---- 巨型凶狼爆出的三件钢铁装备 · 原文第18章，逐字 ----
+     「凶狼之靴：5级钢铁之器，使用要求：近战职业，由巨型凶狼的皮做成的靴子，
+       有一定的柔韧性，属性：防御+5，移动速度+3。」
+     「凶狼护肩：5级钢铁之器，使用要求：近战职业，由巨型凶狼的皮做成的护肩，
+       有着不错的防御能力，属性：防御+10，力量+2。」
+     「凶狼护膝：5级钢铁之器，使用要求：近战职业，由巨型凶狼的皮做成的护膝，
+       有着不错的防御能力，属性：防御+8，体质+2。」
+     ★ 原文第19章的重点：这三件他**一件都穿不了**——
+     「装备要求中清一色的要求近战职业，而他却不在这个要求范围之内，
+       因为他压根就没有职业。」需求由 needClass 表达，recalc 时会被拒绝。
+     ⚠ 槽位：原文只说「靴 / 护肩 / 护膝」。靴→feet、护膝→legs 是直的；
+     护肩没有对应槽位，这里放 body，属推测。 */
+  direwolf_boots: {
+    id: 'direwolf_boots', name: '凶狼之靴', slot: 'feet', tier: 3, level: 5,
+    def: 5, moveSpd: 3, needClass: '近战职业',
+    desc: '5级钢铁之器。使用要求：近战职业。由巨型凶狼的皮做成的靴子，有一定的柔韧性。',
+    price: 0,
+  },
+  direwolf_pauldron: {
+    id: 'direwolf_pauldron', name: '凶狼护肩', slot: 'body', tier: 3, level: 5,
+    def: 10, str: 2, needClass: '近战职业',
+    desc: '5级钢铁之器。使用要求：近战职业。由巨型凶狼的皮做成的护肩，有着不错的防御能力。',
+    price: 0,
+  },
+  direwolf_greaves: {
+    id: 'direwolf_greaves', name: '凶狼护膝', slot: 'legs', tier: 3, level: 5,
+    def: 8, vit: 2, needClass: '近战职业',
+    desc: '5级钢铁之器。使用要求：近战职业。由巨型凶狼的皮做成的护膝，有着不错的防御能力。',
+    price: 0,
+  },
+
   /* ---- 永恒命运之刻（残） · 原文第11章，逐条照抄 ----
      「永恒命运之刻（残）：使用要求：无。品级：仙灵。命运世界的力量核心，
        有着未知的神秘来历和未知的神秘力量。目前处在命运之核全部丧失的残缺状态。
@@ -319,6 +350,62 @@ export const ENEMIES = {
     weak: [], quote: '（嗜血之狼，会攻击所有靠近的生灵。）',
     skills: [{ id: 'atk', w: 1 }],
   },
+  /* ---- 红叶盟「悲催五人组」 · 原文第16~21章 ----
+     作者在第16章末尾的批注：「出现了！出现了！天邪初期的主要玩具……
+     红叶盟的悲催五人组出现了！！」
+
+     原文给的硬数据只有两条：
+       · 「以他们平均三级的等级来对付一个三星级的BOSS」（第16章）
+       · 见习魔法师被一击 -196 清空，原文写「将他90点的生命值瞬间清空」（第18章）
+     所以魔法师的 hp 90 是原文的，其余四人的 hp / atk / def / spd
+     ⚠ 原文未给，按 3 级玩家的体量与各自职业的攻防倾向推。
+
+     他们身上有钢铁级装备（第16章：「有几件还闪烁着暗淡的蓝色光芒」），
+     所以防御比同级怪物高一截。 */
+  hongye_shield: {
+    id: 'hongye_shield', name: '红叶铁壁', shape: 'humanoid', player: true,
+    palette: { hair: '#3a2f28', cloth: '#5a6272', trim: '#8a6a3a', skin: '#e8c2a0', eye: '#6aa8ff', weapon: 'sword' },
+    /* 见习盾卫。原文：举一面木盾在前，技能【挑衅】，冷却 10 秒。
+       ⚠ 数值全部未考证：高血高防、攻击最低。 */
+    baseLevel: 3, hp: 150, atk: 14, def: 12, spd: 24, exp: 0, gold: 0, hot: 3,
+    weak: [], quote: '（举着木盾堵在最前面。）',
+    skills: [{ id: 'atk', w: 9 }, { id: 'heavy', w: 1 }],
+  },
+  hongye_warrior: {
+    id: 'hongye_warrior', name: '红叶盟见习战士', shape: 'humanoid', player: true,
+    palette: { hair: '#2c2620', cloth: '#6a4a3a', trim: '#b04a32', skin: '#e2bc98', eye: '#ff8a4a', weapon: 'sword' },
+    /* 挥双手剑，在凶狼背后输出。就是他密语让盾卫把邪天踢出队伍的。 */
+    baseLevel: 3, hp: 110, atk: 22, def: 7, spd: 30, exp: 0, gold: 0, hot: 3,
+    weak: [], quote: '（双手剑已经举了起来。）',
+    skills: [{ id: 'atk', w: 8 }, { id: 'heavy', w: 2 }],
+  },
+  hongye_archer: {
+    id: 'hongye_archer', name: '红叶盟见习弓箭手', shape: 'humanoid', player: true,
+    palette: { hair: '#4a3a28', cloth: '#4a5a42', trim: '#8a7a4a', skin: '#e8c8a8', eye: '#8ae06a', weapon: 'staff' },
+    /* ★ 全书最惨的一个：进游戏时为了体验 100% 真实度，把痛感承受率设成了 100%。
+       原文：「叶天邪的这一击下去对他来说将和在现实世界被当头劈了一刀完全没有什么两样」。 */
+    baseLevel: 3, hp: 95, atk: 20, def: 5, spd: 32, exp: 0, gold: 0, hot: 2,
+    weak: [], quote: '（窝在石头后面，箭矢一支支射出。）',
+    skills: [{ id: 'atk', w: 1 }],
+  },
+  hongye_mage: {
+    id: 'hongye_mage', name: '红叶盟见习魔法师', shape: 'humanoid', player: true,
+    palette: { hair: '#5a4a6a', cloth: '#42407a', trim: '#8a7ad0', skin: '#f0d8c0', eye: '#9a8aff', weapon: 'staff' },
+    /* ★ hp 90 是原文的：第18章「一个『-196』的红色数字在他头上飘起，
+       将他90点的生命值瞬间清空」。丢的是没有任何属性的魔法弹。 */
+    baseLevel: 3, hp: 90, atk: 24, def: 4, spd: 28, exp: 0, gold: 0, hot: 2,
+    weak: [], quote: '（站在最适的距离，不断丢着没有任何属性的魔法弹。）',
+    skills: [{ id: 'atk', w: 1 }],
+  },
+  hongye_priest: {
+    id: 'hongye_priest', name: '红叶盟见习牧师', shape: 'humanoid', player: true,
+    palette: { hair: '#6a5a4a', cloth: '#e0dcd0', trim: '#c8b070', skin: '#f2dcc6', eye: '#7de0c0', weapon: 'staff' },
+    /* 只有一个最初级的小回复术。第17章被狂化的凶狼两爪拍死，是五个人里第一个倒的。 */
+    baseLevel: 3, hp: 100, atk: 10, def: 5, spd: 26, exp: 0, gold: 0, hot: 2,
+    weak: [], quote: '（一边喝着小型魔法恢复药水一边跑动着施展回复术。）',
+    skills: [{ id: 'atk', w: 1 }],
+  },
+
   dire_wolf: {
     id: 'dire_wolf', name: '凶狼', shape: 'wolf',
     palette: { body: '#5c564c', trim: '#332e28', eye: '#ff7a4a', fang: '#f6efe2' },

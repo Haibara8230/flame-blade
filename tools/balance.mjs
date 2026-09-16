@@ -18,11 +18,14 @@ function dmgOf(atk, def, power, lvl, dlv, critRate = 0, hits = 1) {
   d *= (1 - critRate) * 1 + critRate * 1.72;
   return Math.max(1, Math.round(d));
 }
-function mkEnemy(ref, lv) {
+/* hp0：场景可以单独指定起始血量（battle.js 的 e.hp）。
+   ⚠ 不读它的话，「加入一场已经打了一半的战斗」会被当成满血开打——
+   第17章的巨型凶狼原文只剩 200 血，按 1300 算会误报「太肉」。 */
+function mkEnemy(ref, lv, hp0) {
   const d = ENEMIES[ref];
   const st = enemyStatsAt(d, lv);      // 缩放公式只有 characters.js 一份
   return {
-    name: d.name, level: lv, hp: st.maxHp,
+    name: d.name, level: lv, hp: hp0 != null ? Math.min(st.maxHp, hp0) : st.maxHp,
     atk: st.atk, def: st.defv,
     spd: st.spd, skills: d.skills, boss: !!d.boss, weak: d.weak || [],
   };
@@ -116,9 +119,15 @@ for (const [sid, sc] of Object.entries(SCENES)) {
   if (!sc.enemies || !sc.enemies.length) continue;
   const lv = Math.round(sc.enemies.reduce((a, e) => a + e.level, 0) / sc.enemies.length);
   const label = `${(sc.chapter || '').replace(/^第|章.*$/g, '').slice(0, 8) || '?'} ${sc.enemies.map(e => ENEMIES[e.ref].name).join('+')}`.slice(0, 26);
-  // 教学战（练习木桩）本来就该秒杀，不参与平衡结论
-  const tutorial = sc.enemies.every(e => e.ref === 'training_dummy');
-  STAGES.push([label + (sc.boss ? '(BOSS)' : ''), tierFor(lv, sid), sc.enemies.map(e => [e.ref, e.level]), sid, tutorial]);
+  /* 不参与平衡结论的两类：
+     ① 教学战（练习木桩）本来就该秒杀；
+     ② **script 演出战**——按 CLAUDE.md，有原文逐拍描写的战斗是「演出」不是「玩法」，
+        节拍由剧本定、玩家只看，拿回合数和生存轮数去评它没有意义。
+        比如第17章那只巨型凶狼：原文里他一击就把只剩 200 血的它清空了，
+        balance 会判「太简单」——那正是原文写的东西，不是需要调的数值。 */
+  const tutorial = sc.enemies.every(e => e.ref === 'training_dummy') || !!sc.script;
+  const tag = sc.script ? '〔演出〕' : (sc.boss ? '(BOSS)' : '');
+  STAGES.push([label + tag, tierFor(lv, sid), sc.enemies.map(e => [e.ref, e.level, e.hp]), sid, tutorial]);
 }
 
 /* 从未出现在任何战斗里的敌人（做了数据和立绘却没人用） */
@@ -139,7 +148,7 @@ console.log('场次'.padEnd(26), '我方HP', '敌方HP', '我方/轮', '敌/轮'
 let problems = [];
 for (const [name, pkey, foes, , tutorial] of STAGES) {
   const heroes = PARTY[pkey].map(([id, lv, eq]) => mkHero(id, lv, eq, PARTY[pkey].gear));
-  const es = foes.map(([ref, lv]) => mkEnemy(ref, lv));
+  const es = foes.map(([ref, lv, hp0]) => mkEnemy(ref, lv, hp0));
   const totalHp = heroes.reduce((a, h) => a + h.hp, 0);
   const eHp = es.reduce((a, e) => a + e.hp, 0);
   const eDef0 = es.reduce((a, e) => a + e.def, 0) / es.length;

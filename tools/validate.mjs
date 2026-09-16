@@ -14,6 +14,9 @@ const CANON_NO_ULT = new Set(['kaito']);
 const CANON_ENEMIES = new Set([
   'angry_chick', 'fierce_rabbit', 'wild_wolf', 'dire_wolf',
   'giant_dire_wolf', 'blood_wolf', 'mutant_blood_wolf',
+  /* 红叶盟五人组是**玩家**，不是怪物——原文里根本不存在
+     「探知玩家弱点」这回事，所以和照抄原文面板的怪物一样豁免。 */
+  'hongye_shield', 'hongye_warrior', 'hongye_archer', 'hongye_mage', 'hongye_priest',
 ]);
 
 const errs = [], warns = [];
@@ -324,10 +327,15 @@ console.log('立绘结构: 全部通过（' + Object.keys(PORTRAITS).length + ' 
      而是自动战斗死了 3 次，arc_defeat 把人送回 d_hunt 重打，经验又拿了一遍。
      band 给得宽，是为了抓「整章经验被删 / 被翻倍」这种量级的问题，
      而不是每次微调数值都来烦人。 */
-  /* 原文：0 级杀九只 5 级野狼才升到 1 级（100 点经验），1→2 还要整整 1000 点。
-     剧本里这四场正好是 9 只狼 + 1 只头狼，所以走完应当**刚好 1 级**——
-     和原文第12章他升到 1 级的时点对得上。 */
-  const REAL = { low: 1, high: 2, note: '原文：九只野狼完成 0→1，1→2 还要 1000 点' };
+  /* 基准跟着剧情推进走，改章节时要一起改——这条断言过期过一次（见下）。
+     原文给的三个时点：
+       · 第12章：0 级杀九只 5 级野狼升到 1 级（0→1 是 100 点经验）
+       · 第19章：在恶狼谷刷凶狼升到 2 级（1→2 是整整 1000 点）
+       · 第20章：把凶狼领地包场之后升到 3 级（2→3 原文没给数字）
+     剧本现在写到第21章，所以走完应当**刚好 3 级**。
+     ⚠ 2026-09-16：这条原先写的是 low:1 / high:2，是按「剧本止于第11章」定的；
+     续写到第21章后它开始误报「经验偏高」。基准已跟着原文的时点上调。 */
+  const REAL = { low: 3, high: 4, note: '原文：第12章升1级、第19章升2级、第20章升3级' };
   if (lv < REAL.low) warns.push(`主线经验偏低：模拟终局只有 Lv.${lv}（${REAL.note}）`);
   if (lv > REAL.high) warns.push(`主线经验偏高：模拟终局 Lv.${lv}（${REAL.note}）`);
 }
