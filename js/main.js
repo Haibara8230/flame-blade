@@ -825,7 +825,6 @@ function guessExpr(name, text) {
 const FULL_BODY_RATIO = 1.6;      // 高/宽 ≥ 这个值算全身图
 const ASPECT = new Map();         // url → 高/宽，量过一次就记住
 let portSeq = 0;                  // 台词翻页比图片加载快时，用它丢弃过期结果
-let standeeOn = false;            // 站位立绘是否正在显示——drawScene 据此决定画不画 Q 版小人
 
 function measureAspect(url) {
   return new Promise(res => {
@@ -849,7 +848,6 @@ function swapPortraitImg(el, url) {
 
 function hidePortrait() {
   portSeq++;                                // 作废还没量完的那次，否则旁白会被它翻出立绘
-  standeeOn = false;
   $('dialogue').classList.add('no-portrait');
   $('standee').classList.add('hidden');
 }
@@ -859,8 +857,7 @@ function setPortrait(pid, e) {
   const seq = ++portSeq;
   const apply = r => {
     if (seq !== portSeq) return;            // 已经翻到下一句了，这次结果作废
-    standeeOn = r >= FULL_BODY_RATIO;
-    if (standeeOn) {
+    if (r >= FULL_BODY_RATIO) {
       swapPortraitImg($('standee-img'), url);
       $('standee').classList.remove('hidden');
       $('dialogue').classList.add('no-portrait');   // 对话框自己撑满
@@ -1995,25 +1992,12 @@ function drawScene(dt) {
   G.bgT += dt;
   const t = G.bgT;
   SP.drawBackground(ctx, G.bg, W, H, t, {});
-  /* 队伍剪影站在前景。
-     ⚠ 舞台上已经站着全身立绘时就不画——否则同一个角色会在画面上出现两次，
-     而且一个是写实立绘、一个是 Q 版小人，比例差得离谱。
-     没有全身立绘的场合（旁白、以及只有程序化半身图的角色）照旧画，
-     那时候它是画面上唯一的人形。 */
-  const members = standeeOn ? [] : G.party.slice(0, 4);
-  const spots = [{ x: 180, y: 470 }, { x: 300, y: 484 }, { x: 410, y: 470 }, { x: 510, y: 486 }];
-  members.forEach((m, i) => {
-    const sp = spots[i];
-    const at = ACTORS[m.id];
-    const pal = {
-      kaito: { hair: '#2b2340', cloth: '#1d2a4a', trim: '#c8332f', eye: '#ff8a1a', weapon: 'sword' },
-      cang: { hair: '#7d5fd8', cloth: '#efeaf8', trim: '#6a4fc0', eye: '#57e0ff', weapon: 'staff' },
-      lei: { hair: '#3a3a48', cloth: '#2e3a52', trim: '#c8332f', eye: '#9be25a', weapon: 'spear' },
-      ryze: { hair: '#d8d2ee', cloth: '#2a2050', trim: '#c9a8ff', eye: '#c9a8ff', weapon: 'sword', cape: '#1c1638' },
-    }[m.id];
-    // 呼吸浮动
-    SP.drawHumanoid(ctx, sp.x + Math.sin(t * 0.8 + i) * 4, sp.y, 0.92, t + i * 0.7, 'idle', pal);
-  });
+  /* ⚠ 这里原来会画一排 Q 版队伍剪影（drawHumanoid）。
+     那是立绘还只是对话框里一个小头像时的产物——当时它是画面上唯一的人形。
+     现在对话场景一律由全身立绘承担，剪影就成了多余的第二个自己，
+     而且比例完全对不上。整块删除。
+     （配色表里还留着 cang / lei / ryze 三个《炎之刃》时期的角色，早已不存在，
+       一并删掉。drawHumanoid 本身还在用——battle.js 画我方、sprites.js 画人形怪物。） */
   // 顶部渐变遮罩（让对话框更清晰）
   const g = ctx.createLinearGradient(0, H - 220, 0, H);
   g.addColorStop(0, 'rgba(4,4,12,0)');
