@@ -22,6 +22,8 @@
     </div>
     <div class="hud-right">
       <button class="hbtn" id="btn-full" title="全屏">⛶</button>
+      <!-- 仅 ?debug=1 时显示：场景跳转菜单 -->
+      <button class="hbtn hidden" id="btn-jump" title="场景跳转（调试）">⚑ 跳转</button>
       <button class="hbtn" id="btn-status">◈ 队伍</button>
       <button class="hbtn" id="btn-bag">◆ 道具</button>
       <button class="hbtn" id="btn-save">◇ 存档</button>
@@ -35,6 +37,9 @@
     <div class="dlg-main">
       <div class="dlg-name"><span id="dlg-name-text"></span></div>
       <div class="dlg-text" id="dlg-text"></div>
+      <!-- 快进：点一下连续推进，再点停；键盘按住 Ctrl 同效。
+           遇到选项、战斗、载入画面会自动停下。 -->
+      <button class="dlg-skip" id="btn-skip" title="快进（或按住 Ctrl）">▶▶ 跳过</button>
       <div class="dlg-next" id="dlg-next">▼</div>
     </div>
   </div>
@@ -95,7 +100,8 @@
       <div class="title-menu">
         <button class="tbtn" id="btn-new">开始新角色</button>
         <button class="tbtn" id="btn-continue">继续游戏</button>
-        <button class="tbtn" id="btn-gallery">奥义一览</button>
+        <button class="tbtn" id="btn-chapters">章节选择</button>
+        <button class="tbtn" id="btn-gallery">技能一览</button>
         <button class="tbtn" id="btn-help">操作说明</button>
       </div>
       <div class="title-foot">第一卷 · 序章 ~ 第十一章「永恒命运之刻」</div>

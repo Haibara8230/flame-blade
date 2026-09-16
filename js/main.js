@@ -12,6 +12,9 @@ import * as SP from './sprites.js';
 import * as BT from './battle.js';
 
 const W = 960, H = 540;          // 逻辑坐标系，所有绘制代码都按这个尺寸写
+/* 章节跳转重放期间为 true——toast 会静音，否则一次跳转会刷出几十条「获得……」。
+   声明放在这里是因为 toast() 的定义在 replayTo 之前。 */
+let replaying = false;
 const $ = id => document.getElementById(id);
 const cv = $('cv');
 const ctx = cv.getContext('2d', { alpha: true, desynchronized: false });
@@ -437,6 +440,7 @@ function syncInput() {
    ============================================================ */
 let toastT = 0;
 function toast(msg, ms) {
+  if (replaying) return;     // 章节跳转会一次性重放几十条奖励，别刷屏
   const el = $('toast');
   // 战利品提示带稀有度颜色，所以这里允许少量 HTML
   if (/[<][a-z/]/i.test(msg)) el.innerHTML = msg; else el.textContent = msg;
@@ -1885,38 +1889,63 @@ function loadGame(slot = 1) {
 /* ============================================================
    奥义一览
    ============================================================ */
+/* ============================================================
+   技能一览 / 操作说明
+   ============================================================
+   ⚠ 这个面板原来列的是「奥义一览」：灭魂炎狱斩、复苏之光、疾风迅游枪、
+   绝对零度，对应 kaito / cang / lei / ryze 四个角色。
+   后三个是《炎之刃》时期的角色，早就从 ACTORS 里删掉了——
+   ACTORS['cang'].title 会直接抛 TypeError，点「奥义一览」或「操作说明」
+   就是白屏。现在改成按 ACTORS / SKILLS 的真实内容现列，不写死。 */
 function openGallery() {
   G.prevMode = G.mode;
   const panel = $('panel');
-  $('panel-title').textContent = '★ 奥义一览';
-  const ults = [
-    ['kaito', 'miehun', '奥义·灭魂炎狱斩', '五段斩在敌人体内燃起炎狱。热血全满时发动。'],
-    ['cang', 'fuyin', '福音·复苏之光', '唤醒倒下的同伴并回复其生命。'],
-    ['lei', 'xunyou', '奥义·疾风迅游枪', '化作疾风，七连贯穿。热血全满时发动。'],
-    ['ryze', 'juedui', '奥义·绝对零度', '连时空都冻结的极寒。热血全满时发动。'],
-  ];
-  $('panel-body').innerHTML = ults.map(([pid, sid, name, desc]) => {
-    const s = SKILLS[sid];
+  $('panel-title').textContent = '★ 技能一览 / 操作说明';
+
+  /* 队伍里每个人的真实技能表。原文此时主角没有职业、没有技能，
+     只有全职业共有的探知术和普攻；命运七杀全部「命运之核缺失，不可使用」。 */
+  const cards = Object.values(ACTORS).map(a => {
+    const ids = [...(a.weaponSkill || []), ...(a.skills || []).map(x => x.id || x)];
+    const rows = ids.map(sid => {
+      const sk = SKILLS[sid];
+      if (!sk) return '';
+      const cost = sk.mp ? `${a.resourceName || '魔法值'} ${sk.mp}` : '无消耗';
+      const lock = sk.locked ? `<span style="color:#ff9a9a">（${sk.locked}）</span>` : '';
+      return `<div class="pv">· <b style="color:#ffd76a">${sk.name}</b>
+        ${sk.sub ? `<span style="color:#bbb2dd">${sk.sub}</span>` : ''}
+        ——${sk.desc || ''} <span style="color:#9aa">${cost}</span>${lock}</div>`;
+    }).join('');
+    /* 装备自带的技能（永恒命运之刻的命运之赐与命运七杀）也要列出来。 */
+    const m = G.party.find(p => p.id === a.id);
+    const extra = (m ? m.skills.filter(sid => !ids.includes(sid)) : []).map(sid => {
+      const sk = SKILLS[sid]; if (!sk) return '';
+      const lock = sk.locked ? `<span style="color:#ff9a9a">（${sk.locked}）</span>` : '';
+      return `<div class="pv">· <b style="color:#ffd76a">${sk.name}</b>
+        ${sk.sub ? `<span style="color:#bbb2dd">${sk.sub}</span>` : ''}
+        ——${sk.desc || ''}${lock}</div>`;
+    }).join('');
     return `<div class="pcard">
-      <img src="${portraitURL(pid)}" alt="">
+      <img src="${portraitURL(a.portrait)}" alt="">
       <div class="pi">
-        <div class="pn">${ACTORS[pid].name} <span style="font-size:11.5px;color:#bbb2dd">${ACTORS[pid].title}</span></div>
-        <div style="color:#ffd76a;font-weight:700;margin:4px 0">★ ${name}</div>
-        <div class="pv">${s ? s.desc : desc}</div>
-        <div class="pv" style="margin-top:4px">消耗：${ACTORS[pid].resource === 'rage' ? '怒气' : '术力'} ${s ? s.mp : '?'}</div>
-        <div class="pv" style="margin-top:6px;color:#ff9a9a">${ACTORS[pid].quote}</div>
+        <div class="pn">${a.name} <span style="font-size:11.5px;color:#bbb2dd">${a.title}</span></div>
+        ${rows || '<div class="pv">（没有技能）</div>'}
+        ${extra}
+        <div class="pv" style="margin-top:6px;color:#ff9a9a">${a.quote || ''}</div>
       </div>
     </div>`;
-  }).join('') + `<div style="grid-column:1/-1">
+  }).join('');
+
+  $('panel-body').innerHTML = cards + `<div style="grid-column:1/-1">
     <div class="shop-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-      <b style="color:#ffd76a">战斗操作</b>
+      <b style="color:#ffd76a">操作</b>
       <div style="font-size:12.5px;line-height:1.9;color:#ddd5ff">
-        · 鼠标点击指令按钮，或直接点击画面 = 确认<br>
-        · <kbd>空格</kbd> / <kbd>Z</kbd> = 推进对话；战斗点击指令和目标，不需要时机操作<br>
-        · 【格挡】提升本次防御概率并积攒怒气；顶部显示未来行动顺序<br>
-        · 学会奥义且怒气或术力足够时，可在【技能】中发动<br>
-        · 【◈ 队伍】底部查看目标和支援；战败后可恢复战前状态重试<br>
-        · 敌人有 <b style="color:#8fe6ff">弱点属性</b>，用对应属性攻击可打出 1.5 倍伤害
+        · 点击画面，或 <kbd>空格</kbd> / <kbd>Z</kbd> = 推进对话<br>
+        · 对话框右下角【▶▶ 跳过】= 连续快进；按住 <kbd>Ctrl</kbd> 同效<br>
+        　　遇到选项、战斗、载入画面会自动停下<br>
+        · 标题画面【章节选择】= 从某一章的开头开始，这一路的剧情奖励会自动补上<br>
+        · 战斗指令：【攻击】【技能】【道具】【格挡】，点指令再点目标，没有时机操作<br>
+        · 按原文演出的战斗（如第八章杀狼）只看不打，界面上只有【倍速】和【跳过】<br>
+        · 【◈ 队伍】看面板与属性点；战败后可恢复战前状态重试
       </div>
       <button class="mini g" id="gal-back" style="padding:8px 22px;margin-top:6px">返回</button>
     </div></div>`;
@@ -1962,6 +1991,15 @@ $('btn-title').onclick = e => { e.stopPropagation(); if (confirm('返回标题�
 $('btn-new').onclick = e => { e.stopPropagation(); sfx('levelup'); newGame(); };
 $('btn-continue').onclick = e => { e.stopPropagation(); sfx('ui'); openSlots('load'); };
 $('btn-gallery').onclick = e => { e.stopPropagation(); sfx('ui'); openGallery(); };
+$('btn-chapters').onclick = e => { e.stopPropagation(); sfx('ui'); openChapters(); };
+$('btn-jump').onclick = e => { e.stopPropagation(); sfx('ui'); openJump(); };
+$('btn-skip').onclick = e => { e.stopPropagation(); sfx('ui'); setFF(!ffOn); };
+
+/* 按住 Ctrl 快进——视觉小说的老习惯。松开就停。
+   窗口失焦时也要清掉，否则切出去再切回来会一直快进。 */
+addEventListener('keydown', e => { if (e.key === 'Control') ctrlHeld = true; });
+addEventListener('keyup', e => { if (e.key === 'Control') ctrlHeld = false; });
+addEventListener('blur', () => { ctrlHeld = false; });
 $('btn-help').onclick = e => { e.stopPropagation(); sfx('ui'); openGallery(); };
 $('btn-again').onclick = e => {
   e.stopPropagation();
@@ -2019,6 +2057,11 @@ function loop(now) {
   syncInput();
 
   /* --- 更新 --- */
+  /* ⚠ updateFF 必须每帧都跑，不能只挂在 scene 分支里。
+     它自己负责判断该不该停——进了战斗、弹了选项就关掉快进。
+     挂在 scene 分支里的话，一进战斗它就再也不执行，
+     快进标志和按钮会一直停在「快进中」。 */
+  updateFF(dt);
   if (G.mode === 'scene') {
     updateTyping(dt);
     if (input.confirmPressed) {
@@ -2101,6 +2144,170 @@ function loop(now) {
 /* 台词放完之后该做什么，只允许 finishLines 一处说了算。
    此前这里自己又判了一次 sc.choices，于是「营地 + 二选一」的场景
    会直接弹选项、跳过营地——点击推进和无头测试走的都是这条路。 */
+/* ============================================================
+   快进 / 跳过 / 章节跳转
+   ============================================================
+   手动测试时不想一遍遍重看已经看过的剧情，所以给三条路：
+     · 快进——对话框右下角的「▶▶ 跳过」，或按住 Ctrl，连续推进台词
+     · 章节选择——标题画面，跳到某一章的开头
+     · 场景跳转——?debug=1 时 HUD 上的「⚑ 跳转」，跳到任意一个场景
+
+   后两者会**重放**从序章到目标点这一路的剧情奖励（装备、道具、flag），
+   所以跳过去之后的状态和一路打过来基本一致。
+   ⚠ 但**战斗不会重放**，那一路的经验和掉落不会补发——见 replayTo 的注释。 */
+
+let ffOn = false;        // 「跳过」按钮的开关
+let ctrlHeld = false;    // 键盘按住 Ctrl
+let ffT = 0;             // 快进节拍计时
+
+function ffActive() { return ffOn || ctrlHeld; }
+function setFF(on) {
+  ffOn = !!on;
+  const b = $('btn-skip');
+  if (b) { b.classList.toggle('on', ffOn); b.textContent = ffOn ? '▶▶ 快进中' : '▶▶ 跳过'; }
+}
+
+/* 快进该停下来的时机：离开剧情模式、弹出选项、进载入画面。
+   停在这些地方是有意的——选项要玩家选，战斗要玩家看。 */
+function ffShouldStop() {
+  return G.mode !== 'scene' || choicesOpen() || !$('loading').classList.contains('hidden');
+}
+
+function updateFF(dt) {
+  if (!ffActive()) return;
+  if (ffShouldStop()) { setFF(false); return; }
+  ffT -= dt;
+  if (ffT > 0) return;
+  ffT = 0.05;
+  if (G.typed < G.fullText.length) {      // 这一句还没打完 → 直接打完
+    G.typed = G.fullText.length; G.typing = 0;
+    $('dlg-text').innerHTML = formatLine(G.fullText);
+    $('dlg-next').classList.remove('hidden');
+  } else {
+    nextLineCheck();
+  }
+}
+
+/* ---- 剧情图上的「正典路径」----
+   next 优先；遇到选项取第一项（剧本里第一项写的就是原文的做法）；
+   遇到 branch 按当前 flags 真实判定——所以必须边走边执行动作。 */
+function walkCanonical(targetId, apply) {
+  const seen = new Set();
+  let id = 'prologue';
+  while (id && !seen.has(id)) {
+    if (targetId && id === targetId) return true;
+    const sc = SCENES[id];
+    if (!sc) return false;
+    seen.add(id);
+    if (apply) apply(id, sc);
+    if (sc.next) { id = sc.next; continue; }
+    if (sc.choices && sc.choices.length) {
+      const c = sc.choices[0];
+      if (apply && c.action) for (const a of c.action) runAction(a);
+      id = c.goto; continue;
+    }
+    if (sc.branch) { id = G.flags[sc.branch.branch] ? sc.branch.yes : sc.branch.no; continue; }
+    id = null;
+  }
+  return !targetId;
+}
+
+/* 章节 → 该章第一个场景。按正典路径的顺序取，所以列出来就是游玩顺序。 */
+function chapterEntries() {
+  const out = [], seenCh = new Set();
+  walkCanonical(null, (id, sc) => {
+    const ch = sc.chapter;
+    if (!ch || ch === '——' || seenCh.has(ch)) return;
+    seenCh.add(ch);
+    out.push({ chapter: ch, id });
+  });
+  return out;
+}
+
+/* 跳到某个场景，并把这一路的剧情奖励补上。
+   ⚠ 战斗不重放：那一路的经验和掉落**不会**补发。
+   目前这样够用——原文里主角整个已实现区间都停在 0 级
+   （第12章才升到 1 级），所以等级不受影响；真正影响手感的
+   永恒命运之刻是剧情奖励，会被正常补上。 */
+function replayTo(id) {
+  if (!SCENES[id]) { toast('没有这个场景：' + id); return; }
+  replaying = true;
+  try {
+    G.party = []; G.bag = {}; G.gold = 0; G.fame = 0; G.flags = {};
+    G.battleCheckpoint = null; G.chapter = '';
+    addMember('kaito', 0);
+    for (const m of G.party) { m.hp = m.maxHp; m.mp = m.resource === 'rage' ? 0 : m.maxMp; }
+    const visited = G.flags.sceneRewards || (G.flags.sceneRewards = {});
+    walkCanonical(id, (sid, sc) => {
+      if (sc.pre && (!sc.once || !visited[sid])) {
+        visited[sid] = true;
+        for (const a of sc.pre) runAction(a);
+      }
+    });
+  } finally { replaying = false; }
+  G.mode = 'scene';
+  $('title').classList.add('hidden');
+  $('ending').classList.add('hidden');
+  $('hud').classList.remove('hidden');
+  $('loading').classList.add('hidden');
+  closePanel();
+  gotoScene(id);
+}
+
+/* 章节选择（标题画面）。正式功能，不需要 debug。 */
+function openChapters() {
+  enterPanel('chapters');
+  const panel = $('panel');
+  $('panel-title').textContent = '✦ 章节选择';
+  const list = chapterEntries();
+  $('panel-body').innerHTML = `<div style="grid-column:1/-1">
+      <div class="shop-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+        <b style="color:#ffd76a">从某一章的开头开始</b>
+        <div style="font-size:12px;color:#bbb2dd;line-height:1.7">
+          会自动补上这一路的剧情奖励（装备、道具、选择结果）。<br>
+          ⚠ 沿途的战斗不会重打，那部分经验与掉落不会补发。
+        </div>
+      </div>
+    </div>` + list.map(e =>
+      `<button class="mini" data-jump="${e.id}" style="text-align:left">${e.chapter}</button>`
+    ).join('');
+  panel.classList.remove('hidden');
+  bindJumpButtons();
+}
+
+/* 场景跳转（仅 ?debug=1）。按章分组列出全部场景。 */
+function openJump() {
+  enterPanel('jump');
+  const panel = $('panel');
+  $('panel-title').textContent = '⚑ 场景跳转（调试）';
+  const groups = new Map();
+  walkCanonical(null, (id, sc) => {
+    const ch = sc.chapter || '（未标章节）';
+    if (!groups.has(ch)) groups.set(ch, []);
+    groups.get(ch).push(id);
+  });
+  /* 正典路径以外的场景（分支死路、战败流程）也要能跳到，否则调试不到它们 */
+  const listed = new Set([...groups.values()].flat());
+  const rest = Object.keys(SCENES).filter(id => !listed.has(id));
+  if (rest.length) groups.set('（正典路径之外）', rest);
+
+  $('panel-body').innerHTML = [...groups].map(([ch, ids]) =>
+    `<div style="grid-column:1/-1">
+       <div style="color:#ffd76a;font-weight:700;margin:6px 0 2px">${ch}</div>
+       <div style="display:flex;flex-wrap:wrap;gap:6px">
+         ${ids.map(id => `<button class="mini" data-jump="${id}">${id}${id === G.sceneId ? ' ●' : ''}</button>`).join('')}
+       </div>
+     </div>`).join('');
+  panel.classList.remove('hidden');
+  bindJumpButtons();
+}
+
+function bindJumpButtons() {
+  for (const b of $('panel-body').querySelectorAll('[data-jump]')) {
+    b.onclick = e => { e.stopPropagation(); sfx('ui'); replayTo(b.dataset.jump); };
+  }
+}
+
 function nextLineCheck() {
   const sc = G.scene;
   if (!sc) return;
@@ -2113,6 +2320,8 @@ function nextLineCheck() {
    用于 tools/ 下的无头回归测试，正常玩家不会看到任何差异
    ============================================================ */
 const DEBUG = new URLSearchParams(location.search).has('debug') || location.hash === '#debug';
+/* 场景跳转是调试功能，只在 ?debug=1 时露出来；章节选择是正式功能，一直都在。 */
+if (DEBUG) $('btn-jump').classList.remove('hidden');
 if (DEBUG) {
 /* 供无头测试：推进剧情（等价于点击画面） */
 window.__fast = false;   // 无头测试：跳过商店

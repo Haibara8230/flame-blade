@@ -97,6 +97,15 @@ body{display:block;overflow:hidden}
   display:inline-block;animation:shake .3s infinite alternate}
 .dlg-text .narr{color:#a9a2c8;font-style:italic}
 .dlg-text .sys{color:var(--cyan);font-weight:700}
+/* 快进按钮：压在对话框右下角，和 ▼ 并排。开启时高亮并轻微呼吸。 */
+.dlg-skip{position:absolute;right:30px;bottom:-2px;z-index:2;
+  font-family:var(--font);font-size:11.5px;letter-spacing:1px;cursor:pointer;
+  color:#ffdcb0;background:linear-gradient(180deg,rgba(40,26,60,.9),rgba(16,10,28,.95));
+  border:1px solid rgba(255,160,70,.4);border-radius:4px;padding:3px 8px;transition:.15s}
+.dlg-skip:hover{background:linear-gradient(180deg,rgba(255,120,30,.85),rgba(150,40,10,.9));color:#fff}
+.dlg-skip.on{background:linear-gradient(180deg,rgba(255,120,30,.95),rgba(150,40,10,.95));
+  color:#fff;box-shadow:0 0 14px rgba(255,140,40,.8);animation:pulse 1s infinite}
+.touch-ui .dlg-skip{font-size:12.5px;padding:7px 12px;right:34px;bottom:0}
 .dlg-next{position:absolute;right:6px;bottom:0;color:var(--orange-lt);font-size:18px;
   animation:bob .9s infinite}
 @keyframes bob{0%,100%{transform:translateY(0);opacity:.6}50%{transform:translateY(4px);opacity:1}}
