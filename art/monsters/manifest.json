@@ -1,1 +1,9 @@
-{}
+{
+  "angry_chick": "art/monsters/angry_chick.png",
+  "blood_wolf": "art/monsters/blood_wolf.png",
+  "dire_wolf": "art/monsters/dire_wolf.png",
+  "fierce_rabbit": "art/monsters/fierce_rabbit.png",
+  "giant_dire_wolf": "art/monsters/giant_dire_wolf.png",
+  "mutant_blood_wolf": "art/monsters/mutant_blood_wolf.png",
+  "wild_wolf": "art/monsters/wild_wolf.png"
+}

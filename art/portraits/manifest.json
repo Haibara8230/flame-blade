@@ -1,1 +1,110 @@
-{}
+{
+  "chenxin": {
+    "normal": "art/portraits/chenxin.png"
+  },
+  "chenxue": {
+    "normal": "art/portraits/chenxue.png"
+  },
+  "chief": {
+    "normal": "art/portraits/chief.png"
+  },
+  "clerk": {
+    "normal": "art/portraits/clerk.png"
+  },
+  "extra_elder": {
+    "normal": "art/portraits/extra_elder.png"
+  },
+  "extra_f": {
+    "normal": "art/portraits/extra_f.png"
+  },
+  "extra_m": {
+    "normal": "art/portraits/extra_m.png"
+  },
+  "extra_pf": {
+    "normal": "art/portraits/extra_pf.png"
+  },
+  "extra_pm": {
+    "normal": "art/portraits/extra_pm.png"
+  },
+  "extra_suit": {
+    "normal": "art/portraits/extra_suit.png"
+  },
+  "fatman": {
+    "normal": "art/portraits/fatman.png"
+  },
+  "guoguo": {
+    "normal": "art/portraits/guoguo.png"
+  },
+  "hongye_tiebi": {
+    "normal": "art/portraits/hongye_tiebi.png"
+  },
+  "kaito": {
+    "normal": "art/portraits/kaito.png"
+  },
+  "kaito_fate": {
+    "normal": "art/portraits/kaito_fate.png"
+  },
+  "kaito_game": {
+    "normal": "art/portraits/kaito_game.png"
+  },
+  "lake": {
+    "normal": "art/portraits/lake.png"
+  },
+  "litianpeng": {
+    "normal": "art/portraits/litianpeng.png"
+  },
+  "liuhua": {
+    "normal": "art/portraits/liuhua.png"
+  },
+  "liuqiyue": {
+    "normal": "art/portraits/liuqiyue.png"
+  },
+  "longmoya": {
+    "normal": "art/portraits/longmoya.png"
+  },
+  "prolos": {
+    "normal": "art/portraits/prolos.png"
+  },
+  "qiushui": {
+    "normal": "art/portraits/qiushui.png"
+  },
+  "sealed": {
+    "normal": "art/portraits/sealed.png"
+  },
+  "smith": {
+    "normal": "art/portraits/smith.png"
+  },
+  "smithwife": {
+    "normal": "art/portraits/smithwife.png"
+  },
+  "sufeifei": {
+    "normal": "art/portraits/sufeifei.png"
+  },
+  "sufeifei_game": {
+    "normal": "art/portraits/sufeifei_game.png"
+  },
+  "tianzhizi": {
+    "normal": "art/portraits/tianzhizi.png"
+  },
+  "tianzhizi_sister": {
+    "normal": "art/portraits/tianzhizi_sister.png"
+  },
+  "wuming": {
+    "normal": "art/portraits/wuming.png"
+  },
+  "xiaoxi": {
+    "normal": "art/portraits/xiaoxi.png"
+  },
+  "xingbaoer": {
+    "normal": "art/portraits/xingbaoer.png"
+  },
+  "xueyaoyue": {
+    "normal": "art/portraits/xueyaoyue.png"
+  },
+  "yaya": {
+    "normal": "art/portraits/yaya.png"
+  },
+  "zangshen": {
+    "normal": "art/portraits/zangshen.png"
+  }
+}
