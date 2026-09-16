@@ -825,6 +825,7 @@ function guessExpr(name, text) {
 const FULL_BODY_RATIO = 1.6;      // 高/宽 ≥ 这个值算全身图
 const ASPECT = new Map();         // url → 高/宽，量过一次就记住
 let portSeq = 0;                  // 台词翻页比图片加载快时，用它丢弃过期结果
+let standeeOn = false;            // 站位立绘是否正在显示——drawScene 据此决定画不画 Q 版小人
 
 function measureAspect(url) {
   return new Promise(res => {
@@ -848,6 +849,7 @@ function swapPortraitImg(el, url) {
 
 function hidePortrait() {
   portSeq++;                                // 作废还没量完的那次，否则旁白会被它翻出立绘
+  standeeOn = false;
   $('dialogue').classList.add('no-portrait');
   $('standee').classList.add('hidden');
 }
@@ -857,7 +859,8 @@ function setPortrait(pid, e) {
   const seq = ++portSeq;
   const apply = r => {
     if (seq !== portSeq) return;            // 已经翻到下一句了，这次结果作废
-    if (r >= FULL_BODY_RATIO) {
+    standeeOn = r >= FULL_BODY_RATIO;
+    if (standeeOn) {
       swapPortraitImg($('standee-img'), url);
       $('standee').classList.remove('hidden');
       $('dialogue').classList.add('no-portrait');   // 对话框自己撑满
@@ -1992,8 +1995,12 @@ function drawScene(dt) {
   G.bgT += dt;
   const t = G.bgT;
   SP.drawBackground(ctx, G.bg, W, H, t, {});
-  // 队伍剪影站在前景（若有队友立绘位置）
-  const members = G.party.slice(0, 4);
+  /* 队伍剪影站在前景。
+     ⚠ 舞台上已经站着全身立绘时就不画——否则同一个角色会在画面上出现两次，
+     而且一个是写实立绘、一个是 Q 版小人，比例差得离谱。
+     没有全身立绘的场合（旁白、以及只有程序化半身图的角色）照旧画，
+     那时候它是画面上唯一的人形。 */
+  const members = standeeOn ? [] : G.party.slice(0, 4);
   const spots = [{ x: 180, y: 470 }, { x: 300, y: 484 }, { x: 410, y: 470 }, { x: 510, y: 486 }];
   members.forEach((m, i) => {
     const sp = spots[i];
