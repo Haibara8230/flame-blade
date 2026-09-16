@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>邪龙逆天 — 第一部 · 逆骨</title>
+<title>命运 · DESTINY</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🔥</text></svg>">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -18,7 +18,7 @@
   <!-- ============ HUD ============ -->
   <header id="hud" class="hidden">
     <div class="hud-left">
-      <span id="hud-chapter">第一章 · 灰烬之村</span>
+      <span id="hud-chapter">序章</span>
     </div>
     <div class="hud-right">
       <button class="hbtn" id="btn-full" title="全屏">⛶</button>
@@ -38,6 +38,15 @@
       <div class="dlg-next" id="dlg-next">▼</div>
     </div>
   </div>
+
+  <!-- ============ 全身立绘（站位） ============
+       全身图不塞进对话框里那个 126×136 的小框——塞进去脸只剩几个像素。
+       改成像视觉小说那样站在舞台上，脚被对话框挡住（z-index 24 < 对话框的 25）。
+       半身图仍然走对话框里的小框，由图片自身的高宽比自动选（见 main.js setPortrait）。
+       ⚠ 必须排在 #dialogue **后面**：CSS 没有「前一个兄弟」选择器，
+       靠 `#dialogue.hidden ~ #standee` 这条规则让立绘跟着对话框一起收起来，
+       否则战斗、面板、标题画面里它会一直杵在那。 -->
+  <div id="standee" class="hidden"><img id="standee-img" alt=""></div>
 
   <!-- ============ 抉择 ============ -->
   <div id="choices" class="hidden">
@@ -80,16 +89,16 @@
   <div id="title" class="screen">
     <div class="title-glow"></div>
     <div class="title-inner">
-      <div class="title-en">DEFY&nbsp;THE&nbsp;SKY</div>
-      <h1 class="title-cn">邪 龙 逆 天</h1>
-      <div class="title-sub">— 第一部 · 逆骨 · 化身邪龙誓逆天 —</div>
+      <div class="title-en">DESTINY</div>
+      <h1 class="title-cn">命 运</h1>
+      <div class="title-sub">— 人生可以是游戏，但千万不要试图去游戏你的人生 —</div>
       <div class="title-menu">
         <button class="tbtn" id="btn-new">开始新角色</button>
         <button class="tbtn" id="btn-continue">继续游戏</button>
         <button class="tbtn" id="btn-gallery">奥义一览</button>
         <button class="tbtn" id="btn-help">操作说明</button>
       </div>
-      <div class="title-foot">序章 + 四章 · 一转·逆骨邪龙 · 十一阶装备 · 公会战</div>
+      <div class="title-foot">第一卷 · 序章 ~ 第十一章「永恒命运之刻」</div>
     </div>
   </div>
 
@@ -97,7 +106,7 @@
   <div id="loading" class="screen hidden">
     <div class="title-glow"></div>
     <div class="loading-inner">
-      <h2 id="load-chapter">序章 · 最后一口气</h2>
+      <h2 id="load-chapter">序章</h2>
       <p id="load-text">命运正在转动……</p>
     </div>
   </div>
@@ -122,7 +131,7 @@
   <div id="rotate" class="hidden">
     <div class="rotate-icon">📱</div>
     <div class="rotate-title">请把手机横过来</div>
-    <div class="rotate-sub">《炎之刃》是横屏游戏，横屏后画面更大、战斗指令更清楚</div>
+    <div class="rotate-sub">本作是横屏游戏，横屏后画面更大、战斗指令更清楚</div>
   </div>
 </div>
 

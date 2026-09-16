@@ -106,7 +106,7 @@ function face(o) {
       <ellipse cx="${cx}" cy="153" rx="${es.w}" ry="${h}" fill="#fff" stroke="${SKIN.line}" stroke-width="3"/>
       <ellipse cx="${cx}" cy="153" rx="${pupil}" ry="${Math.max(6, h * 0.95)}" fill="url(#${eyeG})"/>
       <circle cx="${cx}" cy="153" r="${pupil * 0.42}" fill="#120a1e"/>
-      <circle cx="${cx - 4}" cy="149" r="${pupil * 0.34}" fill="#fff" opacity=".95"/>
+      ${o.plain ? '' : `<circle cx="${cx - 4}" cy="149" r="${pupil * 0.34}" fill="#fff" opacity=".95"/>`}
       <path d="M${cx - es.w - 2} ${151 - h * 0.5} ${flip ? es.lidR : es.lidL}"
             stroke="${SKIN.line}" stroke-width="5" fill="none" stroke-linecap="round"/>`;
   };
@@ -194,6 +194,12 @@ function hairSide(fill, len = 300) {
       <path d="M210 150 C218 200 216 ${len - 40} 204 ${len} L182 ${len} C196 ${len - 50} 202 200 198 152 Z"
         fill="${fill}" stroke="${SKIN.line}" stroke-width="3"/>`;
 }
+
+/* 通用路人立绘专用：盖在最上面的一层暗色，压低对比。
+   路人图必须一眼看得出「这个人原文没写长相」，不能让玩家把它当成某个
+   特定角色的脸——所以除了 face({ plain: true }) 不点瞳孔高光之外，
+   整张图再压一层暗。 */
+const SCRIM = '<rect width="300" height="360" fill="#0b0a12" opacity=".32"/>';
 
 const RECIPES = {
   /* ---- 叶天邪 / 邪天 ----
@@ -332,6 +338,129 @@ const RECIPES = {
     <path d="M108 318 q42 -12 84 0" stroke="#ffc6de" stroke-width="4" fill="none"/>
     <path d="M150 252 l-14 10 l14 26 l14 -26 Z" fill="#ffdcec" stroke="${SKIN.line}" stroke-width="2.5"/>
   `, '#3c3458', '#0d0a18'),
+
+  /* ---- 苏菲菲（第1章「蓝白格子裙少女」／第65章报名字） ----
+     第70章：「十八九岁的年纪，肌肤雪色无瑕，远山眉黛，楚楚动人，一双眼眸如
+       夜幕星辰，璀璨清亮，乌黑轻柔的秀发宛如清涧幽泉，倾泻而下，自然的垂散于
+       香肩粉背。」
+     第1章只给了「穿着蓝白格子裙的少女」。
+     ⚠ 第1章被「当街非礼」的那个少女就是她，不是另一个人
+     （考证见 refs/notes/characters-roster.md）。
+     远山眉黛 → 眉细而淡；眸如夜幕星辰 → 深瞳 + 亮 glow；肌肤雪色 → 肤色最白之一。 */
+  sufeifei: e => svgWrap(`
+    ${hairSide('#140f1c', 322)}
+    ${face({ id: 'sufeifei' + e, expr: e, eye: '#2a2440', glow: '#cfd8ff', brow: '#4a4050', blush: '#ffb0c0', skin: '#fff0e6', faceShape: 'oval', eyeShape: 'big', eyeSpacing: 1.02, browThick: 3.5 })}
+    ${hairCap('#181222', { vol: 50, side: 164, line: 98 })}
+    <!-- 蓝白格子裙（第1章） -->
+    <path d="M150 252 q-50 8 -70 32 q-12 26 -6 76 l152 0 q6 -50 -6 -76 q-20 -24 -70 -32 Z"
+          fill="#e8eef8" stroke="${SKIN.line}" stroke-width="3.5"/>
+    <path d="M112 272 h76 M110 300 h80 M110 328 h80" stroke="#5a86c4" stroke-width="3" opacity=".7"/>
+    <path d="M126 258 v102 M150 256 v104 M174 258 v102" stroke="#5a86c4" stroke-width="3" opacity=".7"/>
+    <path d="M150 254 l-18 10 l18 32 l18 -32 Z" fill="#fdfdff" stroke="${SKIN.line}" stroke-width="3"/>
+  `, '#2b3550', '#0a0c14'),
+
+  /* ---- 血妖月 / 梦羽衣（第4章《弑神》／第306章《命运》，同一个人） ----
+     原文第4章：「她全身紧缚着朴实无华的黑衣，脸上罩着一层黑色面罩，
+       仅仅露出鼻子以上的部分……掩面的漆黑薄纱下一双清冷美眸隐隐绽光。」
+     第306章：「长长的发丝在微风中飘渺微动」「这双美得不似凡间的美眸所释放的
+       气息太冷，冷彻骨髓」。
+     ⚠ **绝对不要画出鼻子以下的脸**——原文反复强调「谁也没见过她长的什么样子」。
+     所以这里先画完整的 face()，再用面罩把下半张脸整个盖掉，
+     表情差分只能靠眉和眼皮来演。 */
+  xueyaoyue: e => svgWrap(`
+    ${hairSide('#0c0a12', 330)}
+    ${face({ id: 'xyy' + e, expr: e, eye: '#bfe8ff', glow: '#7ad4ff', brow: '#14101c', blush: null, skin: '#fbeade', faceShape: 'sharp', eyeShape: 'sharp', eyeSpacing: 1.02, browThick: 4 })}
+    ${hairCap('#100d18', { vol: 46, side: 166, line: 96 })}
+    <!-- 黑色面罩：只露出鼻子以上 -->
+    <path d="M92 168 q58 16 116 0 q4 52 -26 82 q-32 12 -64 0 q-30 -30 -26 -82 Z"
+          fill="#141220" stroke="${SKIN.line}" stroke-width="3"/>
+    <path d="M92 170 q58 14 116 0" stroke="#3a3450" stroke-width="2.5" fill="none"/>
+    <!-- 紧身黑衣 -->
+    <path d="M150 250 q-46 10 -66 34 q-10 26 -4 76 l140 0 q6 -50 -4 -76 q-20 -24 -66 -34 Z"
+          fill="#15131e" stroke="${SKIN.line}" stroke-width="3.5"/>
+    <path d="M150 254 q-14 40 0 106 M118 268 q10 44 6 92 M182 268 q-10 44 -6 92"
+          stroke="#33304a" stroke-width="2.5" fill="none"/>
+    <!-- 封血冰牙：遍体透明的短刃，刃尖仿佛初凝的冰凌 -->
+    <path d="M214 300 l14 -46 l10 46 l-12 10 Z" fill="#cfefff" opacity=".8" stroke="#eaf8ff" stroke-width="2"/>
+  `, '#1a1c2e', '#08080e'),
+
+  /* ============================================================
+     通用路人立绘（六张，见 art/portraits/README.md 的「② 通用路人立绘」）
+     ============================================================
+     原文一句长相都没写的配角共用这六张。以前的做法是「宁可没有立绘也不要编」，
+     结果一堆有台词的人全程空着对话框；共用图解决的是同一个问题的另一半——
+     不编具体的脸，但给一个明确写着「这是个没有描写的路人」的通用形象。
+
+     所以这六张一律：plain（不点瞳孔高光）＋ 不点腮红 ＋ 盖一层 SCRIM。 */
+
+  /* 男性路人 / 便装：现实世界的过路人、男记者、没名字的男人 */
+  extra_m: e => svgWrap(`
+    ${face({ id: 'exm' + e, expr: e, eye: '#4a4038', glow: null, brow: '#2e2620', blush: null, skin: '#dcc3ab', faceShape: 'oval', eyeShape: 'droop', browThick: 5, plain: true })}
+    ${hairCap('#2a2420', { vol: 58, side: 154, line: 102 })}
+    <path d="M150 252 q-48 8 -68 32 q-12 26 -6 76 l148 0 q6 -50 -6 -76 q-20 -24 -68 -32 Z"
+          fill="#4e4a46" stroke="${SKIN.line}" stroke-width="3.5"/>
+    ${SCRIM}
+  `, '#26262c', '#0a0a0c'),
+
+  /* 女性路人 / 便装：女记者、街上的女孩 */
+  extra_f: e => svgWrap(`
+    ${hairSide('#2e2620', 300)}
+    ${face({ id: 'exf' + e, expr: e, eye: '#584a3e', glow: null, brow: '#382e26', blush: null, skin: '#e6cdb6', faceShape: 'oval', eyeShape: 'big', browThick: 4, plain: true })}
+    ${hairCap('#33291f', { vol: 54, side: 160, line: 100 })}
+    <path d="M150 252 q-46 8 -66 32 q-12 26 -6 76 l144 0 q6 -50 -6 -76 q-20 -24 -66 -32 Z"
+          fill="#5a5254" stroke="${SKIN.line}" stroke-width="3.5"/>
+    ${SCRIM}
+  `, '#2a2830', '#0a0a0c'),
+
+  /* 男性玩家：粗糙的新手布衣，头顶留出挂 ID 的空间 */
+  extra_pm: e => svgWrap(`
+    ${face({ id: 'expm' + e, expr: e, eye: '#4a4442', glow: null, brow: '#2a2420', blush: null, skin: '#dcc0a4', faceShape: 'square', eyeShape: 'narrow', browThick: 6, plain: true })}
+    ${hairCap('#241e1a', { vol: 60, side: 152, line: 104 })}
+    <path d="M150 252 q-50 8 -70 32 q-12 26 -6 76 l152 0 q6 -50 -6 -76 q-20 -24 -70 -32 Z"
+          fill="#6e6250" stroke="${SKIN.line}" stroke-width="3.5"/>
+    <path d="M150 254 l-18 10 l18 34 l18 -34 Z" fill="#514838" stroke="${SKIN.line}" stroke-width="3"/>
+    ${SCRIM}
+  `, '#2c2a22', '#0a0a08'),
+
+  /* 女性玩家 */
+  extra_pf: e => svgWrap(`
+    ${hairSide('#2c2620', 296)}
+    ${face({ id: 'expf' + e, expr: e, eye: '#52463c', glow: null, brow: '#332a22', blush: null, skin: '#e4cab4', faceShape: 'oval', eyeShape: 'big', browThick: 4, plain: true })}
+    ${hairCap('#2f2720', { vol: 52, side: 162, line: 100 })}
+    <path d="M150 252 q-46 8 -66 32 q-12 26 -6 76 l144 0 q6 -50 -6 -76 q-20 -24 -66 -32 Z"
+          fill="#7a6c58" stroke="${SKIN.line}" stroke-width="3.5"/>
+    <path d="M150 254 l-16 10 l16 32 l16 -32 Z" fill="#5c5140" stroke="${SKIN.line}" stroke-width="3"/>
+    ${SCRIM}
+  `, '#2c2a24', '#0a0a08'),
+
+  /* 黑西装：保镖（第1章）、绑匪（第26章）、随从共用。
+     原文第1章：「四个人全部年至中年，身着漆黑西装，漆黑皮鞋，
+     其中两个还带着深色墨镜」。 */
+  extra_suit: e => svgWrap(`
+    ${face({ id: 'exs' + e, expr: e, eye: '#3a3430', glow: null, brow: '#181410', blush: null, skin: '#cfae90', faceShape: 'square', eyeShape: 'narrow', eyeSpacing: 0.94, browThick: 8, plain: true })}
+    ${hairCap('#141010', { vol: 62, side: 150, line: 108 })}
+    <!-- 深色墨镜 -->
+    <path d="M104 146 h38 q6 0 6 8 v10 q0 10 -10 10 h-24 q-10 0 -10 -10 v-10 q0 -8 6 -8 Z
+             M158 146 h38 q6 0 6 8 v10 q0 10 -10 10 h-24 q-10 0 -10 -10 v-10 q0 -8 6 -8 Z"
+          fill="#0e0d14" stroke="#2a2833" stroke-width="2.5"/>
+    <path d="M148 158 h12" stroke="#2a2833" stroke-width="3"/>
+    <path d="M150 250 q-54 10 -76 34 q-10 26 -4 76 l160 0 q6 -50 -4 -76 q-22 -24 -76 -34 Z"
+          fill="#17161c" stroke="${SKIN.line}" stroke-width="3.5"/>
+    <path d="M150 252 l-20 12 l20 40 l20 -40 Z" fill="#0d0c11" stroke="${SKIN.line}" stroke-width="3"/>
+    <path d="M150 264 l-6 8 l6 34 l6 -34 Z" fill="#54303a"/>
+    ${SCRIM}
+  `, '#1c1c22', '#07070a'),
+
+  /* 老年路人 / NPC：店主、摊主、看门老人共用 */
+  extra_elder: e => svgWrap(`
+    ${face({ id: 'exe' + e, expr: e, eye: '#6a5c48', glow: null, brow: '#8e8578', blush: null, skin: '#d4b896', faceShape: 'sharp', eyeShape: 'droop', browThick: 5, plain: true })}
+    ${hairCap('#9a948a', { vol: 66, side: 148, line: 106 })}
+    <path d="M118 214 q32 22 64 0 q-4 38 -32 42 q-28 -4 -32 -42 Z" fill="#9a948a" stroke="${SKIN.line}" stroke-width="2.5"/>
+    <path d="M150 250 q-50 10 -72 34 q-10 26 -4 76 l152 0 q6 -50 -4 -76 q-22 -24 -72 -34 Z"
+          fill="#5e5344" stroke="${SKIN.line}" stroke-width="3.5"/>
+    <path d="M150 252 l-20 12 l20 38 l20 -38 Z" fill="#453c30" stroke="${SKIN.line}" stroke-width="3"/>
+    ${SCRIM}
+  `, '#2a261e', '#090806'),
 };
 
 /* ============================================================
@@ -386,6 +515,12 @@ export function portraitURL(id, expr) {
 }
 /* 这张立绘现在用的是图片还是代码画的——面板与校验脚本要用 */
 export function portraitIsArt(id) { return !!(ART[id] && ART[id].normal); }
-export function hasPortrait(id) { return !!VARIANTS[id]; }
+/* 这个角色有没有立绘可用。
+   ⚠ 以前这里只看 VARIANTS（即代码画的那批），结果是：
+   往 art/portraits/ 放了一张 `xueyaoyue.png`、也在 PID_MAP 里映射好了，
+   但因为 portraits.js 里没有同名的程序化配方，hasPortrait 返回 false，
+   main.js 直接把立绘框收起来——**图片放进去了却永远不显示**。
+   现在「有图片」和「有程序化配方」任一成立即可。 */
+export function hasPortrait(id) { return !!(VARIANTS[id] || (ART[id] && ART[id].normal)); }
 
 export default PORTRAITS;

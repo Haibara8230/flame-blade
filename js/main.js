@@ -1,6 +1,6 @@
 /* ============================================================
    main.js — 主循环 / 场景 / UI / 存档 / 音效
-   《炎之刃》FLAME BLADE
+   《网游之邪龙逆天》同人改编
    ============================================================ */
 import { ACTORS, SKILLS, COMBOS, ITEMS, EQUIPS, SHOPS, STATUS, ELEM, statsAt, expToNext, ENEMIES, MAX_LEVEL, equipFreeBonus, equipFixedBonus, applyAtkPct } from './characters.js';
 import { SCENES, ENDINGS } from './story.js';
@@ -781,11 +781,25 @@ const PID_MAP = (() => {
   put('接待小姐', 'clerk');
   put('普洛斯', 'prolos');
   put('被封印的老人', 'sealed');
-  put('？？？', 'guoguo'); put('???', 'guoguo'); put('果果', 'guoguo');
-  /* ⚠ 以下几位原文没有写外貌，暂不给立绘，宁可没有也不要编：
-       少女（蓝白格子裙）、保镖（黑西装）、记者、路人玩家、眼镜学长。
-     承泽湖的谪仙女子（lake）与大胖子（fatman）原文有细写，立绘已备好，
-     等剧情把她们的台词补上就能挂。 */
+  put('果果', 'guoguo'); put('？？？', 'guoguo');
+  /* ⚠ 「???」（半角）是序章承泽湖畔那个女子说的「我带你去」，不是果果。
+     此前半角和全角都映射到了 guoguo，序章那一拍会顶着果果的脸。
+     她就是璃仙儿（考证见 refs/notes/characters-roster.md），立绘 id 沿用 lake。 */
+  put('???', 'lake'); put('璃仙儿', 'lake');
+  put('血妖月', 'xueyaoyue'); put('梦羽衣', 'xueyaoyue');   // 同一个人，见第306章
+  put('少女', 'sufeifei'); put('苏菲菲', 'sufeifei');        // 第1章的蓝白格子裙少女
+  put('大胖子', 'fatman'); put('左破军', 'fatman');          // 同一个人，见第141章
+
+  /* ---- 通用路人立绘 ----
+     原文一句长相都没写的配角共用六张通用图，不给他们编五官。
+     对照表与画法见 art/portraits/README.md 的「② 通用路人立绘」。 */
+  put('眼镜学长', 'extra_m');
+  put('记者', 'extra_m');        // 第6章提问的两个记者，原文只写了「标准职业装」
+  put('保镖', 'extra_suit');     // 第1章：年至中年，漆黑西装，漆黑皮鞋，深色墨镜
+  put('黑衣人', 'extra_suit');   // 第26章的四个绑匪
+  put('路人玩家', 'extra_pm');
+  put('女玩家', 'extra_pf');
+  put('村民', 'extra_m'); put('店主', 'extra_elder'); put('老板', 'extra_elder');
   return m;
 })();
 
@@ -801,40 +815,82 @@ function guessExpr(name, text) {
   return 'normal';
 }
 
+/* ---------------- 立绘的两种呈现 ----------------
+   半身像（含 portraits.js 里代码画的那批，300×360）→ 对话框里的小框；
+   全身像 → 舞台站位，站在左侧，脚被对话框挡住。
+
+   为什么要分两种：对话框里的框只有 126×136，全身图塞进去脸只剩几个像素。
+   判断依据是**图片自身的高宽比**，不需要在剧本或清单里额外标一笔——
+   画师换一张更长的图进来，显示方式会自己跟着变。 */
+const FULL_BODY_RATIO = 1.6;      // 高/宽 ≥ 这个值算全身图
+const ASPECT = new Map();         // url → 高/宽，量过一次就记住
+let portSeq = 0;                  // 台词翻页比图片加载快时，用它丢弃过期结果
+
+function measureAspect(url) {
+  return new Promise(res => {
+    const probe = new Image();
+    const done = r => { ASPECT.set(url, r); res(r); };
+    probe.onload = () => done(probe.naturalHeight / Math.max(1, probe.naturalWidth));
+    probe.onerror = () => done(1);          // 读不到就当半身，走原来的小框
+    probe.src = url;
+  });
+}
+
+/* 换人/换表情时给一次轻微的进场，视觉上不再是「贴图突然替换」 */
+function swapPortraitImg(el, url) {
+  if (el.dataset.src === url) return;       // src 会被浏览器转成绝对地址，不能直接比
+  el.dataset.src = url;
+  el.src = url;
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+}
+
+function hidePortrait() {
+  portSeq++;                                // 作废还没量完的那次，否则旁白会被它翻出立绘
+  $('dialogue').classList.add('no-portrait');
+  $('standee').classList.add('hidden');
+}
+
+function setPortrait(pid, e) {
+  const url = portraitURL(pid, e);
+  const seq = ++portSeq;
+  const apply = r => {
+    if (seq !== portSeq) return;            // 已经翻到下一句了，这次结果作废
+    if (r >= FULL_BODY_RATIO) {
+      swapPortraitImg($('standee-img'), url);
+      $('standee').classList.remove('hidden');
+      $('dialogue').classList.add('no-portrait');   // 对话框自己撑满
+    } else {
+      const img = $('dlg-img');
+      swapPortraitImg(img, url);
+      img.style.filter = 'none';
+      $('standee').classList.add('hidden');
+      $('dialogue').classList.remove('no-portrait');
+    }
+  };
+  if (ASPECT.has(url)) apply(ASPECT.get(url));
+  else measureAspect(url).then(apply);
+}
+
 function showLine(name, text, expr) {
   const nm = $('dlg-name-text');
   const tx = $('dlg-text');
-  const img = $('dlg-img');
   const wrap = $('dialogue');
-  const port = img.parentElement;
   wrap.classList.remove('hidden');
 
   /* 旁白占全剧 28% 的台词，此前一直显示一张灰度的凯。
      现在直接把立绘收起来，对话框自己撑满。 */
   if (name === '旁白' || name === '系统') {
     nm.textContent = name === '系统' ? 'SYSTEM' : '';
-    port.classList.add('hidden');
-    wrap.classList.add('no-portrait');
+    hidePortrait();
   } else {
-    const pid = PID_MAP[name]
-      || (name.includes('璃') ? 'ryze' : name.includes('凯') ? 'kaito' : null);
-    if (pid && hasPortrait(pid)) {
-      port.classList.remove('hidden');
-      wrap.classList.remove('no-portrait');
-      const e = expr || guessExpr(name, text);
-      const next = portraitURL(pid, e);
-      if (img.src !== next) {
-        img.src = next;
-        // 换人/换表情时给一次轻微的进场，视觉上不再是「贴图突然替换」
-        img.classList.remove('pop');
-        void img.offsetWidth;
-        img.classList.add('pop');
-      }
-      img.style.filter = 'none';
-    } else {
-      port.classList.add('hidden');
-      wrap.classList.add('no-portrait');
-    }
+    /* ⚠ 此前这里还有一条兜底：名字含「璃」→ 'ryze'、含「凯」→ 'kaito'。
+       ryze / 凯 都是《炎之刃》时期的角色，早已删除，而「璃」现在会命中
+       璃仙儿——留着只会把她指到一个不存在的立绘上。已删除，一律走 PID_MAP。 */
+    const pid = PID_MAP[name];
+    if (pid && hasPortrait(pid)) setPortrait(pid, expr || guessExpr(name, text));
+    else hidePortrait();
     nm.textContent = name;
   }
 
@@ -1872,7 +1928,7 @@ function openGallery() {
    HUD
    ============================================================ */
 function refreshHUD() {
-  $('hud-chapter').textContent = G.chapter || '炎之刃';
+  $('hud-chapter').textContent = G.chapter || '命运';
 }
 $('btn-status').onclick = e => { e.stopPropagation(); togglePanel('party', openPartyPanel); };
 $('panel-close').onclick = e => { e.stopPropagation(); closePanel(); };
@@ -1925,6 +1981,8 @@ $('btn-again').onclick = e => {
 };
 /* 有图片立绘就用图片，没有就继续用代码画的。读不到清单完全静默。 */
 loadArtManifest().then(ok => { if (ok) console.info('[立绘] 已加载图片清单'); });
+/* 怪物图片清单（art/monsters/）。读不到就静默退回 sprites.js 画的那批。 */
+SP.loadMonsterArt().then(ok => { if (ok) console.info('[怪物] 已加载图片清单'); });
 document.addEventListener('pointerdown', () => ac(), { once: true });
 
 /* ============================================================

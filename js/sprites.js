@@ -900,8 +900,65 @@ export function drawKing(ctx, x, y, s, t, pose, p = {}) {
   ctx.restore();
 }
 
+/* ============================================================
+   怪物图片（可选，优先于代码画的）
+   ============================================================
+   和立绘一个套路：把图片丢进 art/monsters/，文件名 = 敌人 id，
+   清单由 node tools/gen-art.mjs 生成。读不到就静默退回 sprites.js 画的那只。
+
+   图片按「脚底中心」对齐，和 drawWolf / drawHumanoid 的锚点一致，
+   所以换成图片之后站位、缩放、血条位置都不用改。 */
+let MONSTER_ART = {};
+const MIMG = new Map();            // id → HTMLImageElement（loaded 之后才画）
+
+export function setMonsterArt(m) { MONSTER_ART = m || {}; MIMG.clear(); }
+export async function loadMonsterArt(url = 'art/monsters/manifest.json') {
+  try {
+    const r = await fetch(url, { cache: 'no-cache' });
+    if (!r.ok) return false;
+    setMonsterArt(await r.json());
+    return Object.keys(MONSTER_ART).length > 0;
+  } catch (e) { return false; }
+}
+
+function monsterImage(id) {
+  const src = MONSTER_ART[id];
+  if (!src) return null;
+  let im = MIMG.get(id);
+  if (im === undefined) {
+    im = new Image();
+    im.src = src;
+    MIMG.set(id, im);
+  }
+  return im.complete && im.naturalWidth ? im : null;   // 没加载完这一帧先用代码画的
+}
+
+/* 图片版怪物：底边贴脚底，宽度按 s 缩放；
+   受击闪白、攻击前冲这些节拍沿用代码版的处理，换图之后手感不变。 */
+function drawMonsterImage(ctx, im, x, y, s, t, pose, p) {
+  const H = 240 * s;                                   // 和代码画的怪物取同一量级
+  const W = H * (im.naturalWidth / im.naturalHeight);
+  const atk = (p && p.attackP) || 0;
+  const hurt = (p && p.hurtP) || 0;
+  const bob = pose === 'dead' ? 0 : Math.sin(t * 2.2) * 3 * s;
+  ctx.save();
+  ctx.translate(x - atk * 26 * s, y + bob);
+  if (pose === 'dead') { ctx.rotate(-0.42); ctx.globalAlpha *= 0.9; }
+  else if (hurt > 0.02) ctx.translate(Math.sin(hurt * 40) * 5 * s, 0);
+  ctx.drawImage(im, -W / 2, -H, W, H);
+  if (hurt > 0.02) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = hurt * 0.55;
+    ctx.drawImage(im, -W / 2, -H, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  ctx.restore();
+}
+
 export function drawEnemy(ctx, kind, def, x, y, s, t, pose, p) {
   const pal = def.palette || {};
+  const im = def.id ? monsterImage(def.id) : null;
+  if (im) return drawMonsterImage(ctx, im, x, y, s, t, pose, p);
   if (kind === 'wolf') return drawWolf(ctx, x, y, s, t, pose, { ...pal, attackP: p && p.attackP, hurtP: p && p.hurtP });
   if (kind === 'demon') return drawDemon(ctx, x, y, s, t, pose, { ...pal, attackP: p && p.attackP, hurtP: p && p.hurtP });
   if (kind === 'king') return drawKing(ctx, x, y, s, t, pose, { ...pal, attackP: p && p.attackP, hurtP: p && p.hurtP });
@@ -1117,4 +1174,4 @@ export function drawFocusLines(ctx, W, H, t, alpha = .6, cx = W / 2, cy = H / 2)
 }
 
 export const util = { clamp, ell, rrect, poly };
-export default { drawBackground, drawHumanoid, drawWolf, drawDemon, drawKing, drawEnemy, drawSlash, drawBurst, drawHeal, drawThunder, drawIce, drawMeteor, drawGuardSpark, drawFloatText, drawSpeedLines, drawFocusLines, util };
+export default { drawBackground, drawHumanoid, drawWolf, drawDemon, drawKing, drawEnemy, setMonsterArt, loadMonsterArt, drawSlash, drawBurst, drawHeal, drawThunder, drawIce, drawMeteor, drawGuardSpark, drawFloatText, drawSpeedLines, drawFocusLines, util };

@@ -1,5 +1,5 @@
 /* ============================================================
-   炎之刃 FLAME BLADE — 日漫热血风 UI
+   《命运》DESTINY — 日漫热血风 UI
    ============================================================ */
 :root{
   --ink:#080a14;
@@ -57,6 +57,22 @@ body{display:block;overflow:hidden}
   letter-spacing:1px;transition:.15s}
 .hbtn:hover{background:linear-gradient(180deg,rgba(255,120,30,.85),rgba(150,40,10,.9));
   color:#fff;box-shadow:0 0 14px rgba(255,140,40,.7)}
+
+/* ---------- 全身立绘（站位） ----------
+   对话框里的小框只有 126×136，全身图塞进去脸只剩几个像素。
+   所以全身图改走这里：站在舞台左侧，底边贴着舞台底，脚被对话框挡住。
+   z-index 24 < #dialogue 的 25 —— 人在框后面，这是视觉小说的标准做法。
+   半身图不走这里，仍然用对话框里的小框（main.js 按图片高宽比自动选）。 */
+#standee{position:absolute;left:1.5%;bottom:0;width:46%;height:88%;z-index:24;pointer-events:none;
+  display:flex;align-items:flex-end;justify-content:flex-start;
+  filter:drop-shadow(0 6px 26px rgba(0,0,0,.8))}
+#standee img{height:100%;width:auto;max-width:100%;object-fit:contain;object-position:bottom left}
+/* 对话框收起来时立绘也要跟着收——战斗、面板、标题画面里有六七处会隐藏对话框，
+   与其逐处补一行 JS，不如让 CSS 直接跟随。这也是 #standee 必须排在 #dialogue
+   后面的原因（CSS 没有「前一个兄弟」选择器）。 */
+#dialogue.hidden ~ #standee{display:none}
+#standee img.pop{animation:standeeIn .26s cubic-bezier(.2,1.5,.4,1)}
+@keyframes standeeIn{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
 
 /* ---------- 对话框 ---------- */
 #dialogue{position:absolute;left:16px;right:16px;bottom:14px;height:158px;z-index:25;
@@ -272,6 +288,7 @@ body{display:block;overflow:hidden}
 .touch-ui #panel-close{font-size:13px;padding:10px 16px;min-height:42px}
 .touch-ui #dialogue{left:8px;right:8px;bottom:8px;height:164px;gap:8px;padding:8px}
 .touch-ui .dlg-portrait{width:108px;height:146px;flex:0 0 108px}
+.touch-ui #standee{width:52%;height:84%}
 .touch-ui .dlg-text{font-size:16px;line-height:1.58}
 .touch-ui .dlg-name{font-size:14px}
 .touch-ui .dlg-text .shout{font-size:18px}
@@ -302,6 +319,7 @@ body{display:block;overflow:hidden}
   .touch-ui #hud-chapter{display:none}
   .touch-ui #dialogue{height:150px}
   .touch-ui .dlg-portrait{width:92px;height:132px;flex:0 0 92px}
+  .touch-ui #standee{height:78%}
   .touch-ui .battle-log{height:48px}
 }
 
